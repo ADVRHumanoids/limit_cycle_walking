@@ -161,7 +161,7 @@ q_record = zeros(length(q),1);
 j = 0;
 F = zeros(length(q),1);
 time = 0;
-dt = 0.01;
+dt = 0.001;
 
  while 1
      
@@ -170,7 +170,7 @@ time = (j-1)*dt;
     
     
 [D,C,G] = updatateDynMatrices(symD,symC,symG,symbolicVar,numericVar);
-deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
+
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
 
@@ -221,12 +221,12 @@ numericVar = [q; q_dot; q_Ddot].';
 if yLink2(2) <= 0 && flag == 0
 % flag = 1;
 
-
+deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
 q(1:2) = deltaq * q(1:2);
 q_dot(1:2) = deltaqDot * q_dot(1:2);
 
 Base = [xLink2(2);
-        yLink2(2)];
+        0];
 end
 %===================================
 set(Link1,'xdata',xLink1,'ydata',yLink1);
