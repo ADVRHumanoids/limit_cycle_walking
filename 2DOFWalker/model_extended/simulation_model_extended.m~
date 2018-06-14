@@ -48,10 +48,10 @@ DynamicEquations = [simplify(First_eq), simplify(Second_eq), simplify(Third_eq),
 dynamics_extended;
 impact_extended;
 %======================
-
+alfa = subs(alfa);
                       %pos / vel / acc
-startingParameters = [pi/10,   0,    0,...  %q1
-                      pi/2,     0,    0,...  %q2
+startingParameters = [pi/18,   0,    0,...  %q1
+                      pi/10,     0,    0,...  %q2
                       0,      0,    0,...  %z1
                       0,      0,    0];    %z2
 %======================
@@ -87,30 +87,24 @@ symG = G;
 symdeltaqDot = deltaqDot;
 
 
-q = [q1(t); 
+q = double([q1(t); 
      q2(t);
      z1(t);
-     z2(t)];
+     z2(t)]);
  
-q_dot = [q1_dot(t); 
+q_dot = double([q1_dot(t); 
          q2_dot(t);
          z1_dot(t);
-         z2_dot(t)];
+         z2_dot(t)]);
 
-q_Ddot = [q1_Ddot(t); 
+q_Ddot = double([q1_Ddot(t); 
           q2_Ddot(t);
           z1_Ddot(t);
-          z2_Ddot(t)];
+          z2_Ddot(t)]);
          
 
-
-time_record = 0;
-q_record = zeros(length(q),1);
-
-j = 0;
-F = zeros(length(q),1);
-time = 0;
-dt = 0.03;
+% [D,C,G] = updatateDynMatrices(symD,symC,symG,symbolicVar,[q(:);q_dot(:);q_Ddot(:)]');
+D = subs(D,q1(t),double(v));
 
 Origin = [0;0];
 Base = [0;0];
@@ -144,15 +138,19 @@ set(fig1,'Position',[2400, 400,560,420])
 
 Link1 = plot(0,0,'LineWidth',2); grid on; hold on;
 Link2 = plot(0,0,'LineWidth',2); grid on; hold on;
+
 xlim([-3 3]);
 ylim([-3 3]);
+
+xLineTerrain = xlim;
+yLineTerrain = alfa * (xLineTerrain);
+LineTerrain = plot(xLineTerrain,yLineTerrain);
 %===========================================
 set(Link1,'xdata',xLink1,'ydata',yLink1);
 set(Link2,'xdata',xLink2,'ydata',yLink2);
 %===========================================
 fig2 = figure(2);
 set(fig2,'Position',[3000, 400,560,420])
-
 for loop = 1:size(q,1)
 plot_q(loop) = plot(0,0); hold on;
 xlim([0 100]);
@@ -161,6 +159,14 @@ end
 
 disp('push a button to continue'); pause;
 flag = 0;
+time_record = 0;
+q_record = zeros(length(q),1);
+
+j = 0;
+F = zeros(length(q),1);
+time = 0;
+dt = 0.005;
+
  while 1
      
 j = j + 1;
@@ -168,13 +174,16 @@ time = (j-1)*dt;
     
     
 [D,C,G] = updatateDynMatrices(symD,symC,symG,symbolicVar,numericVar);
-deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
+
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
 
 q = double(q);
+
 q_dot = double(q_dot);
 % q_Ddot = double(q_Ddot);
+q_old = q;
+q_dot_old = q_dot;
 
 q_Ddot =  D \ (F - C*(q_dot) - G);
 q_dot = q_dot + dt * q_Ddot;
@@ -187,7 +196,18 @@ for i  = 1:length(q)
     end
 end
 
+%===========impact switch===========
+if yLink2(2) <= 0 && flag == 0
+% flag = 1;
 
+deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
+q(1:2) = deltaq * q_old(1:2);
+q_dot(1:2) = -deltaqDot * q_dot(1:2);
+
+Base = [xLink2(2);
+        0];
+end
+%===================================
 
 R1_0 = [sin(q(1)) -cos(q(1)) 0;
         cos(q(1)) sin(q(1))  0;
@@ -215,18 +235,7 @@ yLink2 = yLink1(2) + [Origin(2) rp2_0(2)];
 
 numericVar = [q; q_dot; q_Ddot].';
 
-%===========impact switch===========
-if yLink2(2) <= 0 && flag == 0
-% flag = 1;
 
-
-q(1:2) = deltaq * q(1:2);
-q_dot(1:2) = deltaqDot * q_dot(1:2);
-
-Base = [xLink2(2);
-        0];
-end
-%===================================
 set(Link1,'xdata',xLink1,'ydata',yLink1);
 set(Link2,'xdata',xLink2,'ydata',yLink2);
 %       if t>1

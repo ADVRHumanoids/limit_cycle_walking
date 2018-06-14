@@ -14,7 +14,7 @@ syms q1(t) q2(t) q1_dot(t) q2_dot(t) q1_Ddot(t) q2_Ddot(t)
 syms z1(t) z2(t) z1_dot(t) z2_dot(t) z1_Ddot(t) z2_Ddot(t)
 syms I1 I2
 syms g
-
+syms alfa
 syms m I l lc
 
 nlink = 2;
@@ -48,6 +48,7 @@ DynamicEquations = [simplify(First_eq), simplify(Second_eq), simplify(Third_eq),
 dynamics_extended;
 impact_extended;
 %======================
+alfa = double(subs(alfa,pi/6));
 
                       %pos / vel / acc
 startingParameters = [pi/18,   0,    0,...  %q1
@@ -87,22 +88,21 @@ symG = G;
 symdeltaqDot = deltaqDot;
 
 
-q = [q1(t); 
+q = double([q1(t); 
      q2(t);
      z1(t);
-     z2(t)];
+     z2(t)]);
  
-q_dot = [q1_dot(t); 
+q_dot = double([q1_dot(t); 
          q2_dot(t);
          z1_dot(t);
-         z2_dot(t)];
+         z2_dot(t)]);
 
-q_Ddot = [q1_Ddot(t); 
+q_Ddot = double([q1_Ddot(t); 
           q2_Ddot(t);
           z1_Ddot(t);
-          z2_Ddot(t)];
+          z2_Ddot(t)]);
          
-
 
 
 
@@ -141,7 +141,7 @@ Link2 = plot(0,0,'LineWidth',2); grid on; hold on;
 
 xlim([-3 3]);
 ylim([-3 3]);
-alfa = 0;
+
 xLineTerrain = xlim;
 yLineTerrain = alfa * (xLineTerrain);
 LineTerrain = plot(xLineTerrain,yLineTerrain);
