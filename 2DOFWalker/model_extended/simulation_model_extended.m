@@ -48,14 +48,14 @@ DynamicEquations = [simplify(First_eq), simplify(Second_eq), simplify(Third_eq),
 dynamics_extended;
 impact_extended;
 %======================
-alfa = double(subs(alfa,pi/6));
+AngleSlope = -pi/4; 
 
                       %pos / vel / acc
 startingParameters = [pi/18,   0,    0,...  %q1
-                      pi/10,     0,    0,...  %q2
+                      pi/4,     0,    0,...  %q2
                       0,      0,    0,...  %z1
                       0,      0,    0];    %z2
-%======================
+%======================pi/18
 q1(t) = subs(q1(t),q1,startingParameters(1));
 q1_dot(t) = subs(q1_dot(t),q1_dot,startingParameters(2));
 q1_Ddot(t) = subs(q1_Ddot(t),q1_Ddot,startingParameters(3));
@@ -81,11 +81,16 @@ numericVar = [q1(t), q2(t),z1(t),z2(t),...
              q1_dot(t), q2_dot(t),z1_dot(t),z2_dot(t),...
              q1_Ddot(t), q2_Ddot(t),z1_Ddot(t),z2_Ddot(t)];
 
+     %pi/6 
+G = subs(G, alfa, double(subs(alfa,AngleSlope)));
+alfa = double(subs(alfa,AngleSlope));
 symD = D;
 symC = C;
 symG = G;
-% symdeltaq = deltaq;
+symdeltaq = deltaq;
 symdeltaqDot = deltaqDot;
+
+
 
 
 q = double([q1(t); 
@@ -134,7 +139,7 @@ yLink2 = yLink1(2) + [Origin(2) rp2_0(2)];
 
 %==========================================================================
 fig1 = figure(1);
-set(fig1,'Position',[2400, 400,560,420])
+% set(fig1,'Position',[2400, 400,560,420])
 
 Link1 = plot(0,0,'LineWidth',2); grid on; hold on;
 Link2 = plot(0,0,'LineWidth',2); grid on; hold on;
@@ -143,14 +148,14 @@ xlim([-3 3]);
 ylim([-3 3]);
 
 xLineTerrain = xlim;
-yLineTerrain = alfa * (xLineTerrain);
+yLineTerrain = tan(alfa) * (xLineTerrain);
 LineTerrain = plot(xLineTerrain,yLineTerrain);
 %===========================================
 set(Link1,'xdata',xLink1,'ydata',yLink1);
 set(Link2,'xdata',xLink2,'ydata',yLink2);
 %===========================================
 fig2 = figure(2);
-set(fig2,'Position',[3000, 400,560,420])
+% set(fig2,'Position',[3000, 400,560,420])
 for loop = 1:size(q,1)
 plot_q(loop) = plot(0,0); hold on;
 xlim([0 100]);
@@ -196,16 +201,17 @@ for i  = 1:length(q)
     end
 end
 
+yLineTerrain = tan(alfa) * xLink2(2);
 %===========impact switch===========
-if yLink2(2) <= 0 && flag == 0
-% flag = 1;
+if yLink2(2) <= yLineTerrain && flag == 0
+flag = 1;
 
 deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
-q(1:2) = deltaq * q_old(1:2);
-q_dot(1:2) = -deltaqDot * q_dot(1:2);
+q(1:2) = deltaq * q_old(1:2) - [2*alfa;0];
+q_dot(1:2) = deltaqDot * q_dot_old(1:2);
 
 Base = [xLink2(2);
-        0];
+        yLineTerrain];
 end
 %===================================
 
