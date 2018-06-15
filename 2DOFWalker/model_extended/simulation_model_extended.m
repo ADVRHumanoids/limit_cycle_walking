@@ -84,6 +84,7 @@ numericVar = [q1(t), q2(t),z1(t),z2(t),...
      %pi/6 
 G = subs(G, alfa, double(subs(alfa,AngleSlope)));
 alfa = double(subs(alfa,AngleSlope));
+
 symD = D;
 symC = C;
 symG = G;
@@ -139,7 +140,7 @@ yLink2 = yLink1(2) + [Origin(2) rp2_0(2)];
 
 %==========================================================================
 fig1 = figure(1);
-% set(fig1,'Position',[2400, 400,560,420])
+set(fig1,'Position',[2400, 400,560,420])
 
 Link1 = plot(0,0,'LineWidth',2); grid on; hold on;
 Link2 = plot(0,0,'LineWidth',2); grid on; hold on;
@@ -150,12 +151,13 @@ ylim([-3 3]);
 xLineTerrain = xlim;
 yLineTerrain = tan(alfa) * (xLineTerrain);
 LineTerrain = plot(xLineTerrain,yLineTerrain);
+handleQuiver = quiver(0,0);
 %===========================================
 set(Link1,'xdata',xLink1,'ydata',yLink1);
 set(Link2,'xdata',xLink2,'ydata',yLink2);
 %===========================================
 fig2 = figure(2);
-% set(fig2,'Position',[3000, 400,560,420])
+set(fig2,'Position',[3000, 400,560,420])
 for loop = 1:size(q,1)
 plot_q(loop) = plot(0,0); hold on;
 xlim([0 100]);
@@ -164,6 +166,7 @@ end
 
 disp('push a button to continue'); pause;
 flag = 0;
+flag_plot = 0;
 time_record = 0;
 q_record = zeros(length(q),1);
 
@@ -194,6 +197,8 @@ q_Ddot =  D \ (F - C*(q_dot) - G);
 q_dot = q_dot + dt * q_Ddot;
 q = q + dt * q_dot; 
 
+% q_dot = cumtrapz(dt,q_Ddot);
+% q = cumtrapz(dt,q_dot);
 
 for i  = 1:length(q)
     if q(i) >= 2*pi
@@ -205,13 +210,24 @@ yLineTerrain = tan(alfa) * xLink2(2);
 %===========impact switch===========
 if yLink2(2) <= yLineTerrain && flag == 0
 flag = 1;
+flag_plot = 1;
 
-deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
+%===================================
+E2 = double(subs(E2,symbolicVar,numericVar));
+matA = [ D -E2.';
+     E2  zeros(2)];
+matB = [D * q; zeros(2,1)];
+qdotF = linsolve(matA,matB);  %[q_dot+ ; F2]
+%===================================
+% deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
 q(1:2) = deltaq * q_old(1:2) - [2*alfa;0];
-q_dot(1:2) = deltaqDot * q_dot_old(1:2);
+% q_dot(1:2) = deltaqDot * q_dot_old(1:2);
+q_dot(1:2) = [R zeros(nlink,2)] * qdotF(1:4);
 
 Base = [xLink2(2);
         yLineTerrain];
+
+    delete(handleQuiver);
 end
 %===================================
 
@@ -240,6 +256,13 @@ xLink2 = xLink1(2) + [Origin(1) rp2_0(1)]; %
 yLink2 = yLink1(2) + [Origin(2) rp2_0(2)];
 
 numericVar = [q; q_dot; q_Ddot].';
+
+%============plot F2=======================================================
+if flag_plot == 1
+figure(1); handleQuiver = quiver(xLink2(2),yLink2(2),qdotF(5),qdotF(6));
+flag_plot = 0;
+end
+%==========================================================================
 
 
 set(Link1,'xdata',xLink1,'ydata',yLink1);

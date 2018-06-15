@@ -18,6 +18,8 @@ syms g
 syms m I l lc
 
 nlink = 2;
+alfa = 0;
+
 
 GeneralizedCoordinates = [q1(t),q2(t),z1(t),z2(t)];
 first_derivative_names = [q1_dot(t), q2_dot(t), z1_dot(t), z2_dot(t)];
@@ -134,6 +136,7 @@ xlim([0 100]);
 ylim([-2 10]);
 end
 
+flag = 0;
 disp('push a button to continue'); pause;
 
  while 1
@@ -143,7 +146,7 @@ time = (j-1)*dt;
     
     
 [D,C,G] = updatateDynMatrices(symD,symC,symG,symbolicVar,numericVar);
-deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
+
 
 q = double(q);
 q_dot = double(q_dot);
@@ -184,9 +187,11 @@ yLink1 = Base(2) + [Origin(2) rp1_0(2)];
 xLink2 = xLink1(2) + [Origin(1) rp2_0(1)]; %
 yLink2 = yLink1(2) + [Origin(2) rp2_0(2)];
 %===========impact switch===========
-if yLink2(2) <= 0
+if yLink2(2) <= 0 && flag == 0
 
-q(1:2) = deltaq * q(1:2);
+flag = 1;
+deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
+% q(1:2) = deltaq * q(1:2);
 q_dot(1:2) = deltaqDot * q_dot(1:2);
 
 % Base = [xLink2(2);
