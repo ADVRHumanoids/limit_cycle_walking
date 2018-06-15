@@ -48,13 +48,13 @@ DynamicEquations = [simplify(First_eq), simplify(Second_eq), simplify(Third_eq),
 dynamics_extended;
 impact_extended;
 %======================
-AngleSlope = 0;%-pi/4; 
+AngleSlope = -pi/4; 
 
                       %pos / vel / acc
 startingParameters = [pi/18,   0,    0,...  %q1
-                      3*pi/4,    100,    0,...  %q2
-                      0,       0,    0,...  %z1
-                      0,       0,    0];    %z2
+                      pi/4,     0,    0,...  %q2
+                      0,      0,    0,...  %z1
+                      0,      0,    0];    %z2
 %======================pi/18
 q1(t) = subs(q1(t),q1,startingParameters(1));
 q1_dot(t) = subs(q1_dot(t),q1_dot,startingParameters(2));
@@ -137,7 +137,7 @@ yLink1 = Base(2) + [Origin(2) rp1_0(2)];
 xLink2 = xLink1(2) + [Origin(1) rp2_0(1)]; %
 yLink2 = yLink1(2) + [Origin(2) rp2_0(2)];
 
-yLink2_old = yLink2;
+
 %==========================================================================
 fig1 = figure(1);
 set(fig1,'Position',[2400, 400,560,420])
@@ -173,7 +173,7 @@ q_record = zeros(length(q),1);
 j = 0;
 F = zeros(length(q),1);
 time = 0;
-dt = 0.001;
+dt = 0.005;
 
  while 1
      
@@ -184,7 +184,7 @@ time = (j-1)*dt;
 [D,C,G] = updatateDynMatrices(symD,symC,symG,symbolicVar,numericVar);
 
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
 
 q = double(q);
 
@@ -206,30 +206,28 @@ for i  = 1:length(q)
     end
 end
 
-yLineTerrain = double(tan(alfa) * xLink2(2));
-E2 = double(subs(E2,symbolicVar,numericVar));
-
+yLineTerrain = tan(alfa) * xLink2(2);
 %===========impact switch===========
-if yLink2(2) * yLink2_old(2) < 0 && flag == 0 %yLink2(2) <= yLineTerrain && yLink2_old(2) > yLineTerrain && flag == 0
-% flag = 1;
+if yLink2(2) <= yLineTerrain && flag == 0
+flag = 1;
 flag_plot = 1;
 
 %===================================
-% E2 = double(subs(E2,symbolicVar,numericVar));
-% matA = [ D -E2.';
-%      E2  zeros(2)];
-% matB = [D * q; zeros(2,1)];
-% qdotF = linsolve(matA,matB);  %[q_dot+ ; F2]
+E2 = double(subs(E2,symbolicVar,numericVar));
+matA = [ D -E2.';
+     E2  zeros(2)];
+matB = [D * q; zeros(2,1)];
+qdotF = linsolve(matA,matB);  %[q_dot+ ; F2]
 %===================================
-deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
+% deltaqDot = double(subs(symdeltaqDot,symbolicVar,numericVar));
 q(1:2) = deltaq * q_old(1:2) - [2*alfa;0];
-q_dot(1:2) = -deltaqDot * q_dot_old(1:2);
-% q_dot(1:2) = [R zeros(nlink,2)] * qdotF(1:4);
+% q_dot(1:2) = deltaqDot * q_dot_old(1:2);
+q_dot(1:2) = [R zeros(nlink,2)] * qdotF(1:4);
 
 Base = [xLink2(2);
         yLineTerrain];
 
-%     delete(handleQuiver);
+    delete(handleQuiver);
 end
 %===================================
 
@@ -249,9 +247,9 @@ rp2_2 = [l2; 0; 0];
 rp1_0 = R1_0 * rp1_1;
 rp2_0 = R2_0 * rp2_2;
 
-yLink2_old = yLink2;
+
 % Base = [q(3);q(4)]; %no fixed base
-xLink1 = Base(1) + [Origin(1) rp1_0(1)]; %0
+xLink1 = Base(1) + [Origin(1) rp1_0(1)]; %
 yLink1 = Base(2) + [Origin(2) rp1_0(2)];
 
 xLink2 = xLink1(2) + [Origin(1) rp2_0(1)]; %
@@ -260,10 +258,10 @@ yLink2 = yLink1(2) + [Origin(2) rp2_0(2)];
 numericVar = [q; q_dot; q_Ddot].';
 
 %============plot F2=======================================================
-% if flag_plot == 1
-% figure(1); handleQuiver = quiver(xLink2(2),yLink2(2),qdotF(5),qdotF(6));
-% flag_plot = 0;
-% end
+if flag_plot == 1
+figure(1); handleQuiver = quiver(xLink2(2),yLink2(2),qdotF(5),qdotF(6));
+flag_plot = 0;
+end
 %==========================================================================
 
 
