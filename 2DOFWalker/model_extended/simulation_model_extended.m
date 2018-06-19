@@ -1,5 +1,6 @@
 close all; clear all; clc;
-addpath('/home/francesco/advr-superbuild/external/limit_cycle_walking/2DOFWalker/model_extended');
+addpath(genpath('/home/francesco/advr-superbuild/external/limit_cycle_walking'));
+% addpath(genpath('2DOFWalker'));
 %==================simulation model of a 2 link walker extended========================
 syms m1 m2 
 syms vc1_0 vc2_0
@@ -132,11 +133,10 @@ Links = simKinematics(q,robotData,Base); %update kinematics
 set_plot;
 %=======
 %=======
-
 j = 0;
 F = zeros(length(q),1);
 time = 0;
-dt = 0.001;
+dt = 0.005;
 
  while 1
      
@@ -167,6 +167,7 @@ yLineTerrain = double(tan(alfa) * Links(2,1,2));
 
 Links = simKinematics(q,robotData,Base); %update kinematics
 
+
 numericVar = [q; q_dot; q_Ddot].';
 
 
@@ -181,7 +182,7 @@ deltaqDotBar = double(subs(deltaqDotBar,symbolicVar,numericVar)); %velocity befo
 % deltaqDot = double(subs(deltaqDot,symbolicVar,numericVar)); %velocity after relabeling TODO
 %===================================
 % deltaqDotBar = double(subs(symdeltaqDotBar,symbolicVar,numericVar));
-q(1:2) = deltaq * q(1:2) - [2*alfa;0]; %q_old(1:2)
+q(1:2) = deltaq * q(1:2)- [2*alfa;0]; %q_old(1:2)
 q_dot(1:2) = [eye(nlink,2) zeros(nlink,2)] * deltaqDotBar * q_dot(1:2); %q_dot_old(1:2)
 % q_dot(1:2) = [R zeros(nlink,2)] * qdotF(1:4);
 
@@ -189,6 +190,7 @@ Base = [Links(2,1,2);
         yLineTerrain];
 
 Links = simKinematics(q,robotData,Base);
+
 % F2 = deltaF2 * q_dot(1:2);
 % delete(handleQuiver);
 end
