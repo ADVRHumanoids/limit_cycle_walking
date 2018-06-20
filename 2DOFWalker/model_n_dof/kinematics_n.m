@@ -58,7 +58,6 @@ end
 % rp2_0 = R2_0 * rp2_2;
 % rc2_0 = R2_0 * rc2_2;
 
-
 %base
 v_abs(:,:,1) = [z1_dot(t); z2_dot(t); 0];
 for i = 2:length(parent_tree)

@@ -35,19 +35,20 @@ rp_rel(1,:) = sym('l',[length(parent_tree),1]);
 rc_rel = sym(zeros(3,length(parent_tree)));
 rc_rel(1,:) = sym('lc',[length(parent_tree),1]);
 
-kinematics_n;
+m = sym('m',[length(parent_tree),1]);
+I = sym('I',[length(parent_tree),1]);
 
+kinematics_n;
 Lagrange_n;
 %==========================================================================
-DynamicEquations = [simplify(First_eq), simplify(Second_eq), simplify(Third_eq), simplify(Fourth_eq)];
 %=============================getting D matrix=============================
-dynamics_extended;
+dynamics_n;
 
 
-D_dot = diff_t(D,[GeneralizedCoordinates,d_GeneralizedCoordinates], [first_derivative_names, second_derivative_names]);
+D_dot = diff_t(D,[q,q_dot], [q,q_dot]);
 
 N = (D_dot - 2*C);
-ThisShouldbeZero = simplify(d_GeneralizedCoordinates*N*d_GeneralizedCoordinates.');
+ThisShouldbeZero = simplify(qe_dot*N*qe_dot.'); %NOT ZERO!
 %==========================================================================
 %==========================================================================
 
