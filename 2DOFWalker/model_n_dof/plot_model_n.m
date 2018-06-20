@@ -8,8 +8,8 @@ syms z1(t) z2(t) z1_dot(t) z2_dot(t) z1_Ddot(t) z2_Ddot(t)
 syms I1 I2
 syms g
 syms alfa
-parent_tree = [0,1,2,2,4];
-% parent_tree = [0,1];
+% parent_tree = [0,1,2,2,4];
+parent_tree = [0,1];
 n_link = length(parent_tree);
 
 q = [q1(t), q2(t), q3(t), q4(t), q5(t)];

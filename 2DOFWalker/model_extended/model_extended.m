@@ -16,7 +16,7 @@ syms g
 syms theta1 theta2 theta3 theta4 theta5
 syms q_dot_plus F2
 syms alfa
-nlink = 2;
+n_link = 2;
 
 GeneralizedCoordinates = [q1(t),q2(t),z1(t),z2(t)];
 first_derivative_names = [q1_dot(t), q2_dot(t), z1_dot(t), z2_dot(t)];

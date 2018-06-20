@@ -18,7 +18,7 @@ syms g
 syms alfa
 syms m I l lc
 
-nlink = 2;
+n_link = 2;
 
 GeneralizedCoordinates = [q1(t),q2(t),z1(t),z2(t)];
 first_derivative_names = [q1_dot(t), q2_dot(t), z1_dot(t), z2_dot(t)];
@@ -59,11 +59,11 @@ DynamicEquations = [simplify(First_eq), simplify(Second_eq), simplify(Third_eq),
 dynamics_extended;
 impact_extended;
 %======================
-AngleSlope = -pi/10;%-pi/4; 
+AngleSlope = -pi/10;%-pi/4;-pi/10 
 
                       %pos / vel / acc
-startingParameters = [pi/18,  0,    0,...  %q1
-                      3*pi/4, 0,    0,...  %q2      3*pi/4,    50,    0,...  %q2
+startingParameters = [pi/18,   0,    0,...  %q1 
+                      3*pi/4,  0,    0,...  %q2      3*pi/4,    50,    0,...  %q2
                       0,       0,    0,...  %z1
                       0,       0,    0];    %z2
 %======================pi/18
@@ -92,8 +92,13 @@ numericVar = [q1(t), q2(t),z1(t),z2(t),...
              q1_dot(t), q2_dot(t),z1_dot(t),z2_dot(t),...
              q1_Ddot(t), q2_Ddot(t),z1_Ddot(t),z2_Ddot(t)];
 
-     %pi/6 
+         
+D = subs(D, alfa, double(subs(alfa,AngleSlope)));
+C = subs(C, alfa, double(subs(alfa,AngleSlope)));
 G = subs(G, alfa, double(subs(alfa,AngleSlope)));
+deltaF2 = subs(deltaF2, alfa, double(subs(alfa,AngleSlope)));
+deltaqDotBar = subs(deltaqDotBar, alfa, double(subs(alfa,AngleSlope)));
+
 alfa = double(subs(alfa,AngleSlope));
 
 symD = D;
@@ -163,18 +168,20 @@ for i  = 1:length(q)
 end
 
 yLineTerrain = double(tan(alfa) * Links(2,1,2));
-% E2 = double(subs(E2,symbolicVar,numericVar));
 
 Links = simKinematics(q,robotData,Base); %update kinematics
-
 
 numericVar = [q; q_dot; q_Ddot].';
 
 
 %===========impact switch===========
-if Links(2,2,2) <= yLineTerrain && Links_old(2,2,2) > yLineTerrain %* yLink2_old(2) < 0 
+if Links(2,2,2) <= yLineTerrain && Links_old(2,2,2) > yLineTerrain 
 flag_plot = 1;
 
+%===================================
+% E2 = double(subs(E2,symbolicVar,numericVar));
+% deltaF2 = -inv(E2 * inv(D) * E2.') * E2 * [eye(n_link); zeros(2)];
+% deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2)];
 %===================================
 % E2 = double(subs(E2,symbolicVar,numericVar));
 deltaF2 = double(subs(deltaF2,symbolicVar,numericVar));
@@ -182,8 +189,11 @@ deltaqDotBar = double(subs(deltaqDotBar,symbolicVar,numericVar)); %velocity befo
 % deltaqDot = double(subs(deltaqDot,symbolicVar,numericVar)); %velocity after relabeling TODO
 %===================================
 % deltaqDotBar = double(subs(symdeltaqDotBar,symbolicVar,numericVar));
-q(1:2) = deltaq * q(1:2)- [2*alfa;0]; %q_old(1:2)
-q_dot(1:2) = [eye(nlink,2) zeros(nlink,2)] * deltaqDotBar * q_dot(1:2); %q_dot_old(1:2)
+% q(1:2) = deltaq * q(1:2)- [2*alfa;0]; %q_old(1:2) %ALSO THIS
+q(1) = -(pi - q(1) - q(2)); %- 2*alfa; %q_old(1:2)
+q(2) = 2*pi - q(2); %q_old(1:2)
+
+q_dot(1:2) = [eye(n_link) zeros(n_link,2)] * deltaqDotBar * q_dot(1:2); %q_dot_old(1:2)
 % q_dot(1:2) = [R zeros(nlink,2)] * qdotF(1:4);
 
 Base = [Links(2,1,2);

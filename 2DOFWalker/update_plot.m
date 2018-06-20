@@ -1,5 +1,6 @@
-set(Link1,'xdata',Links(1,1,:),'ydata',Links(1,2,:));
-set(Link2,'xdata',Links(2,1,:),'ydata',Links(2,2,:));
+for i = 1:n_link
+set(Link(i),'xdata',Links(i,1,:),'ydata',Links(i,2,:));
+end   
 
 
 buffer = 1000;
