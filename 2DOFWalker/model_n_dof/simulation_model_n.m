@@ -182,7 +182,7 @@ deltaF2 = -inv(E2 * inv(D) * E2.') * E2 * [eye(n_link); zeros(2,n_link)];
 deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2,n_link)];
 %===================================
 
-q(1) = -(pi - q(1) - q(2) ); %- 2*alfa; %q_old(1:2)
+q(1) = -(pi -q(1) -q(2) -q(3) -q(4)); %- 2*alfa; %q_old(1:2) WRONG
 q(2) =  2*pi - q(2); %q_old(1:2)
 q(3) =  - q(4); %q_old(1:2)
 q(4) =  - q(3); %q_old(1:2)
