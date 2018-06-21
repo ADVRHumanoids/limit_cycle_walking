@@ -56,9 +56,13 @@ I = sym('I',[length(parent_tree),1]);
 for i = 1:n_link
     rp_rel(1,i) = subs(rp_rel(1,i),1);
 end
-for i = 1:n_link
-    rc_rel(1,i) = subs(rc_rel(1,i),0.8);
-end
+% for i = 1:n_link
+%     rc_rel(1,i) = subs(rc_rel(1,i),0.8);
+% end
+rc_rel(1,1) = 1-0.8;
+rc_rel(1,2) = 0.8;
+rc_rel(1,3) = 0.8;
+rc_rel(1,4) = 0.8;
 for i = 1:n_link
     m(i) = subs(m(i),0.3);
 end
@@ -79,13 +83,13 @@ impact_n;
 AngleSlope = 0;%-pi/4; 
 
                       %pos / vel / acc
-startingParameters = [pi/18,   0,    0;...  %q1    pi/18
-                      -pi/18,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2
-                      3*pi/4,       0,    0;...  %q3 
-                     pi/4,       0,    0;...  %q4
-%                       0,       0,    0;...  %q5
-                      0,       0,    0;...  %z1
-                      0,       0,    0];    %z2
+startingParameters = [ pi/18,   0,    0;...  %q1    pi/18
+                      -pi/18,   0,    0;...  %q2     -pi/18
+                       3*pi/4,  0,    0;...  %q3     3*pi/4,
+                       pi/4,    0,    0;...  %q4      pi/4,
+%                      0,       0,    0;...  %q5
+                       0,       0,    0;...  %z1
+                       0,       0,    0];    %z2
 %======================pi/18
 numericVar = zeros(n_link+2,1,3);
 symbolicVar = cat(3,qe.',qe_dot.',qe_Ddot.');
@@ -109,10 +113,8 @@ end
 symD = D;
 symC = C;
 symG = G;
-% symdeltaq = deltaq;
-% symdeltaqDot = deltaqDot;
-% symdeltaqDotBar = deltaqDotBar;
-
+symE2 = E2;
+symPhi = phi;
 
 
 q = numericVar(:,:,1);
@@ -120,7 +122,7 @@ q_dot = numericVar(:,:,2);
 q_Ddot = numericVar(:,:,3);
          
 
-
+phi = double(subs(symPhi,symbolicVar,numericVar));
 
 Origin = [0;0]; 
 Base = [0;0];
@@ -139,8 +141,9 @@ set_plot;
 j = 0;
 F = zeros(length(q),1);
 time = 0;
-dt = 0.01; %0.001
+dt = 0.005; %0.001
 
+disp('push a button to continue'); pause;
  while 1
      
 j = j + 1;
@@ -177,24 +180,41 @@ if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain   %
 % flag_plot = 1;
 % 
 %====================impact model===============
-E2 = double(subs(E2,symbolicVar,numericVar));
+phi = Base + double(subs(symPhi,symbolicVar,numericVar));
+set(p2plot,'xdata',phi(1),'ydata',phi(2));
+E2 = double(subs(symE2,symbolicVar,numericVar));
 deltaF2 = -inv(E2 * inv(D) * E2.') * E2 * [eye(n_link); zeros(2,n_link)];
 deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2,n_link)];
 %===================================
+q_old = q;
+q(1) = -(pi -q_old(1) -q_old(2) -q_old(3) -q_old(4)); %- 2*alfa; 
+q(2) = -q_old(4);
+q(3) = -q_old(3);
+q(4) = -q_old(2);
+%==================check========================
+% q_dot_check1 = deltaqDotBar * q_dot(1:n_link);
+%===============================================
+q_dot(1:n_link) = [eye(n_link) zeros(n_link,2)] * deltaqDotBar * q_dot(1:n_link); %q
 
-q(1) = -(pi -q(1) -q(2) -q(3) -q(4)); %- 2*alfa; %q_old(1:2) WRONG
-q(2) =  2*pi - q(2); %q_old(1:2)
-q(3) =  - q(4); %q_old(1:2)
-q(4) =  - q(3); %q_old(1:2)
-q_dot(1:n_link) = [eye(n_link) zeros(n_link,2)] * deltaqDotBar * q_dot(1:n_link); %q_dot_old(1:2)
-
+% ==================check=======================
+% numericVar = cat(3,q,q_dot,q_Ddot);
+% 
+% E2 = double(subs(symE2,symbolicVar,numericVar));
+% q_dot_check2 = q_dot;
+% q_dot_check2(5:6) = 0;
+% p2_check2 = E2*q_dot_check2;
+%===============================================
 Base = [Links(n_link,1,2);
         yLineTerrain];
-% 
+
+numericVar = cat(3,q,q_dot,q_Ddot);   
+phi = Base + double(subs(symPhi,symbolicVar,numericVar));
+set(p2plot,'xdata',phi(1),'ydata',phi(2));
+
 Links = simKinematics_n(q,parent_tree,robotData,Base); %update kinematics
 
 % % F2 = deltaF2 * q_dot(1:2);
-% % delete(handleQuiver);
+% % delete(handleQuiver); 
 end
 %===================================
 %==========

@@ -13,6 +13,10 @@ xLineTerrain = xlim;
 yLineTerrain = tan(alfa) * (xLineTerrain);
 LineTerrain = plot(xLineTerrain,yLineTerrain);
 handleQuiver = quiver(0,0);
+
+
+p2plot = plot(0,0,'o');
+
 %===========================================
 for i = 1:n_link
 set(Link(i),'xdata',Links(i,1,:),'ydata',Links(i,2,:));
@@ -26,7 +30,7 @@ xlim([0 100]);
 ylim([-2 10]);
 end
 
-disp('push a button to continue'); pause;
+
 flag = 0;
 flag_plot = 0;
 time_record = 0;

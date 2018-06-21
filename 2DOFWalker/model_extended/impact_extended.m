@@ -14,9 +14,9 @@ deltaF2 = - inv(E2 * inv(D) * E2.') * E2 * [eye(n_link); zeros(2)];
 
 deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2)];
 
-R = [-1 0; %[pi;0]
-     0 -1];
- 
-% R = eye(2);
-deltaq = R;
-deltaqDot = [R zeros(n_link,2)] * deltaqDotBar;
+% R = [-1 0; %[pi;0]
+%      0 -1];
+%  
+% % R = eye(2);
+% deltaq = R;
+% deltaqDot = [R zeros(n_link,2)] * deltaqDotBar;
