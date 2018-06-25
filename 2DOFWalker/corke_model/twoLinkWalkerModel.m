@@ -1,7 +1,3 @@
-clear all; clc;
-% addpath(genpath('/home/francesco/Documents/MATLAB/Add-Ons/Toolboxes/Robotics Toolbox for MATLAB'));
-startup_rvc;
-
 clear L
 
 a = [1,1];
@@ -15,7 +11,7 @@ L(2) = Revolute('d', 0, 'a', a(2), 'alpha', 0, ...
     'm', 0.3);
 
 
-qz = [0 pi/2];
+qz = [0 0];
 
 
 twoLinkWalker = SerialLink(L, 'name', 'twoLinkWalker', ...
