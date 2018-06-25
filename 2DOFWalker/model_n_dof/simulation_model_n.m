@@ -1,6 +1,7 @@
 close all; clear all; clc;
-addpath(genpath('/home/francesco/advr-superbuild/external/limit_cycle_walking'));
-% addpath(genpath('2DOFWalker'));
+
+Folder = cd;
+addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a 2 link walker extended========================
 syms m1 m2
 syms q1(t) q2(t) q3(t) q4(t)  q5(t)
@@ -15,8 +16,7 @@ alfa = 0;
 parent_tree = [0,1,2,3];
 % parent_tree = [0,1];
 n_link = length(parent_tree);
-
-
+MatrixVelocityRelabel = inv(flip(tril(ones(n_link)))) *tril(ones(n_link));
 % q = [q1(t), q2(t)];
 % q_dot = [q1_dot(t), q2_dot(t)];
 % q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
@@ -168,15 +168,15 @@ for i  = 1:length(q)
     end
 end
 
+yLineTerrain_old = yLineTerrain;
 yLineTerrain = double(tan(alfa) * Links(n_link,1,2));
-
 Links = simKinematics_n(q,parent_tree,robotData,Base);  %update kinematics
 
 numericVar = cat(3,q,q_dot,q_Ddot);
 
 
 %===========impact switch===========
-if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain   %link,axis,begin/end
+if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old   %link,axis,begin/end
 % flag_plot = 1;
 % 
 %====================impact model===============
@@ -194,8 +194,10 @@ q(4) = -q_old(2);
 %==================check========================
 % q_dot_check1 = deltaqDotBar * q_dot(1:n_link);
 %===============================================
-q_dot(1:n_link) = [eye(n_link) zeros(n_link,2)] * deltaqDotBar * q_dot(1:n_link); %q
+% q_dot(1:n_link) = [eye(n_link) zeros(n_link,2)] * deltaqDotBar * q_dot(1:n_link); %q
 
+q_dot = deltaqDotBar * q_dot(1:n_link);
+q_dot(1:n_link) = MatrixVelocityRelabel*q_dot(1:n_link);
 % ==================check=======================
 % numericVar = cat(3,q,q_dot,q_Ddot);
 % 

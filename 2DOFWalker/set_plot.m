@@ -15,6 +15,7 @@ LineTerrain = plot(xLineTerrain,yLineTerrain);
 handleQuiver = quiver(0,0);
 
 
+p1plot = plot(0,0,'o');
 p2plot = plot(0,0,'o');
 
 %===========================================

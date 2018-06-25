@@ -1,5 +1,8 @@
 close all; clear all; clc;
-addpath(genpath('/home/francesco/advr-superbuild/external/limit_cycle_walking'));
+Folder = cd;
+addpath(genpath(fullfile(Folder, '..')));
+
+% addpath(genpath('/home/francesco/advr-superbuild/external/limit_cycle_walking'));
 % addpath(genpath('2DOFWalker'));
 %==================simulation model of a 2 link walker extended========================
 syms m1 m2 
@@ -20,7 +23,7 @@ syms m I l lc
 
 n_link = 2;
 flagPhi = 0;
-
+MatrixVelocityRelabel = inv(flip(tril(ones(n_link)))) *tril(ones(n_link));
 GeneralizedCoordinates = [q1(t),q2(t),z1(t),z2(t)];
 first_derivative_names = [q1_dot(t), q2_dot(t), z1_dot(t), z2_dot(t)];
 second_derivative_names = [q1_Ddot(t), q2_Ddot(t), z1_Ddot(t), z2_Ddot(t)];
@@ -60,7 +63,7 @@ DynamicEquations = [simplify(First_eq), simplify(Second_eq), simplify(Third_eq),
 dynamics_extended;
 impact_extended;
 %======================
-slope = 0;%-pi/8;-pi/10 
+slope = -pi/8;%-pi/8-pi/8;-pi/10 
 
                       %pos / vel / acc
 startingParameters = [pi/18,   0,    0,...  %q1     %pi/18
@@ -110,7 +113,9 @@ symdeltaF2 = deltaF2;
 % symdeltaq = deltaq;
 % symdeltaqDot = deltaqDot;
 symdeltaqDotBar = deltaqDotBar;
-symPhi = phi;
+symPhi1 = phi_link1;
+symPhi2 = phi_link2;
+symE1 = E1;
 
 
 q = double([q1(t); 
@@ -129,21 +134,28 @@ q_Ddot = double([q1_Ddot(t);
           z2_Ddot(t)]);
          
 
-phi = double(subs(symPhi,symbolicVar,numericVar));
-
+phi_link1 = double(subs(symPhi1,symbolicVar,numericVar));
+phi_link2 = double(subs(symPhi2,symbolicVar,numericVar));
 Base = [0;0];
 %=======================starting kinematics================================
 robotData = eval(robotData); 
 Links = simKinematics(q,robotData,Base); %update kinematics
+Links_old = Links;
+
+
+
 %=======
 %=======
 set_plot;
 %=======
 %=======
+yLineTerrain = double(tan(alfa) * Links(2,1,2));
+yLineTerrain_old = yLineTerrain;
+
 j = 0;
 F = zeros(length(q),1);
 time = 0;
-dt = 0.005;
+dt = 0.001;
 
 disp('push a button to continue'); pause;
  while 1
@@ -155,7 +167,6 @@ time = (j-1)*dt;
 q = double(q);
 q_dot = double(q_dot);
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Links_old = Links;
 
 q_Ddot =  D \ (F - C*(q_dot) - G);
 q_dot = q_dot + dt * q_Ddot;
@@ -167,21 +178,22 @@ for i  = 1:length(q)
         q(i) = q(i) - 2*pi;
     end
 end
-
+yTerrain_old = yLineTerrain;
 yLineTerrain = double(tan(alfa) * Links(2,1,2));
-
+Links_old = Links;
 Links = simKinematics(q,robotData,Base); %update kinematics
 
 numericVar = [q; q_dot; q_Ddot].';
 
 
 %===========impact switch===========
-if Links(2,2,2) <= yLineTerrain && Links_old(2,2,2) > yLineTerrain 
+if Links(2,2,2) <= yLineTerrain && Links_old(2,2,2) > yLineTerrain_old
 flag_plot = 1;
 
 %===================================
 % phi = Base + double(subs(symPhi,symbolicVar,numericVar));
 % set(p2plot,'xdata',phi(1),'ydata',phi(2));
+E1 = double(subs(symE1,symbolicVar,numericVar));
 E2 = double(subs(symE2,symbolicVar,numericVar));
 deltaF2 = -inv(E2 * inv(D) * E2.') * E2 * [eye(n_link); zeros(2)];
 deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2)];
@@ -193,8 +205,10 @@ q(2) = 2*pi - q_old(2); %q_old(1:2)
 %==================check========================
 q_dot_check1 = deltaqDotBar * q_dot(1:n_link);
 %===============================================
-q_dot(1:n_link) = [eye(n_link) zeros(n_link,2)] * deltaqDotBar * q_dot(1:n_link); 
+% q_dot(1:n_link) = [eye(n_link) zeros(n_link,2)] * deltaqDotBar * q_dot(1:n_link); 
 % q_dot(2) = -q_dot(2); %NEEDED??
+q_dot = deltaqDotBar * q_dot(1:n_link);
+q_dot(1:n_link) = MatrixVelocityRelabel *q_dot(1:n_link);
 % ==================check=======================
 numericVar = [q; q_dot; q_Ddot].';
 
@@ -208,16 +222,18 @@ p2_check2 = E2*q_dot_check2;
 Base = [Links(2,1,2);
         yLineTerrain];
 
-% phi = Base + double(subs(symPhi,symbolicVar,numericVar));
-% set(p2plot,'xdata',phi(1),'ydata',phi(2));
+phi1 = Base + double(subs(symPhi1,symbolicVar,numericVar));
+set(p1plot,'xdata',phi1(1),'ydata',phi1(2));
+phi2 = Base + double(subs(symPhi2,symbolicVar,numericVar));
+set(p2plot,'xdata',phi2(1),'ydata',phi2(2));
 
+
+yLineTerrain = double(tan(alfa) * Links(2,1,2));
 Links = simKinematics(q,robotData,Base);
-
 % F2 = deltaF2 * q_dot(1:2);
 % delete(handleQuiver);
 end
 %===================================
-
 %============plot F2=======================================================
 % if flag_plot == 1
 % figure(1); handleQuiver = quiver(Links(2,1,2),Links(2,2,2),F2(1),F2(2));

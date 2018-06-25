@@ -1,10 +1,20 @@
 %=============================impact model=================================
-phi = rp1_0(1:2) + rp2_0(1:2); 
-p2 = [z1(t);z2(t)] + phi;
+phi_link1 = rp1_0(1:2); %planar
+phi_link2 = rp1_0(1:2) + rp2_0(1:2);  %planar
 
-E2 = sym(zeros(size(phi,1), dimGC));
+p1 = [z1(t);z2(t)] + phi_link1;
+p2 = [z1(t);z2(t)] + phi_link2;
 
-for j = 1:size(phi,1)
+E1 = sym(zeros(size(phi_link1,1), dimGC));
+E2 = sym(zeros(size(phi_link2,1), dimGC));
+
+for j = 1:size(phi_link2,1)
+  for i = 1:dimGC
+        E1(j,i) = functionalDerivative(p1(j),GeneralizedCoordinates(i));
+  end
+end 
+
+for j = 1:size(phi_link2,1)
   for i = 1:dimGC
         E2(j,i) = functionalDerivative(p2(j),GeneralizedCoordinates(i));
   end
