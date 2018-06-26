@@ -16,7 +16,9 @@ alfa = 0;
 parent_tree = [0,1,2,3];
 % parent_tree = [0,1];
 n_link = length(parent_tree);
-MatrixVelocityRelabel = inv(flip(tril(ones(n_link)))) *tril(ones(n_link));
+
+piMatrix = pi*[1; zeros(length(parent_tree)-1,1)];
+MatrixRelabel = inv(flip(tril(ones(n_link)))) *tril(ones(n_link));
 % q = [q1(t), q2(t)];
 % q_dot = [q1_dot(t), q2_dot(t)];
 % q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
@@ -116,6 +118,9 @@ symG = G;
 symE2 = E2;
 symPhi = phi;
 
+symq = q;
+symq_dot = q_dot;
+symq_Ddot = q_Ddot;
 
 q = numericVar(:,:,1);
 q_dot = numericVar(:,:,2);
@@ -133,6 +138,13 @@ robotData.mass = eval(robotData.mass);
 robotData.inertia = eval(robotData.inertia);
 
 Links = simKinematics_n(q,parent_tree,robotData,Base);  %update kinematics
+
+yLineTerrain = double(tan(alfa) * Links(n_link,1,2));
+yLineTerrain_old = yLineTerrain;
+
+
+
+% E2 = convertMatrices(symE2);
 %=======
 %=======
 set_plot;
@@ -143,15 +155,16 @@ F = zeros(length(q),1);
 time = 0;
 dt = 0.005; %0.001
 
+
 disp('push a button to continue'); pause;
  while 1
      
 j = j + 1;
 time = (j-1)*dt;
 
-[D,C,G] = updatateDynMatrices(symD,symC,symG,symbolicVar,numericVar);
-% q = double(q);
-% q_dot = double(q_dot);
+[D,C,G] = calcDynMatrices(q,q_dot,q_Ddot);
+% [D,C,G] = updatateDynMatrices(symD,symC,symG,symbolicVar,numericVar);
+
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 q_old = q;
 q_dot_old = q_dot;
@@ -180,27 +193,23 @@ if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old
 % flag_plot = 1;
 % 
 %====================impact model===============
-phi = Base + double(subs(symPhi,symbolicVar,numericVar));
-set(p2plot,'xdata',phi(1),'ydata',phi(2));
-E2 = double(subs(symE2,symbolicVar,numericVar));
+% phi = Base + double(subs(symPhi,symbolicVar,numericVar));
+% set(p2plot,'xdata',phi(1),'ydata',phi(2));
+% E2 = double(subs(symE2,symbolicVar,numericVar));
+E2 = calcJacobianMatrix(q);
 deltaF2 = -inv(E2 * inv(D) * E2.') * E2 * [eye(n_link); zeros(2,n_link)];
 deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2,n_link)];
 %===================================
 q_old = q;
-q(1) = -(pi -q_old(1) -q_old(2) -q_old(3) -q_old(4)); %- 2*alfa; 
-q(2) = -q_old(4);
-q(3) = -q_old(3);
-q(4) = -q_old(2);
+
+q(1:n_link) = MatrixRelabel*q_old(1:n_link) - piMatrix;
 %==================check========================
 % q_dot_check1 = deltaqDotBar * q_dot(1:n_link);
 %===============================================
-% q_dot(1:n_link) = [eye(n_link) zeros(n_link,2)] * deltaqDotBar * q_dot(1:n_link); %q
-
 q_dot = deltaqDotBar * q_dot(1:n_link);
-q_dot(1:n_link) = MatrixVelocityRelabel*q_dot(1:n_link);
+q_dot(1:n_link) = MatrixRelabel*q_dot(1:n_link);
 % ==================check=======================
 % numericVar = cat(3,q,q_dot,q_Ddot);
-% 
 % E2 = double(subs(symE2,symbolicVar,numericVar));
 % q_dot_check2 = q_dot;
 % q_dot_check2(5:6) = 0;
@@ -209,9 +218,9 @@ q_dot(1:n_link) = MatrixVelocityRelabel*q_dot(1:n_link);
 Base = [Links(n_link,1,2);
         yLineTerrain];
 
-numericVar = cat(3,q,q_dot,q_Ddot);   
-phi = Base + double(subs(symPhi,symbolicVar,numericVar));
-set(p2plot,'xdata',phi(1),'ydata',phi(2));
+% numericVar = cat(3,q,q_dot,q_Ddot);   
+% phi = Base + double(subs(symPhi,symbolicVar,numericVar));
+% set(p2plot,'xdata',phi(1),'ydata',phi(2));
 
 Links = simKinematics_n(q,parent_tree,robotData,Base); %update kinematics
 

@@ -67,7 +67,7 @@ slope = -pi/8;%-pi/8-pi/8;-pi/10
 
                       %pos / vel / acc
 startingParameters = [pi/18,   0,    0,...  %q1     %pi/18
-                      3*pi/5,  0,    0,...  %q2      3*pi/4,    50,    0,...  %q2
+                      3*pi/4,  0,    0,...  %q2      3*pi/4,    50,    0,...  %q2
                       0,       0,    0,...  %z1
                       0,       0,    0];    %z2
 %======================pi/18
@@ -162,8 +162,9 @@ disp('push a button to continue'); pause;
      
 j = j + 1;
 time = (j-1)*dt;
-    
-[D,C,G] = updatateDynMatrices(symD,symC,symG,symbolicVar,numericVar);
+
+dynMatricestryTwoLink;
+% [D,C,G] = updatateDynMatrices(symD,symC,symG,symbolicVar,numericVar);
 q = double(q);
 q_dot = double(q_dot);
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -193,8 +194,9 @@ flag_plot = 1;
 %===================================
 % phi = Base + double(subs(symPhi,symbolicVar,numericVar));
 % set(p2plot,'xdata',phi(1),'ydata',phi(2));
-E1 = double(subs(symE1,symbolicVar,numericVar));
-E2 = double(subs(symE2,symbolicVar,numericVar));
+JacobianMatrixtryTwoLink;
+% E1 = double(subs(symE1,symbolicVar,numericVar));
+% E2 = double(subs(symE2,symbolicVar,numericVar));
 deltaF2 = -inv(E2 * inv(D) * E2.') * E2 * [eye(n_link); zeros(2)];
 deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2)];
 %===================================

@@ -9,9 +9,9 @@ lims = 3;
 xlim([-lims lims]);
 ylim([-lims lims]);
 
-xLineTerrain = xlim;
-yLineTerrain = tan(alfa) * (xLineTerrain);
-LineTerrain = plot(xLineTerrain,yLineTerrain);
+xLineTerrainLim = xlim;
+yLineTerrainLim = tan(alfa) * (xLineTerrainLim);
+LineTerrain = plot(xLineTerrainLim,yLineTerrainLim);
 handleQuiver = quiver(0,0);
 
 
