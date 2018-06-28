@@ -1,5 +1,5 @@
 fig1 = figure(1);
-%set(fig1,'Position',[2007 1 1107 973]);  %[2400, 400,560,420]
+set(fig1,'Position',[-1854          20        1211         954]);  %[2400, 400,560,420]
 
 
 for i = 1:n_link
@@ -10,7 +10,7 @@ xlim([-lims lims]);
 ylim([-lims lims]);
 
 xLineTerrainLim = xlim;
-yLineTerrainLim = tan(alfa) * (xLineTerrainLim);
+yLineTerrainLim = tan(slope) * (xLineTerrainLim);
 LineTerrain = plot(xLineTerrainLim,yLineTerrainLim);
 handleQuiver = quiver(0,0);
 
@@ -23,16 +23,16 @@ for i = 1:n_link
 set(Link(i),'xdata',Links(i,1,:),'ydata',Links(i,2,:));
 end
 %===========================================
-fig2 = figure(2);
-%set(fig2,'Position',[3300, 400,560,420])
-for loop = 1:size(q,1)
-plot_q(loop) = plot(0,0); hold on;
-xlim([0 100]);
-ylim([-2 10]);
-end
 
+% fig2 = figure(2);
+% set(fig2,'Position',[  -609   503   560   420])
+% for loop = 1:size(q,1)
+% plot_q(loop) = plot(0,0); hold on;
+% xlim([0 100]);
+% ylim([-2 10]);
+% end
+% 
+% 
 
-flag = 0;
-flag_plot = 0;
 time_record = 0;
 q_record = zeros(length(q),1);

@@ -1,21 +1,28 @@
 clear all; clc
+Folder = cd;
+addpath(genpath(fullfile(Folder, '..')));
 %==================dynamic model of a 2 link walker========================
-syms m1 m2
-syms q1(t) q2(t) q3(t) q4(t)  q5(t)
-syms q1_dot(t) q2_dot(t) q3_dot(t) q4_dot(t) q5_dot(t)
-syms q1_Ddot(t) q2_Ddot(t) q3_Ddot(t) q4_Ddot(t) q5_Ddot(t)
-syms z1(t) z2(t) z1_dot(t) z2_dot(t) z1_Ddot(t) z2_Ddot(t)
-syms I1 I2
-syms g
-syms alfa
+syms m1 m2 ...
+q1(t) q2(t) q3(t) q4(t)  q5(t) ...
+q1_dot(t) q2_dot(t) q3_dot(t) q4_dot(t) q5_dot(t) ...
+q1_Ddot(t) q2_Ddot(t) q3_Ddot(t) q4_Ddot(t) q5_Ddot(t) ...
+z1(t) z2(t) z1_dot(t) z2_dot(t) z1_Ddot(t) z2_Ddot(t) ...
+I1 I2 ...
+g ...
+slope ...
+I l lc
 
-% parent_tree = [0,1,2,2,4];
-parent_tree = [0,1];
+parent_tree = [0,1,2,3];
+% parent_tree = [0,1];
 n_link = length(parent_tree);
+% 
+% q = [q1(t), q2(t)];
+% q_dot = [q1_dot(t), q2_dot(t)];
+% q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
 
-q = [q1(t), q2(t)];
-q_dot = [q1_dot(t), q2_dot(t)];
-q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
+q = [q1(t), q2(t), q3(t), q4(t)];
+q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t),];
+q_Ddot = [q1_Ddot(t), q2_Ddot(t), q3_Ddot(t), q4_Ddot(t)];
 
 % q = [q1(t), q2(t), q3(t), q4(t), q5(t)];
 % q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t)  q5_dot(t)];
@@ -45,6 +52,8 @@ kinematics_n;
 Lagrange_n;
 dynamics_n;
 impact_n;
+
+% save('dynMatricesExtended.mat','D','C','G');
 %=============================check========================================
 % D_dot = diff_t(D,[qe,qe_dot], [qe_dot,qe_Ddot]);
 % 

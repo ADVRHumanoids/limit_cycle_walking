@@ -3,8 +3,8 @@ clear L
 
 a = [1,1];
 
-L_base(1) = Prismatic('theta', 0, 'alpha', -pi/2);% 0 -pi/2
-L_base(2) = Prismatic('theta', -pi/2, 'alpha', pi/2); %-pi/2 pi/2
+L_base(1) = Prismatic('theta', 0, 'alpha', 0);% 0 -pi/2
+L_base(2) = Prismatic('theta', 0, 'alpha', pi/2); %-pi/2 pi/2
 
 
 
@@ -31,5 +31,5 @@ twoLinkWalkerExt = SerialLink([base,twoLinkWalker], 'name', 'twoLinkWalkerExt');
 
 clear L
 % twoLinkWalker.teach;
-% base.teach;
+base.teach;
 % twoLinkWalkerExt.teach

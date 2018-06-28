@@ -3,22 +3,23 @@ close all; clear all; clc;
 Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a 2 link walker extended========================
-syms m1 m2
-syms q1(t) q2(t) q3(t) q4(t)  q5(t)
-syms q1_dot(t) q2_dot(t) q3_dot(t) q4_dot(t) q5_dot(t)
-syms q1_Ddot(t) q2_Ddot(t) q3_Ddot(t) q4_Ddot(t) q5_Ddot(t)
-syms z1(t) z2(t) z1_dot(t) z2_dot(t) z1_Ddot(t) z2_Ddot(t)
-syms I1 I2
-syms g
-syms alfa
-syms m I l lc
-alfa = 0;
+syms m1 m2 ...
+q1(t) q2(t) q3(t) q4(t)  q5(t) ...
+q1_dot(t) q2_dot(t) q3_dot(t) q4_dot(t) q5_dot(t) ...
+q1_Ddot(t) q2_Ddot(t) q3_Ddot(t) q4_Ddot(t) q5_Ddot(t) ...
+z1(t) z2(t) z1_dot(t) z2_dot(t) z1_Ddot(t) z2_Ddot(t) ...
+I1 I2 ...
+g ...
+slope ...
+I l lc
+
+slope = 0;%-pi/8-pi/8;-pi/10 
+
 parent_tree = [0,1,2,3];
 % parent_tree = [0,1];
 n_link = length(parent_tree);
 
-piMatrix = pi*[1; zeros(length(parent_tree)-1,1)];
-MatrixRelabel = inv(flip(tril(ones(n_link)))) *tril(ones(n_link));
+
 % q = [q1(t), q2(t)];
 % q_dot = [q1_dot(t), q2_dot(t)];
 % q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
@@ -58,13 +59,12 @@ I = sym('I',[length(parent_tree),1]);
 for i = 1:n_link
     rp_rel(1,i) = subs(rp_rel(1,i),1);
 end
-% for i = 1:n_link
-%     rc_rel(1,i) = subs(rc_rel(1,i),0.8);
-% end
+
 rc_rel(1,1) = 1-0.8;
-rc_rel(1,2) = 0.8;
-rc_rel(1,3) = 0.8;
-rc_rel(1,4) = 0.8;
+for i = 2:n_link
+    rc_rel(1,i) = subs(rc_rel(1,i),0.8);
+end
+
 for i = 1:n_link
     m(i) = subs(m(i),0.3);
 end
@@ -92,6 +92,11 @@ startingParameters = [ pi/18,   0,    0;...  %q1    pi/18
 %                      0,       0,    0;...  %q5
                        0,       0,    0;...  %z1
                        0,       0,    0];    %z2
+% startingParameters = [pi/18,   0,    0;...  %q1     %pi/18
+%                       pi/2,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2
+%                       0,       0,    0;...  %z1
+%                       0,       0,    0];    %z2
+                  
 %======================pi/18
 numericVar = zeros(n_link+2,1,3);
 symbolicVar = cat(3,qe.',qe_dot.',qe_Ddot.');
@@ -102,15 +107,6 @@ for i = 1:n_link
     end
 end
 
-%=====================
-         
-% D = subs(D, alfa, double(subs(alfa,AngleSlope)));
-% C = subs(C, alfa, double(subs(alfa,AngleSlope)));
-% G = subs(G, alfa, double(subs(alfa,AngleSlope)));
-% deltaF2 = subs(deltaF2, alfa, double(subs(alfa,AngleSlope)));
-% deltaqDotBar = subs(deltaqDotBar, alfa, double(subs(alfa,AngleSlope)));
-
-% alfa = double(subs(alfa,AngleSlope));
 
 symD = D;
 symC = C;
@@ -118,9 +114,14 @@ symG = G;
 symE2 = E2;
 symPhi = phi;
 
+
 symq = q;
 symq_dot = q_dot;
 symq_Ddot = q_Ddot;
+
+% [matD, matC, matG, matE2] = replaceMatrices(symD, symC, symG, symE2);
+% %when needed
+
 
 q = numericVar(:,:,1);
 q_dot = numericVar(:,:,2);
@@ -139,22 +140,22 @@ robotData.inertia = eval(robotData.inertia);
 
 Links = simKinematics_n(q,parent_tree,robotData,Base);  %update kinematics
 
-yLineTerrain = double(tan(alfa) * Links(n_link,1,2));
+yLineTerrain = double(tan(slope) * Links(n_link,1,2));
 yLineTerrain_old = yLineTerrain;
 
-
-
-% E2 = convertMatrices(symE2);
 %=======
 %=======
 set_plot;
 %=======
 %=======
 j = 0;
-F = zeros(length(q),1);
+tau = zeros(length(q),1);
 time = 0;
-dt = 0.005; %0.001
+dt = 0.001; %0.001
 
+
+k_p = 1;
+k_d = 1;
 
 disp('push a button to continue'); pause;
  while 1
@@ -162,7 +163,7 @@ disp('push a button to continue'); pause;
 j = j + 1;
 time = (j-1)*dt;
 
-[D,C,G] = calcDynMatrices(q,q_dot,q_Ddot);
+[D,C,G] = calcDynMatrices(q,q_dot);
 % [D,C,G] = updatateDynMatrices(symD,symC,symG,symbolicVar,numericVar);
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -170,7 +171,7 @@ q_old = q;
 q_dot_old = q_dot;
 Links_old = Links;
 
-q_Ddot =  D \ (F - C*(q_dot) - G);
+q_Ddot =  D \ (tau - C*(q_dot) - G);
 q_dot = q_dot + dt * q_Ddot;
 q = q + dt * q_dot; 
 
@@ -182,52 +183,35 @@ for i  = 1:length(q)
 end
 
 yLineTerrain_old = yLineTerrain;
-yLineTerrain = double(tan(alfa) * Links(n_link,1,2));
+yLineTerrain = double(tan(slope) * Links(n_link,1,2));
 Links = simKinematics_n(q,parent_tree,robotData,Base);  %update kinematics
 
-numericVar = cat(3,q,q_dot,q_Ddot);
-
-
-%===========impact switch===========
-if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old   %link,axis,begin/end
-% flag_plot = 1;
-% 
-%====================impact model===============
-% phi = Base + double(subs(symPhi,symbolicVar,numericVar));
-% set(p2plot,'xdata',phi(1),'ydata',phi(2));
-% E2 = double(subs(symE2,symbolicVar,numericVar));
-E2 = calcJacobianMatrix(q);
-deltaF2 = -inv(E2 * inv(D) * E2.') * E2 * [eye(n_link); zeros(2,n_link)];
-deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2,n_link)];
-%===================================
-q_old = q;
-
-q(1:n_link) = MatrixRelabel*q_old(1:n_link) - piMatrix;
-%==================check========================
-% q_dot_check1 = deltaqDotBar * q_dot(1:n_link);
-%===============================================
-q_dot = deltaqDotBar * q_dot(1:n_link);
-q_dot(1:n_link) = MatrixRelabel*q_dot(1:n_link);
-% ==================check=======================
 % numericVar = cat(3,q,q_dot,q_Ddot);
-% E2 = double(subs(symE2,symbolicVar,numericVar));
-% q_dot_check2 = q_dot;
-% q_dot_check2(5:6) = 0;
-% p2_check2 = E2*q_dot_check2;
-%===============================================
+%============impact========================================================
+if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old   %link,axis,begin/end  
+[q,q_dot] = impact_handler(q,q_dot);
 Base = [Links(n_link,1,2);
         yLineTerrain];
-
-% numericVar = cat(3,q,q_dot,q_Ddot);   
-% phi = Base + double(subs(symPhi,symbolicVar,numericVar));
-% set(p2plot,'xdata',phi(1),'ydata',phi(2));
-
 Links = simKinematics_n(q,parent_tree,robotData,Base); %update kinematics
-
-% % F2 = deltaF2 * q_dot(1:2);
-% % delete(handleQuiver); 
 end
-%===================================
+% %============controller====================================================
+% % q2d = 2/ (pi*atan(q_dot(1)));
+% 
+% q2d = 0;
+% % q2d_Ddot =  ;
+% % q2d_dot = q2d_dot + dt * q2d_Ddot;
+% % q2d = q2d + dt * q2d_dot; 
+% u = k_p*(q2d - q(2)) - k_d * q_dot(2);
+% % u = q2d_Ddot + k_d*(q2d_dot - q_dot(2)) + k_p*(q2d - q(2));
+% %============linearization=================================================
+% CommonTerm = D(1,2) * inv(D(1,1));
+% q2_Ddot_term =  D(2,2) - CommonTerm * D(1,2);
+% q1_dot_term =   C(2,1) - CommonTerm * C(1,1);
+% q2_dot_term =   C(2,2) - CommonTerm * C(1,2);
+% 
+% tau = q2_Ddot_term * u + q1_dot_term * q_dot(1) + q2_dot_term * q_dot(2) + G(2) - CommonTerm * G(1);
+% 
+% %===================================
 %==========
 %==========
 update_plot

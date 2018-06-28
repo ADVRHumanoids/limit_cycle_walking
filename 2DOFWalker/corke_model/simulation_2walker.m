@@ -6,7 +6,8 @@ addpath(genpath(fullfile(Folder, '..')));
 twoLinkWalkerModel;
 n_link = 2;
 n_link_extended = n_link + 2;
-alfa = 0;
+slope = -pi/8;%-pi/8-pi/8;-pi/10 
+
 MatrixVelocityRelabel = inv(flip(tril(ones(n_link)))) *tril(ones(n_link));
 
                         %pos / vel / acc
@@ -42,10 +43,9 @@ Links(i,:,j) = plotLinks(:,i+j-1);
 end
 
 
-yLineTerrain = double(tan(alfa) * Links(n_link,1,2));
+yLineTerrain = double(tan(slope) * Links(n_link,1,2));
 yLineTerrain_old = yLineTerrain;
 
-alfa = 0;
 j = 0;
 F = zeros(length(q),1);
 time = 0;
@@ -84,7 +84,7 @@ for i  = 1:length(q)
 end
 
 yLineTerrain_old = yLineTerrain;
-yLineTerrain = double(tan(alfa) * Links(n_link,1,2));
+yLineTerrain = double(tan(slope) * Links(n_link,1,2));
 
 
 
@@ -117,7 +117,7 @@ end
 % deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2,n_link)];
 % %===================================
 % q_old = q;
-% q(1) = -(pi -q_old(1) -q_old(2) -q_old(3) -q_old(4)); %- 2*alfa; 
+% q(1) = -(pi -q_old(1) -q_old(2) -q_old(3) -q_old(4)); %- 2*slope; 
 % q(2) = -q_old(4);
 % q(3) = -q_old(3);
 % q(4) = -q_old(2);
