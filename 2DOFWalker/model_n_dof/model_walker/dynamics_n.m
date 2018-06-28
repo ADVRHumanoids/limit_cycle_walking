@@ -1,3 +1,12 @@
+function [D,C,G] = dynamics_n(eqMotion, generalizedVariables,robotData)
+
+g = robotData.gravity;
+
+qe = generalizedVariables.qe;
+qe_dot = generalizedVariables.qe_dot;
+qe_Ddot = generalizedVariables.qe_Ddot;
+dim_qe = size(qe,2);
+
 zeroTerms_D = [qe_dot, g];
 D = sym(zeros(dim_qe));
 for i = 1:dim_qe
@@ -31,4 +40,6 @@ for j = 1:dim_qe
             C(k,j) = C(k,j) + c(i,j,k)*qe_dot(i).';
         end
     end
+end
+
 end

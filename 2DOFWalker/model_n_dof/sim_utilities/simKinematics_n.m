@@ -1,8 +1,13 @@
 function Links = simKinematics_n(q,parent_tree,robotData,Base)
 
 n_link = length(q)-2;
-rp_rel = robotData.link_length;
 
+rp_rel = zeros(3,length(parent_tree));
+for i = 1:robotData.n_link
+rp_rel(1,i) = robotData.link_length(i);
+end
+    
+    
 R_rel = zeros(3,3,length(parent_tree));
 R_rel(:,:,1) = [sin(q(1)) -cos(q(1)) 0;
                 cos(q(1)) sin(q(1))  0;

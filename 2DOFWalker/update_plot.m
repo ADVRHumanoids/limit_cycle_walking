@@ -5,7 +5,7 @@ end
 % set(p2plot,'xdata',phi(1),'ydata',phi(2));
 
 buffer = 1000;
-time_record = sym([time_record time]);
+time_record = [time_record time];
 q_record = [q_record q];
 
 if size(time_record,2) >= buffer
