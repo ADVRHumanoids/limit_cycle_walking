@@ -6,7 +6,7 @@ addpath(genpath(fullfile(Folder, '..')));
 robotTree;
 [D,C,G,kinematics] = createModelWalker(parent_tree,generalizedVariables,robotData);
 %======================
-% save('dynMatricesExtended.mat','D','C','G');
+% save('dynMatricesExtendedSymbolic.mat','D','C','G');
 %=============================check========================================
 D_dot = diff_t(D,[qe,qe_dot], [qe_dot,qe_Ddot]);
 
@@ -17,3 +17,4 @@ ThisShouldbeZero = simplify(qe_dot*N*qe_dot.');
 % E2 = kinematics.jacobian;
 % [matD, matC, matG, matE2] = replaceMatrices(D, C, G, E2);
 % %when needed, to put in --> calcDynMatrices, calcJacobianMatrix
+% save('dynMatricesExtended.mat','matD','matC','matG', 'matE2');

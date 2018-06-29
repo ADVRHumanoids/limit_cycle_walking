@@ -8,7 +8,7 @@ g ...
 slope ...
 I l lc
 
-flagSym = 1;
+flagSim = 0;
 parent_tree = [0,1,2,3];
 % parent_tree = [0,1];
 n_link = length(parent_tree);
@@ -39,24 +39,15 @@ generalizedVariables.qe_dot = qe_dot;
 generalizedVariables.qe_Ddot = qe_Ddot;
 
 
-if flagSym == 1
+
+%==========================================================================
+
 link_length = sym('l',[length(parent_tree),1]).';
 com_position = sym('lc',[length(parent_tree),1]).';
 m = sym('m',[length(parent_tree),1]);
 I = sym('I',[length(parent_tree),1]);
-else
-%========================real values=======================================
-link_length = 1;
-com_position = 0.8;
-mass = 0.3;
-inertia = 0.03;
-link_length = link_length * ones(1,length(parent_tree));
-com_position = [1-com_position, com_position * ones(1,length(parent_tree)-1)];
-m = mass * ones(1,length(parent_tree));
-I = inertia * ones(1,length(parent_tree));
-g = 9.81;
-end
+
 %==========================================================================
 
-robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity',g);
+robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSim', flagSim);
 
