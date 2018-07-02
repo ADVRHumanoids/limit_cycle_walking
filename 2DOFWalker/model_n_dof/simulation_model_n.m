@@ -3,23 +3,26 @@ close all; clear all; clc;
 Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a 2 link walker extended========================
+flagSim = 1;
 slope = 0;
-parent_tree = [0,1];
+parent_tree = [0];
 n_link = length(parent_tree);
 Base = [0;0];
 
-flagSim = 1;
 link_length = 1;
-com_position = 0.8;
-mass = 0.3;
-inertia = 0.03;
+com_position = 0.5; %0.8
+mass = 1; %0.3
+inertia = [0.083 0.083];
+
 link_length = link_length * ones(1,length(parent_tree));
 com_position = [1-com_position, com_position * ones(1,length(parent_tree)-1)];
 m = mass * ones(1,length(parent_tree));
-I = inertia * ones(1,length(parent_tree));
+% I = inertia * ones(1,length(parent_tree));
+I = inertia;
 g = 9.81;
+%==========================================================================
+robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSim', flagSim);
 
-robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSim', flagSim, 'Base', Base);
 
 
 
@@ -31,8 +34,8 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 % %                      0,       0,    0;...  %q5
 %                        0,       0,    0;...  %z1
 %                        0,       0,    0];    %z2
-startingParameters = [pi/18,   0,    0;...  %q1     %pi/18
-                      pi/2,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2
+startingParameters = [pi/2,   0,    0;...  %q1     %pi/18
+%                       pi/18,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2
                       0,       0,    0;...  %z1
                       0,       0,    0];    %z2
                   
@@ -42,16 +45,17 @@ q_dot = startingParameters(1:n_link+2,2);
 q_Ddot = startingParameters(1:n_link+2,3);
 
 
-Links = KinematicsLinks(q,parent_tree,robotData,Base);  %update kinematics
+Links = KinematicsLinks(q,parent_tree,robotData);  %update kinematics
 
 yLineTerrain = double(tan(slope) * Links(n_link,1,2));
 yLineTerrain_old = yLineTerrain;
 
-%=======
-%=======
+%just 1 link
+% E = (2943*cos(q(1)))/200 + (981*cos(q(1) + q(2)))/200 + (981*q(4))/50 + (83*q_dot(1)^2)/2000 + (q_dot(4)/2 + (sin(q(1))*q_dot(1))/2 + (sin(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2))/2)*(q_dot(4) + sin(q(1))*q_dot(1) + sin(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2)) + (q_dot(1) + q_dot(2))*((83*q_dot(1))/2000 + (83*q_dot(2))/2000) + (q_dot(3)/2 - (cos(q(1))*q_dot(1))/4)*(q_dot(3) - (cos(q(1))*q_dot(1))/2) + (cos(q(1))*q_dot(1) - q_dot(3) + cos(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2))*((cos(q(1))*q_dot(1))/2 - q_dot(3)/2 + (cos(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2))/2) + (q_dot(4)/2 + (sin(q(1))*q_dot(1))/4)*(q_dot(4) + (sin(q(1))*q_dot(1))/2);
 set_plot;
 %=======
 %=======
+
 
 j = 0;
 time = 0;
@@ -59,8 +63,8 @@ dt = 0.001; %0.001
 
 tau = zeros(length(q),1);
 k_p = 1;
-k_d = 1;
-
+k_d = 0.1;
+Base = [0,0];
 disp('push a button to continue'); pause;
  while 1
      
@@ -74,7 +78,10 @@ Links_old = Links;
 
 [q_Ddot, q_dot, q] = integrator(dt,D,C,G, tau, q_dot, q);
 
-
+q(end-1:end) = Base;
+q_dot(end-1:end) = 0;
+q_Ddot(end-1:end) = 0;
+% 
 for i  = 1:length(q)
     if q(i) >= 2*pi
         q(i) = q(i) - 2*pi;
@@ -83,33 +90,55 @@ end
 
 yLineTerrain_old = yLineTerrain;
 yLineTerrain = double(tan(slope) * Links(n_link,1,2));
-Links = KinematicsLinks(q,parent_tree,robotData,Base);  %update kinematics
+[Links,kinematics] = KinematicsLinks(q,parent_tree,robotData);  %update kinematics
 
-%============impact========================================================
-if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old   %link,axis,begin/end  
-[q,q_dot] = impact_handler(q,q_dot);
-Base = [Links(n_link,1,2);
-        yLineTerrain];
-Links = KinematicsLinks(q,parent_tree,robotData,Base); %update kinematics
-end
-% %============controller====================================================
-% % q2d = 2/ (pi*atan(q_dot(1)));
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% for i = 1:length(parent_tree)
+%     
+%     K_terms(i) =   1/2 * m(i) * kinematics.velocityCoM_absolute(:,:,i).'*kinematics.velocityCoM_absolute(:,:,i) ...
+%                  + 1/2 * kinematics.angularVelocity_absolute(:,:,i).' * I(i) * kinematics.angularVelocity_absolute(:,:,i);
+% end
 % 
+% K = sum(K_terms);
+% 
+% 
+% p = cat(3,[0;0],kinematics.linksPosition);
+% for i = 1:length(parent_tree)
+% P_terms(i,:) = m(i) * g * (q(end) + p(2,:,i) + kinematics.positionCoM_absolute(2,:,i));
+% end
+% 
+% P = sum(P_terms);
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%============impact========================================================
+% if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old   %link,axis,begin/end  
+%     
+% [q,q_dot] = impact_handler(q,q_dot);
+% 
+% Base = [Links(n_link,1,2); yLineTerrain];
+% q(end-1:end) = Base;
+% Links = KinematicsLinks(q,parent_tree,robotData); %update kinematics
+% end
+% %============controller====================================================
+alpha = 5; 
+q2d = 2*alpha/ pi * atan(q_dot(1));
+% q2d = -2*alpha/pi * sign(q_dot(1));
 % q2d = 0;
 % % q2d_Ddot =  ;
 % % q2d_dot = q2d_dot + dt * q2d_Ddot;
 % % q2d = q2d + dt * q2d_dot; 
-% u = k_p*(q2d - q(2)) - k_d * q_dot(2);
+u = k_p*(q2d - q(2)) - k_d * q_dot(2);
 % % u = q2d_Ddot + k_d*(q2d_dot - q_dot(2)) + k_p*(q2d - q(2));
 % %============linearization=================================================
-% CommonTerm = D(1,2) * inv(D(1,1));
-% q2_Ddot_term =  D(2,2) - CommonTerm * D(1,2);
-% q1_dot_term =   C(2,1) - CommonTerm * C(1,1);
-% q2_dot_term =   C(2,2) - CommonTerm * C(1,2);
-% 
-% tau = q2_Ddot_term * u + q1_dot_term * q_dot(1) + q2_dot_term * q_dot(2) + G(2) - CommonTerm * G(1);
-% 
+CommonTerm = D(1,2) * inv(D(1,1));
+q2_Ddot_term =  D(2,2) - CommonTerm * D(1,2);
+q1_dot_term =   C(2,1) - CommonTerm * C(1,1);
+q2_dot_term =   C(2,2) - CommonTerm * C(1,2);
+
+% tau(2) = q2_Ddot_term * u + q1_dot_term * q_dot(1) + q2_dot_term * q_dot(2) + G(2) - CommonTerm * G(1);
+
 % %===================================
+% just 1 link
+% E = (2943*cos(q(1)))/200 + (981*cos(q(1) + q(2)))/200 + (981*q(4))/50 + (83*q_dot(1)^2)/2000 + (q_dot(4)/2 + (sin(q(1))*q_dot(1))/2 + (sin(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2))/2)*(q_dot(4) + sin(q(1))*q_dot(1) + sin(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2)) + (q_dot(1) + q_dot(2))*((83*q_dot(1))/2000 + (83*q_dot(2))/2000) + (q_dot(3)/2 - (cos(q(1))*q_dot(1))/4)*(q_dot(3) - (cos(q(1))*q_dot(1))/2) + (cos(q(1))*q_dot(1) - q_dot(3) + cos(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2))*((cos(q(1))*q_dot(1))/2 - q_dot(3)/2 + (cos(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2))/2) + (q_dot(4)/2 + (sin(q(1))*q_dot(1))/4)*(q_dot(4) + (sin(q(1))*q_dot(1))/2);
 %==========
 %==========
 update_plot

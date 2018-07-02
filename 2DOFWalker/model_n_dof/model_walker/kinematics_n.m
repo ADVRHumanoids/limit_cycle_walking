@@ -7,6 +7,7 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
     if robotData.flagSim == 1
         
         q = generalizedVariables;
+        z = generalizedVariables(end-1:end);
         dim_qe = size(q,2);
         
     else
@@ -15,6 +16,7 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
         q = qe(1:end-2);
         qe_dot = generalizedVariables.qe_dot;
         z = generalizedVariables.qe(end-1:end);
+        z = z.';
         z_dot = generalizedVariables.qe_dot(end-1:end);
         
         q_dot = qe_dot(1:end-2);
@@ -77,12 +79,23 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
         rp_abs(:,:,i) = R_abs(:,:,i) * rp_rel(:,i);
     end
 
-%==========================================================================
-    if robotData.flagSim == 1
+    
+%==========forward kinematics==============================================
+    p(:,:,1) = rp_abs(1:2,:,1);
+    for i = 2:length(parent_tree)
+        p(:,:,i) = p(1:2,:,parent_tree(i)) + rp_abs(1:2,:,i);
+    end
         
-               kinematics = struct('positionLink_absolute', rp_abs);
-    else
+        for i = 1:length(parent_tree)
+            p(:,:,i) = z + p(:,:,i);
+        end
+        p_last = p(:,:,end);
 
+%==========================================================================
+
+%==========================================================================
+    if robotData.flagSim == 0
+        
         for i = 1:length(parent_tree)
             rc_abs(:,:,i) = R_abs(:,:,i) * rc_rel(:,i);
         end
@@ -111,34 +124,32 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
         for i = 1:length(parent_tree)
             vc_abs(:,:,i) = v_abs(:,:,i) + cross(w_abs(:,:,i),rc_abs(:,:,i));
         end
-
+        
 %==========jacobian========================================================
-        phi = sum(reshape(rp_abs,3,length(parent_tree)),2);
-        phi = phi(1:2);
-
-        p_last = z.' + phi(1:2);
-
-
-
-        for j = 1:size(phi,1)
+        for j = 1:size(p(:,:,end),1)
             for i = 1:dim_qe
                 J(j,i) = functionalDerivative(p_last(j),qe(i));
             end
-        end 
+        end
 %==========================================================================
         kinematics = struct('parent_tree', parent_tree, ...
-                            'rotationMatrix_relative', R_rel, ...
-                            'rotationMatrix_absolute', R_abs, ...
-                            'angularVelocity_relative', w_rel, ...
-                            'angularVelocity_absolute', w_abs, ...
-                            'positionLink_relative', rp_rel, ...
-                            'positionLink_absolute', rp_abs,...
-                            'positionCom_relative', rc_rel, ...
-                            'positionCoM_absolute', rc_abs,...
-                            'velocityLink_absolute', v_abs, ...
-                            'velocityCoM_absolute', vc_abs, ...
-                            'lastLinkPosition', p_last, ...
-                            'jacobian', J);
+                            'rotationMatrix_relative', simplify(R_rel), ...
+                            'rotationMatrix_absolute', simplify(R_abs), ...
+                            'angularVelocity_relative', simplify(w_rel), ...
+                            'angularVelocity_absolute', simplify(w_abs), ...
+                            'positionLink_relative', simplify(rp_rel), ...
+                            'positionLink_absolute', simplify(rp_abs),...
+                            'positionCoM_relative', simplify(rc_rel), ...
+                            'positionCoM_absolute', simplify(rc_abs),...
+                            'velocityLink_absolute', simplify(v_abs), ...
+                            'velocityCoM_absolute', simplify(vc_abs), ...
+                            'linksPosition', simplify(p), ...
+                            'jacobian', simplify(J));
+                        
+    else
+       kinematics = struct('linksPosition', p);
+
+
     end
 
 end

@@ -9,17 +9,23 @@ slope ...
 I l lc
 
 flagSim = 0;
-parent_tree = [0,1,2,3];
-% parent_tree = [0,1];
+parent_tree = [0];
+% parent_tree = [0,1,2,2,4];
 n_link = length(parent_tree);
+% 
+
+q = [q1(t)];
+q_dot = [q1_dot(t)];
+q_Ddot = [q1_Ddot(t)];
+
 % 
 % q = [q1(t), q2(t)];
 % q_dot = [q1_dot(t), q2_dot(t)];
 % q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
 
-q = [q1(t), q2(t), q3(t), q4(t)];
-q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t),];
-q_Ddot = [q1_Ddot(t), q2_Ddot(t), q3_Ddot(t), q4_Ddot(t)];
+% q = [q1(t), q2(t), q3(t), q4(t)];
+% q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t),];
+% q_Ddot = [q1_Ddot(t), q2_Ddot(t), q3_Ddot(t), q4_Ddot(t)];
 
 % q = [q1(t), q2(t), q3(t), q4(t), q5(t)];
 % q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t)  q5_dot(t)];
@@ -39,15 +45,4 @@ generalizedVariables.qe_dot = qe_dot;
 generalizedVariables.qe_Ddot = qe_Ddot;
 
 
-
-%==========================================================================
-
-link_length = sym('l',[length(parent_tree),1]).';
-com_position = sym('lc',[length(parent_tree),1]).';
-m = sym('m',[length(parent_tree),1]);
-I = sym('I',[length(parent_tree),1]);
-
-%==========================================================================
-
-robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSim', flagSim);
 

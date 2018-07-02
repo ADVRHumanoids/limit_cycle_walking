@@ -1,18 +1,18 @@
-function Links = KinematicsLinks(q,parent_tree,robotData,Base)
+function [Links,kinematics] = KinematicsLinks(q,parent_tree,robotData)
 
 generalizedVariables = q;
 kinematics = kinematics_n(parent_tree, generalizedVariables, robotData);
 
-rp_abs = kinematics.positionLink_absolute;
+p = kinematics.linksPosition;
 %==========================================================================
-for j = 1:2
-    Links(1,j,:) = Base(j) + [0 rp_abs(j,:,1)]; %link,axis,begin/end
+Base = q(end-1:end);
+
+for i = 1:robotData.n_link
+        Links(i,:,:) = [Base p(:,:,i)];
 end
 
 for i = 2:robotData.n_link
-    for j = 1:2
-Links(i,j,:) = Links(parent_tree(i),j,2) + [0 rp_abs(j,:,i)]; %x of link 1 begin/end
-    end
+        Links(i,:,:) = [p(:,:,parent_tree(i)) p(:,:,i)];
 end
 %==========================================================================
 end

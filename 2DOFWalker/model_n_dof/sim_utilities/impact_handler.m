@@ -18,7 +18,7 @@ q_After(1:n_link) = MatrixRelabel*q_Before(1:n_link) - piMatrix;
 q_dot_After = deltaqDotBar * q_dot_Before(1:n_link);
 q_dot_After(1:n_link) = MatrixRelabel*q_dot_After(1:n_link);
 % ==================check=======================
-% % numericVar = cat(3,q,q_dot,q_Ddot);
+% numericVar = cat(3,q,q_dot,q_Ddot);
 % E2 = calcJacobianMatrix(q_After);
 % q_dot_check2 = q_dot_After;
 % q_dot_check2(end-1:end) = 0;
