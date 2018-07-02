@@ -45,7 +45,7 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 %==========================================================================
 E2_ext = kinematics_ext.jacobian;
 E2 = kinematics.jacobian;
-[matD_ext, matC_ext, matG_ext, matE2_ext, matT_ext] = replaceMatricesExtended(D_ext, C_ext, G_ext, E2_ext, dynamics_ext.mechanicalEnergy);
+[matD_ext, matC_ext, matG_ext, matE2_ext] = replaceMatricesExtended(D_ext, C_ext, G_ext, E2_ext);
 [matD, matC, matG, matE2, matT] = replaceMatrices(D, C, G, E2, dynamics.mechanicalEnergy);
 
 K_dot = diff_t(dynamics.KineticEnergy,[q,q_dot], [q_dot, q_Ddot]);

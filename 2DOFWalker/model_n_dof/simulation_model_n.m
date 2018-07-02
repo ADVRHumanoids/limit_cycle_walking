@@ -4,7 +4,7 @@ Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a 2 link walker extended========================
 flagSim = 1;
-slope = 0;
+slope = -pi/28;
 parent_tree = [0 1];
 n_link = length(parent_tree);
 Base = [0;0];
@@ -34,8 +34,8 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 % %                      0,       0,    0;...  %q5
 %                        0,       0,    0;...  %z1
 %                        0,       0,    0];    %z2
-startingParameters = [pi,   0,    0;...  %q1     %pi/18
-                      -pi/18,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2
+startingParameters = [pi/18,   0,    0;...  %q1     %pi/18
+                      3*pi/4,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2
                       0,       0,    0;...  %z1
                       0,       0,    0];    %z2
                   
@@ -62,7 +62,7 @@ set_plot;
 
 j = 0;
 time = 0;
-dt = 0.01; %0.001
+dt = 0.005; %0.001
 
 tau = zeros(length(q),1);
 k_p = 1;
@@ -115,31 +115,31 @@ yLineTerrain = double(tan(slope) * Links(n_link,1,2));
 % P = sum(P_terms);
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %============impact========================================================
-% if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old   %link,axis,begin/end  
-%     
-% [q,q_dot] = impact_handler(q,q_dot);
-% 
-% Base = [Links(n_link,1,2); yLineTerrain];
-% q(end-1:end) = Base;
-% Links = KinematicsLinks(q,parent_tree,robotData); %update kinematics
-% end
-% %============controller====================================================
-alpha = 6; 
-q2d = -2*alpha/ pi * atan(q_dot(1));
-% q2d = -2*alpha/pi * sign(q_dot(1));
-% q2d = 0;
-% q2d_Ddot =  ;
-% q2d_dot = q2d_dot + dt * q2d_Ddot;
-% q2d = q2d + dt * q2d_dot; 
-u = k_p*(q2d - q(2)) - k_d * q_dot(2);
-% u = q2d_Ddot + k_d*(q2d_dot - q_dot(2)) + k_p*(q2d - q(2));
-% %============linearization=================================================
-CommonTerm = D(1,2) * inv(D(1,1));
-q2_Ddot_term =  D(2,2) - CommonTerm * D(1,2);
-q1_dot_term =   C(2,1) - CommonTerm * C(1,1);
-q2_dot_term =   C(2,2) - CommonTerm * C(1,2);
+if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old   %link,axis,begin/end  
+    
+[q,q_dot] = impact_handler(q,q_dot);
 
-tau(2) = q2_Ddot_term * u + q1_dot_term * q_dot(1) + q2_dot_term * q_dot(2) + G(2) - CommonTerm * G(1);
+Base = [Links(n_link,1,2); yLineTerrain]; %TODO
+q(end-1:end) = Base;
+Links = KinematicsLinks(q,parent_tree,robotData); %update kinematics
+end
+% %============controller====================================================
+% alpha = 6; 
+% q2d = -2*alpha/ pi * atan(q_dot(1));
+% % q2d = -2*alpha/pi * sign(q_dot(1));
+% % q2d = 0;
+% % q2d_Ddot =  ;
+% % q2d_dot = q2d_dot + dt * q2d_Ddot;
+% % q2d = q2d + dt * q2d_dot; 
+% u = k_p*(q2d - q(2)) - k_d * q_dot(2);
+% % u = q2d_Ddot + k_d*(q2d_dot - q_dot(2)) + k_p*(q2d - q(2));
+% % %============linearization=================================================
+% CommonTerm = D(1,2) * inv(D(1,1));
+% q2_Ddot_term =  D(2,2) - CommonTerm * D(1,2);
+% q1_dot_term =   C(2,1) - CommonTerm * C(1,1);
+% q2_dot_term =   C(2,2) - CommonTerm * C(1,2);
+
+% tau(2) = q2_Ddot_term * u + q1_dot_term * q_dot(1) + q2_dot_term * q_dot(2) + G(2) - CommonTerm * G(1);
 
 % %=========mechanicalenergy=============
 % mechanical energy 1 link
