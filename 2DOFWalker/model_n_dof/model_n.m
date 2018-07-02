@@ -27,18 +27,27 @@ g = 9.81;
 robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSim', flagSim);
 
 
-[D,C,G,kinematics,T] = createModelWalker(parent_tree,generalizedVariables,robotData);
+[D_ext,C_ext,G_ext,kinematics_ext,dynamics_ext] = createModelExtendedWalker(parent_tree,generalizedVariablesExtended,robotData);
+
+[D,C,G,kinematics,dynamics] = createModelWalker(parent_tree,generalizedVariables,robotData);
 %======================
 % save('dynMatricesExtendedSymbolic.mat','D','C','G');
 %=============================check========================================
-% D_dot = diff_t(D,[qe,qe_dot], [qe_dot,qe_Ddot]);
+% D_dot_ext = diff_t(D_ext,[qe,qe_dot], [qe_dot,qe_Ddot]);
+% 
+% N_ext = simplify(D_dot_ext - 2*C_ext);
+% ThisShouldbeZero_ext = simplify(qe_dot*N_ext*qe_dot.');
+% %===========================check========================================
+% D_dot = diff_t(D,[q,q_dot], [q_dot,q_Ddot]);
 % 
 % N = simplify(D_dot - 2*C);
-% ThisShouldbeZero = simplify(qe_dot*N*qe_dot.');
+% ThisShouldbeZero = simplify(q_dot*N*q_dot.');
 %==========================================================================
-%==========================================================================
+E2_ext = kinematics_ext.jacobian;
 E2 = kinematics.jacobian;
+[matD_ext, matC_ext, matG_ext, matE2_ext, matT_ext] = replaceMatricesExtended(D_ext, C_ext, G_ext, E2_ext, dynamics_ext.mechanicalEnergy);
+[matD, matC, matG, matE2, matT] = replaceMatrices(D, C, G, E2, dynamics.mechanicalEnergy);
 
-[matD, matC, matG, matE2, matT] = replaceMatrices(D, C, G, E2, T);
+K_dot = diff_t(dynamics.KineticEnergy,[q,q_dot], [q_dot, q_Ddot]);
 %when needed, to put in --> calcDynMatrices, calcJacobianMatrix
 % save('dynMatricesExtended.mat','matD','matC','matG', 'matE2');

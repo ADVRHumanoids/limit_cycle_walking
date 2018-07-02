@@ -9,19 +9,19 @@ slope ...
 I l lc
 
 flagSim = 0;
-parent_tree = [0];
+parent_tree = [0 1];
 % parent_tree = [0,1,2,2,4];
 n_link = length(parent_tree);
 % 
 
-q = [q1(t)];
-q_dot = [q1_dot(t)];
-q_Ddot = [q1_Ddot(t)];
+% q = [q1(t)];
+% q_dot = [q1_dot(t)];
+% q_Ddot = [q1_Ddot(t)];
 
 % 
-% q = [q1(t), q2(t)];
-% q_dot = [q1_dot(t), q2_dot(t)];
-% q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
+q = [q1(t), q2(t)];
+q_dot = [q1_dot(t), q2_dot(t)];
+q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
 
 % q = [q1(t), q2(t), q3(t), q4(t)];
 % q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t),];
@@ -40,9 +40,11 @@ qe_dot = [q_dot, z_dot];
 qe_Ddot = [q_Ddot, z_Ddot];
 
 
-generalizedVariables.qe = qe;
-generalizedVariables.qe_dot = qe_dot;
-generalizedVariables.qe_Ddot = qe_Ddot;
+generalizedVariablesExtended.qe = qe;
+generalizedVariablesExtended.qe_dot = qe_dot;
+generalizedVariablesExtended.qe_Ddot = qe_Ddot;
 
 
-
+generalizedVariables.q = q;
+generalizedVariables.q_dot = q_dot;
+generalizedVariables.q_Ddot = q_Ddot;

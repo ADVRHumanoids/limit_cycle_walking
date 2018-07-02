@@ -1,4 +1,4 @@
-function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
+function kinematics = kinematicsRobot(parent_tree, generalizedVariables, robotData)
 % 
 
 
@@ -7,20 +7,13 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
     if robotData.flagSim == 1
         
         q = generalizedVariables;
-        z = generalizedVariables(end-1:end);
-        dim_qe = size(q,2);
+        dim_q = size(q,2);
         
     else
         
-        qe = generalizedVariables.qe;
-        q = qe(1:end-2);
-        qe_dot = generalizedVariables.qe_dot;
-        z = generalizedVariables.qe(end-1:end);
-        z = z.';
-        z_dot = generalizedVariables.qe_dot(end-1:end);
-        
-        q_dot = qe_dot(1:end-2);
-        dim_qe = size(qe,2);
+        q = generalizedVariables.q;
+        q_dot = generalizedVariables.q_dot;
+        dim_q = size(q,2);
 
     end
     
@@ -35,7 +28,7 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
         rp_abs = sym(zeros(3,1,length(parent_tree)));
         rc_abs = sym(zeros(3,1,length(parent_tree)));
         vc_abs = sym(zeros(3,1,length(parent_tree)));
-        J = sym(zeros(2, dim_qe));
+        J = sym(zeros(2, dim_q));
 
     else
     %     
@@ -48,7 +41,7 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
         rp_abs = zeros(3,1,length(parent_tree));
         rc_abs = zeros(3,1,length(parent_tree));
         vc_abs = zeros(3,1,length(parent_tree));
-        J = zeros(2, dim_qe);
+        J = zeros(2, dim_q);
     %      
     end
 
@@ -84,7 +77,7 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
 %         rp_abs(:,:,i) = [z; 0] + rp_abs(:,:,i);
 %     end
 %==========forward kinematics==============================================
-    p(:,:,1) = z + rp_abs(1:2,:,1);
+    p(:,:,1) = rp_abs(1:2,:,1);
     for i = 2:length(parent_tree)
         p(:,:,i) = p(1:2,:,parent_tree(i)) + rp_abs(1:2,:,i);
     end
@@ -100,15 +93,11 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
         for i = 1:length(parent_tree)
             rc_abs(:,:,i) = R_abs(:,:,i) * rc_rel(:,i);
         end
-        
-%         %floating base
-%         for i = 1:length(parent_tree)
-%             rc_abs(:,:,i) = [z; 0] + rc_abs(:,:,i);
-%         end        
+                
 %==========forward kinematics CoM==========================================
-        pc(:,:,1) = z + rc_abs(1:2,:,1);
+        pc(:,:,1) =  rc_abs(1:2,:,1);
         for i = 2:length(parent_tree)
-            pc(:,:,i) = z + rp_abs(1:2,:,parent_tree(i)) + rc_abs(1:2,:,i);
+            pc(:,:,i) = rp_abs(1:2,:,parent_tree(i)) + rc_abs(1:2,:,i);
         end
 %==========================================================================
 
@@ -126,7 +115,7 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
         end
 
         %base~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        v_abs(:,:,1) = [z_dot(1); z_dot(2); 0];
+        v_abs(:,:,1) = sym([0; 0; 0]);
         %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for i = 2:length(parent_tree)
             v_abs(:,:,i) = v_abs(:,:,parent_tree(i)) + cross(w_abs(:,:,i-1), rp_abs(:,:,i-1));
@@ -141,8 +130,8 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
 
 %==========jacobian========================================================
         for j = 1:size(p(:,:,end),1)
-            for i = 1:dim_qe
-                J(j,i) = functionalDerivative(p_last(j),qe(i));
+            for i = 1:dim_q
+                J(j,i) = functionalDerivative(p_last(j),q(i));
             end
         end
 %==========================================================================

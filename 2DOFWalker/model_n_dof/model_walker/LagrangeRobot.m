@@ -1,4 +1,4 @@
-function [eqMotion,dynamics] = Lagrange_n(kinematics, generalizedVariables, robotData)
+function [eqMotion,dynamics] = LagrangeRobot(kinematics, generalizedVariables, robotData)
 
 
 
@@ -17,10 +17,9 @@ function [eqMotion,dynamics] = Lagrange_n(kinematics, generalizedVariables, robo
 
 g = robotData.gravity;
 
-qe =  generalizedVariables.qe;
-qe_dot =  generalizedVariables.qe_dot;
-qe_Ddot =  generalizedVariables.qe_Ddot;
-z = generalizedVariables.qe(end-1:end);
+q =  generalizedVariables.q;
+q_dot =  generalizedVariables.q_dot;
+q_Ddot =  generalizedVariables.q_Ddot;
 
 parent_tree = kinematics.parent_tree;
 w_abs = kinematics.angularVelocity_absolute;
@@ -49,18 +48,15 @@ P = sum(P_terms);
 
 
 L = K - P;
-
-
 mechanicalEnergy = K + P;
 
 dynamics.mechanicalEnergy = mechanicalEnergy;
 dynamics.KineticEnergy = K;
 dynamics.PotentialEnergy = P;
-
 %==========================================================================
-dL_qe_dot = functionalDerivative(L,qe_dot);
-dL_qe_dot_dt = diff_t(dL_qe_dot,[qe,qe_dot], [qe_dot, qe_Ddot]);
-dL_qe = functionalDerivative(L,qe);
-eqMotion = dL_qe_dot_dt - dL_qe;
+dL_q_dot = functionalDerivative(L,q_dot);
+dL_q_dot_dt = diff_t(dL_q_dot,[q,q_dot], [q_dot, q_Ddot]);
+dL_q = functionalDerivative(L,q);
+eqMotion = dL_q_dot_dt - dL_q;
 %==========================================================================
 end

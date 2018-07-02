@@ -12,13 +12,12 @@ deltaF2 = -inv(E2 * inv(D) * E2.') * E2 * [eye(n_link); zeros(2,n_link)];
 deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2,n_link)];
 %===================================
 q_After(1:n_link) = MatrixRelabel*q_Before(1:n_link) - piMatrix;
-%==================check========================
+%==================check relabeling========================
 % q_dot_check1 = deltaqDotBar * q_dot_Before(1:n_link);
 %===============================================
 q_dot_After = deltaqDotBar * q_dot_Before(1:n_link);
 q_dot_After(1:n_link) = MatrixRelabel*q_dot_After(1:n_link);
-% ==================check=======================
-% numericVar = cat(3,q,q_dot,q_Ddot);
+% ==================check relabeling=======================
 % E2 = calcJacobianMatrix(q_After);
 % q_dot_check2 = q_dot_After;
 % q_dot_check2(end-1:end) = 0;

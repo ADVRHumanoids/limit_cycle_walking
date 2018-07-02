@@ -13,7 +13,7 @@ if size(time_record,2) >= buffer
     time_record = [time_record(:,2:end) time];
     q_record = [q_record(:,2:end) q];
     q_dot_record = [q_dot_record(:,2:end) q_dot];
-    E_record = [E_record(:,2:end) E];
+    T_record = [T_record(:,2:end) T];
 end
 
 % for loop = 1:size(q,1)
@@ -22,7 +22,14 @@ set(plot_q_dot,'xdata',time_record,'ydata',q_dot_record(1,:));
 % end
 
 
-E_record = [E_record E];
-set(energyPlot, 'xdata', time_record,'ydata', E_record);
+T_record = [T_record T];
+set(energyPlot, 'xdata', time_record,'ydata', T_record);
+
+%==========check2===================================
+% K_dot_record = [K_dot_record K_dot];
+% check2_record = [check2_record check2];
+% set(plotCheck2(1), 'xdata', time_record, 'ydata', K_dot_record);
+% set(plotCheck2(2), 'xdata', time_record, 'ydata', check2_record);
+%===================================================
 
 drawnow;
