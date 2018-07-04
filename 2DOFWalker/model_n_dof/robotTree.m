@@ -9,7 +9,7 @@ slope ...
 I l lc
 
 flagSim = 0;
-parent_tree = [0 1 2 3];
+parent_tree = [0 1];
 % parent_tree = [0,1,2,2,4];
 n_link = length(parent_tree);
 % 
@@ -19,13 +19,13 @@ n_link = length(parent_tree);
 % q_Ddot = [q1_Ddot(t)];
 
 % 
-% q = [q1(t), q2(t)];
-% q_dot = [q1_dot(t), q2_dot(t)];
-% q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
+q = [q1(t), q2(t)];
+q_dot = [q1_dot(t), q2_dot(t)];
+q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
 
-q = [q1(t), q2(t), q3(t), q4(t)];
-q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t),];
-q_Ddot = [q1_Ddot(t), q2_Ddot(t), q3_Ddot(t), q4_Ddot(t)];
+% q = [q1(t), q2(t), q3(t), q4(t)];
+% q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t),];
+% q_Ddot = [q1_Ddot(t), q2_Ddot(t), q3_Ddot(t), q4_Ddot(t)];
 
 % q = [q1(t), q2(t), q3(t), q4(t), q5(t)];
 % q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t)  q5_dot(t)];

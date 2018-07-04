@@ -4,7 +4,7 @@ Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a 2 link walker extended========================
 flagSim = 1;
-slope = -pi/28;
+slope = 0;%-pi/28;
 parent_tree = [0 1];
 n_link = length(parent_tree);
 Base = [0;0];
@@ -34,7 +34,7 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 % %                      0,       0,    0;...  %q5
 %                        0,       0,    0;...  %z1
 %                        0,       0,    0];    %z2
-startingParameters = [pi/18,   0,    0;...  %q1     %pi/18
+startingParameters = [pi/9,   0,    0;...  %q1     %pi/18
                       3*pi/4,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2
                       0,       0,    0;...  %z1
                       0,       0,    0];    %z2
@@ -74,8 +74,12 @@ disp('push a button to continue'); pause;
 j = j + 1;
 time = (j-1)*dt;
 
-[D,C,G] = calcDynMatrices(q,q_dot);
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[D_ext,C_ext,G_ext] = calcDynMatrices(q,q_dot);
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+D = D_ext(1:n_link,1:n_link);
+C = C_ext(1:n_link,1:n_link);
+G = G_ext(1:n_link);
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Links_old = Links;
 
 
@@ -84,7 +88,7 @@ Links_old = Links;
 % q_dot(n_link+1:end) = 0;
 % q(n_link+1:end) = Base;
 
-[q_Ddot(1:n_link), q_dot(1:n_link), q(1:n_link)] = integrator(dt,D(1:n_link,1:n_link),C(1:n_link,1:n_link),G(1:n_link), tau(1:n_link), q_dot(1:n_link), q(1:n_link));
+[q_Ddot(1:n_link), q_dot(1:n_link), q(1:n_link)] = integrator(dt,D,C,G, tau(1:n_link), q_dot(1:n_link), q(1:n_link));
 
 % 
 for i  = 1:length(q)
@@ -117,30 +121,32 @@ yLineTerrain = double(tan(slope) * Links(n_link,1,2));
 %============impact========================================================
 if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old   %link,axis,begin/end  
     
-[q,q_dot] = impact_handler(q,q_dot);
+    [q,q_dot] = impact_handler(q,q_dot);
 
-Base = [Links(n_link,1,2); yLineTerrain]; %TODO
-q(end-1:end) = Base;
-Links = KinematicsLinks(q,parent_tree,robotData); %update kinematics
+    Base = [Links(n_link,1,2); yLineTerrain]; %TODO
+    q(end-1:end) = Base;
+    Links = KinematicsLinks(q,parent_tree,robotData); %update kinematics
+    
 end
-% %============controller====================================================
-% alpha = 6; 
-% q2d = -2*alpha/ pi * atan(q_dot(1));
-% % q2d = -2*alpha/pi * sign(q_dot(1));
-% % q2d = 0;
-% % q2d_Ddot =  ;
-% % q2d_dot = q2d_dot + dt * q2d_Ddot;
-% % q2d = q2d + dt * q2d_dot; 
-% u = k_p*(q2d - q(2)) - k_d * q_dot(2);
-% % u = q2d_Ddot + k_d*(q2d_dot - q_dot(2)) + k_p*(q2d - q(2));
-% % %============linearization=================================================
-% CommonTerm = D(1,2) * inv(D(1,1));
-% q2_Ddot_term =  D(2,2) - CommonTerm * D(1,2);
-% q1_dot_term =   C(2,1) - CommonTerm * C(1,1);
-% q2_dot_term =   C(2,2) - CommonTerm * C(1,2);
+% %============controller==================================================
+alpha = 0.1;
+epsilon = 0.1;
 
-% tau(2) = q2_Ddot_term * u + q1_dot_term * q_dot(1) + q2_dot_term * q_dot(2) + G(2) - CommonTerm * G(1);
+x1 = q(1) + q(2);
+x2 = epsilon*(q_dot(1) + q_dot(2));
 
+phi = x1 + (1/(2 - alpha))*sign(x2)*abs(x2)^(2-alpha);
+psi = -sign(x2)*abs(x2)^alpha - sign(phi) * abs(phi)^(alpha/(2 - alpha));
+
+v = 1/epsilon^2 * psi;
+%==========================================================================
+h_dq_dq = [0 0 2 1];
+B = [0; 1];
+L2fh  = -h_dq_dq(end-1:end)* inv(D) * C* q_dot(1:n_link) - h_dq_dq(end-1:end) * inv(D) * G;
+LgLfh =  h_dq_dq(end-1:end) * inv(D) * B;
+
+u = inv(LgLfh) * (v - L2fh);
+tau = [0;u];
 % %=========mechanicalenergy=============
 % mechanical energy 1 link
 % T = (981*cos(q(1)))/200 + (333*q_dot(1)^2)/2000;
@@ -159,3 +165,23 @@ update_plot
 %==========
 %==========
  end
+ 
+ 
+ 
+ % %============controller====================================================
+% alpha = 6; 
+% q2d = -2*alpha/ pi * atan(q_dot(1));
+% % q2d = -2*alpha/pi * sign(q_dot(1));
+% % q2d = 0;
+% % q2d_Ddot =  ;
+% % q2d_dot = q2d_dot + dt * q2d_Ddot;
+% % q2d = q2d + dt * q2d_dot; 
+% u = k_p*(q2d - q(2)) - k_d * q_dot(2);
+% % u = q2d_Ddot + k_d*(q2d_dot - q_dot(2)) + k_p*(q2d - q(2));
+% % %============linearization=================================================
+% CommonTerm = D(1,2) * inv(D(1,1));
+% q2_Ddot_term =  D(2,2) - CommonTerm * D(1,2);
+% q1_dot_term =   C(2,1) - CommonTerm * C(1,1);
+% q2_dot_term =   C(2,2) - CommonTerm * C(1,2);
+
+% tau(2) = q2_Ddot_term * u + q1_dot_term * q_dot(1) + q2_dot_term * q_dot(2) + G(2) - CommonTerm * G(1);

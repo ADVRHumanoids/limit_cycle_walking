@@ -77,6 +77,7 @@ x = [x1;x2;x3;x4];
 xVar(:,:,1) = [x1 x3].';
 xVar(:,:,2) = [x2 x4].';
 xVar(:,:,3) = [x2_dot x4_dot].';
+
 D = subs(D, symbolicVar, xVar);
 C = subs(C, symbolicVar, xVar);
 G = subs(G, symbolicVar, xVar);
