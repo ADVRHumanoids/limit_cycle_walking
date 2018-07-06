@@ -42,4 +42,8 @@ for j = 1:dim_q
     end
 end
 
+
+D = simplify(D);
+C = simplify(C);
+G = simplify(G);
 end

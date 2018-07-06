@@ -4,15 +4,15 @@ Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a 2 link walker extended========================
 flagSim = 1;
-slope = 0;%-pi/28;
+slope = 0; %-pi/28;
 parent_tree = [0 1];
 n_link = length(parent_tree);
 Base = [0;0];
 
 link_length = 1;
-com_position = 0.5; %0.8
-mass = 1; %0.3
-inertia = [0.083 0.083];
+com_position = 0.8; %0.8
+mass = 0.3; %0.3
+inertia = [0.03 0.03];
 
 link_length = link_length * ones(1,length(parent_tree));
 com_position = [1-com_position, com_position * ones(1,length(parent_tree)-1)];
@@ -34,7 +34,7 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 % %                      0,       0,    0;...  %q5
 %                        0,       0,    0;...  %z1
 %                        0,       0,    0];    %z2
-startingParameters = [pi/9,   0,    0;...  %q1     %pi/18
+startingParameters = [pi/18,   0,    0;...  %q1     %pi/18
                       3*pi/4,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2
                       0,       0,    0;...  %z1
                       0,       0,    0];    %z2
@@ -123,30 +123,30 @@ if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old
     
     [q,q_dot] = impact_handler(q,q_dot);
 
-    Base = [Links(n_link,1,2); yLineTerrain]; %TODO
+    Base = [Links(n_link,1,2); yLineTerrain+ 0.01]; %TODO
     q(end-1:end) = Base;
     Links = KinematicsLinks(q,parent_tree,robotData); %update kinematics
     
 end
 % %============controller==================================================
-alpha = 0.1;
-epsilon = 0.1;
-
-x1 = q(1) + q(2);
-x2 = epsilon*(q_dot(1) + q_dot(2));
-
-phi = x1 + (1/(2 - alpha))*sign(x2)*abs(x2)^(2-alpha);
-psi = -sign(x2)*abs(x2)^alpha - sign(phi) * abs(phi)^(alpha/(2 - alpha));
-
-v = 1/epsilon^2 * psi;
+% alpha = 0.1;
+% epsilon = 0.1;
+% 
+% x1 = q(1) + q(2);
+% x2 = epsilon*(q_dot(1) + q_dot(2));
+% 
+% phi = x1 + (1/(2 - alpha))*sign(x2)*abs(x2)^(2-alpha);
+% psi = -sign(x2)*abs(x2)^alpha - sign(phi) * abs(phi)^(alpha/(2 - alpha));
+% 
+% v = 1/epsilon^2 * psi;
 %==========================================================================
-h_dq_dq = [0 0 2 1];
-B = [0; 1];
-L2fh  = -h_dq_dq(end-1:end)* inv(D) * C* q_dot(1:n_link) - h_dq_dq(end-1:end) * inv(D) * G;
-LgLfh =  h_dq_dq(end-1:end) * inv(D) * B;
-
-u = inv(LgLfh) * (v - L2fh);
-tau = [0;u];
+% h_dq_dq = [0 0 2 1];
+% B = [0; 1];
+% L2fh  = -h_dq_dq(end-1:end)* inv(D) * C* q_dot(1:n_link) - h_dq_dq(end-1:end) * inv(D) * G;
+% LgLfh =  h_dq_dq(end-1:end) * inv(D) * B;
+% 
+% u = inv(LgLfh) * (v - L2fh);
+% tau = [0;u];
 % %=========mechanicalenergy=============
 % mechanical energy 1 link
 % T = (981*cos(q(1)))/200 + (333*q_dot(1)^2)/2000;

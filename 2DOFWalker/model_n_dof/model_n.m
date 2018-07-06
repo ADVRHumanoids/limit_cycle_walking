@@ -3,7 +3,7 @@ close all; clear all; clc;
 Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
 %==================dynamic model of a n link walker========================
-robotTree;
+robotTree; %change here the robot tree and run model_n
 %======================symbolic parameters=================================
 
 link_length = sym('l',[length(parent_tree),1]).';
@@ -13,9 +13,9 @@ I = sym('I',[length(parent_tree),1]);
 
 %======================real parameters=====================================
 % link_length = 1;
-% com_position = 0.5; %0.8
-% mass = 1; %0.3
-% inertia = 0.083;
+% com_position = 0.8; %0.8
+% mass = 0.3; %0.3
+% inertia = 0.03;
 % 
 % link_length = link_length * ones(1,length(parent_tree));
 % com_position = [1-com_position, com_position * ones(1,length(parent_tree)-1)];
@@ -52,3 +52,4 @@ K_dot = diff_t(dynamics.KineticEnergy,[q,q_dot], [q_dot, q_Ddot]);
 
 % %when needed, to put in --> calcDynMatrices, calcJacobianMatrix
 % % save('dynMatricesExtended.mat','matD','matC','matG', 'matE2');
+model_n_created = 1;
