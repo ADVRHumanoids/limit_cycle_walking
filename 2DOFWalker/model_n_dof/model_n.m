@@ -32,7 +32,7 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 [D,C,G,kinematics,dynamics] = createModelWalker(parent_tree,generalizedVariables,robotData);
 %======================
 % save('dynMatricesExtendedSymbolic.mat','D','C','G');
-%=============================check========================================
+%=============================che ck========================================
 % D_dot_ext = diff_t(D_ext,[qe,qe_dot], [qe_dot,qe_Ddot]);
 % 
 % N_ext = simplify(D_dot_ext - 2*C_ext);

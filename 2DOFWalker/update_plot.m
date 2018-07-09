@@ -21,9 +21,9 @@ set(plot_q,'xdata',time_record,'ydata',q_record(1,:));
 set(plot_q_dot,'xdata',time_record,'ydata',q_dot_record(1,:));
 % end
 
-
-T_record = [T_record T];
-set(energyPlot, 'xdata', time_record,'ydata', T_record);
+%=========mechanical energy=========================
+% T_record = [T_record T];
+% set(energyPlot, 'xdata', time_record,'ydata', T_record);
 
 %==========check2===================================
 % K_dot_record = [K_dot_record K_dot];

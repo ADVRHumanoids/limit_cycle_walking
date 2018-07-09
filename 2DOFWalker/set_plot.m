@@ -33,12 +33,14 @@ xlim([0 50]);
 ylim([-100 100]);
 % end 
 
-fig3 = figure(3);
-set(fig3,'Position',[-601   525   560   420])
-energyPlot = plot(0,0);
-xlim([0 50]);
-% ylim([-5 100]);
-T_record = 0;
+%==========mechanical energy========================
+% fig3 = figure(3);
+% set(fig3,'Position',[-601   525   560   420])
+% energyPlot = plot(0,0);
+% xlim([0 50]);
+% % ylim([-5 100]);
+% T_record = 0;
+%===================================================
 
 %==========check2===================================
 % fig4 = figure(4);
