@@ -1,27 +1,41 @@
-function torque = controllerWalker(q,q_dot, D,C,G, anglePi)
-% =========================================================================
+function torque = controllerWalker(q,q_dot, D,C,G)
+% ===================
 n_link = length(q)-2;
-%=====================
-alpha = 0.9;
-epsilon = 0.1;
 
-y = q(1) - (anglePi - q(1) - q(2));
-y_dot = 2* q_dot(1) + q_dot(2);%- q_dot(2); 
+n_unactuated_variable = 1;
+n_base_variables = 2;
+n_controlled_variables = length(q) - n_base_variables - n_unactuated_variable; %-base z1 z2 // -underactuated var
+%=====================finite time controller===============================
+qd = 0;
+
+y = zeros(n_controlled_variables, 1);
+y_dot = zeros(n_controlled_variables, 1);
+
+y(1) = q(1) - (-pi - q(1) - q(2));
+y(2) = q(3) - qd;
+y_dot(1) = 2* q_dot(1) + q_dot(2);%- q_dot(2); 
+y_dot(2) = q_dot(3);
 
 
-x1 = y;
-x2 = epsilon*y_dot;
-phi = x1 + (1/(2 - alpha))*sign(x2)*abs(x2)^(2-alpha);
-psi = -sign(x2)*abs(x2)^alpha - sign(phi) * abs(phi)^(alpha/(2 - alpha));
 
-v = 1/epsilon^2 * psi;
+v = finiteTime_stabilizer(y,y_dot);
 % ===================partial linearization=================================
-h_dq_dq = [ 0, 0, 2, 1];
-B = [0; 1];
-L2fh  = -h_dq_dq(end-1:end)* inv(D) * C* q_dot(1:n_link) - h_dq_dq(end-1:end) * inv(D) * G;
-LgLfh =  h_dq_dq(end-1:end) * inv(D) * B;
+%>> h_dq = jacobian(h,q);
+% h_dq = [2 1];
+h_dq = [2 1 0;
+        0 0 1];
+
+%>>as long as there are no variables the first part of the matrix:
+%>>(however, see partialLinearization for clarification)
+h_dq_dq = [zeros(length(y), n_link) h_dq];
+
+B = [0; ones(n_controlled_variables,1)];
+
+L2fh  = -h_dq_dq(length(y), end-n_controlled_variables:end)* inv(D) * C* q_dot(1:n_link) - h_dq_dq(length(y), end-n_controlled_variables:end) * inv(D) * G;
+LgLfh =  h_dq_dq(length(y), end-n_controlled_variables:end) * inv(D) * B;
 
 u = inv(LgLfh) * (v - L2fh);
+
 torque = [0;u];
 end
 

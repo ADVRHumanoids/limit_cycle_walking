@@ -1,10 +1,10 @@
-function [q_After,q_dot_After] = impact_handler(q_Before,q_dot_Before)
+function [q_After,q_dot_After] = impact_handler(q_Before,q_dot_Before,relabelingMatrices)
+
+piMatrix = relabelingMatrices{1};
+MatrixRelabel = relabelingMatrices{2};
 
 q_After = q_Before;
 n_link = length(q_Before)-2;
-% ===============relabeling matrices==============
-piMatrix = pi*[1; zeros(n_link-1,1)];
-MatrixRelabel = inv(flip(tril(ones(n_link)))) *tril(ones(n_link));
 %====================impact model===============
 [D,~,~] = calcDynMatrices(q_Before,q_dot_Before);
 E2 = calcJacobianMatrix(q_Before);

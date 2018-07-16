@@ -1,23 +1,27 @@
 close all; clear all; clc;
+%check if parameters here are the same used in model_n
 
 Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a 2 link walker extended========================
 flagSim = 1;
 slope = 0; %-pi/28;
-parent_tree = [0 1];
+parent_tree = [0 1 2 2 4];
 n_link = length(parent_tree);
+relabelingMatrices;
+swing_leg = 2;
+
 Base = [0;0];
 
 link_length = 1;
 com_position = 0.8; %0.8
 mass = 0.3; %0.3
-inertia = [0.03 0.03];
+inertia = 0.03;
 
 link_length = link_length * ones(1,length(parent_tree));
 com_position = [1-com_position, com_position * ones(1,length(parent_tree)-1)];
 m = mass * ones(1,length(parent_tree));
-% I = inertia * ones(1,length(parent_tree));
+I = inertia * ones(1,length(parent_tree));
 I = inertia;
 g = 9.81;
 %==========================================================================
@@ -34,8 +38,9 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 % %                      0,       0,    0;...  %q5
 %                        0,       0,    0;...  %z1
 %                        0,       0,    0];    %z2
-startingParameters = [pi/100,   0,    0;...  %q1     %pi/18
-                      pi - pi/18,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2 -2*(pi/18)+pi
+startingParameters = [pi/18,   0,    0;...  %q1     %pi/18
+                      3*pi/4,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2 -2*(pi/18)+pi
+                      0,       0,    0;...
                       0,       0,    0;...  %z1
                       0,       0,    0];    %z2
                   
@@ -60,7 +65,6 @@ set_plot;
 %=======
 %=======
 
-
 j = 0;
 time = 0;
 dt = 0.005; %0.001
@@ -71,7 +75,7 @@ k_d = 0.1;
 Base = [0,0];
 disp('push a button to continue'); pause;
 
-anglePi = pi;
+control_flag = 0;
  while 1
      
 j = j + 1;
@@ -100,23 +104,27 @@ for i  = 1:length(q)
     end
 end
 
+
 yLineTerrain_old = yLineTerrain;
-yLineTerrain = double(tan(slope) * Links(n_link,1,2));
+yLineTerrain = double(tan(slope) * Links(swing_leg,1,2));
 [Links,kinematics] = KinematicsLinks(q,parent_tree,robotData);  %update kinematics
-
 %============impact========================================================
-if Links(n_link,2,2) <= yLineTerrain && Links_old(n_link,2,2) > yLineTerrain_old   %link,axis,begin/end  
+step_condition = Links(swing_leg,1,2) > Base(1);
+if Links(swing_leg,2,2) <= yLineTerrain && Links_old(swing_leg,2,2) > yLineTerrain_old && step_condition %link,axis,begin/end  
     
-    [q,q_dot] = impact_handler(q,q_dot);
+    [q,q_dot] = impact_handler(q,q_dot,relabelingMatrices);
 
-    Base = [Links(n_link,1,2); yLineTerrain+ 0.01]; %TODO
+    Base = [Links(swing_leg,1,2); yLineTerrain]; %TODO
     q(end-1:end) = Base;
     Links = KinematicsLinks(q,parent_tree,robotData); %update kinematics
-    anglePi = -anglePi;
-    
+    control_flag = 1;
 end
-%============controller==================================================
-tau = controllerWalker(q,q_dot, D,C,G, anglePi);
+%============controller===============
+% if control_flag == 1
+% tau = controllerWalker(q,q_dot, D,C,G);
+% end
+%=====================================
+
 %=========mechanicalenergy============
 % mechanical energy 1 link
 % T = (981*cos(q(1)))/200 + (333*q_dot(1)^2)/2000;

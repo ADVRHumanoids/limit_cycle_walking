@@ -4,8 +4,12 @@ if length(q) == 6
 
 E2 = [   cos(q(1) + q(2) + q(3)) + cos(q(1) + q(2) + q(3) + q(4)) + cos(q(1) + q(2)) + cos(q(1)),   cos(q(1) + q(2) + q(3)) + cos(q(1) + q(2) + q(3) + q(4)) + cos(q(1) + q(2)),   cos(q(1) + q(2) + q(3)) + cos(q(1) + q(2) + q(3) + q(4)),  cos(q(1) + q(2) + q(3) + q(4)), 1, 0;
        - sin(q(1) + q(2) + q(3)) - sin(q(1) + q(2) + q(3) + q(4)) - sin(q(1) + q(2)) - sin(q(1)), - sin(q(1) + q(2) + q(3)) - sin(q(1) + q(2) + q(3) + q(4)) - sin(q(1) + q(2)), - sin(q(1) + q(2) + q(3)) - sin(q(1) + q(2) + q(3) + q(4)), -sin(q(1) + q(2) + q(3) + q(4)), 0, 1];
- 
 
+elseif length(q) == 5
+    
+E2 = [   cos(q(1) + q(3)) + cos(q(1)), 0,  cos(q(1) + q(3)), 1, 0;
+       - sin(q(1) + q(3)) - sin(q(1)), 0, -sin(q(1) + q(3)), 0, 1];
+   
 elseif length(q) == 4
     
 E2 = [   cos(q(1) + q(2)) + cos(q(1)),  cos(q(1) + q(2)), 1, 0;

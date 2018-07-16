@@ -12,12 +12,12 @@ clc;
 syms d11 d12 d21 d22...
 c11 c12 c21 c22...
 g1 g2...
-q1 q2 q1_dot q2_dot...
+q1 q2 q3 q1_dot q2_dot q3_dot...
 u v...
 y;
 
-q = [q1; q2];
-q_dot = [q1_dot; q2_dot];
+q = [q1; q2; q3];
+q_dot = [q1_dot; q2_dot; q3_dot];
 
 
 D = [d11 d12; d12 d22];
@@ -26,8 +26,8 @@ G = [g1; g2];
 B = [0; 1];
 % 
 % 
-h =  q(1) - (pi - q(1) - q(2)); %%output of the system
-
+h(1) =  q(1) - (pi - q(1) - q(2)); %%output of the system
+h(2) = q(3);
 h_dq = jacobian(h,q);  % h_dq = functionalDerivative(h,q)';
 
 Lfh = h_dq * q_dot;
