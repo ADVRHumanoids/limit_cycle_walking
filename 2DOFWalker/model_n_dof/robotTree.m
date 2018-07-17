@@ -11,7 +11,8 @@ I l lc
 flagSim = 0;
 % parent_tree = [0 1];
 parent_tree = [0 1 1];
-% parent_tree = [0,1,2,2,4];
+% parent_tree = [0 1 2 3];
+swing_leg = 2;
 n_link = length(parent_tree);
 % 
 

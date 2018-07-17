@@ -81,9 +81,6 @@ function kinematics = kinematicsRobot(parent_tree, generalizedVariables, robotDa
     for i = 2:length(parent_tree)
         p(:,:,i) = p(1:2,:,parent_tree(i)) + rp_abs(1:2,:,i);
     end
-        
-
-    p_last = p(:,:,end);
 
 %==========================================================================
 
@@ -129,11 +126,13 @@ function kinematics = kinematicsRobot(parent_tree, generalizedVariables, robotDa
 
 
 %==========jacobian========================================================
-        for j = 1:size(p(:,:,end),1)
-            for i = 1:dim_q
-                J(j,i) = functionalDerivative(p_last(j),q(i));
-            end
+for k = 1:length(parent_tree)
+    for j = 1:size(p(:,:,k),1)
+        for i = 1:dim_q
+            J(j,i,k) = functionalDerivative(p(j,:,k),q(i));
         end
+    end
+end
 %==========================================================================
         kinematics = struct('parent_tree', parent_tree, ...
                             'rotationMatrix_relative', simplify(R_rel), ...

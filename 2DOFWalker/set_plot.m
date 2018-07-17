@@ -60,6 +60,18 @@ ylim([-100 100]);
 % p2_record = 0;
 %===================================================
 
+%===========controller==============================
+% fig6 = figure(6);
+% set(fig6,'Position',[  -601     7   560   420])
+% for i = 1:length(h)
+% plot_controller(i) = plot(0,0); hold on;
+% end
+% xlim([0 10]);
+% ylim([-1 1]);
+% controller_record = zeros(n_link-1,1);
+%===================================================
+
+
 time_record = 0;
 q_record = zeros(length(q),1);
 q_dot_record = zeros(length(q_dot),1);

@@ -6,24 +6,27 @@ addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a 2 link walker extended========================
 flagSim = 1;
 slope = 0; %-pi/28;
-parent_tree = [0 1 2 2 4];
-n_link = length(parent_tree);
-relabelingMatrices;
+parent_tree = [0 1 1];
+waist = [3];
 swing_leg = 2;
+n_link = length(parent_tree);
+relabeling;
+
 
 Base = [0;0];
 
-link_length = 1;
-com_position = 0.8; %0.8
-mass = 0.3; %0.3
-inertia = 0.03;
-
-link_length = link_length * ones(1,length(parent_tree));
-com_position = [1-com_position, com_position * ones(1,length(parent_tree)-1)];
-m = mass * ones(1,length(parent_tree));
-I = inertia * ones(1,length(parent_tree));
-I = inertia;
+link_length = [1 1 0.5];
+com_position = [0.8 0.8 0.5/2]; %0.8
+m = [0.3 0.3 1]; %0.3
+I = [0.03 0.03 0.1];
 g = 9.81;
+
+% link_length = link_length * ones(1,length(parent_tree));
+% com_position = [1-com_position, com_position * ones(1,length(parent_tree)-1)];
+% m = mass * ones(1,length(parent_tree));
+% I = inertia * ones(1,length(parent_tree));
+% I = inertia;
+
 %==========================================================================
 robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSim', flagSim);
 
@@ -35,7 +38,7 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 %                       -pi/18,   0,    0;...  %q2     -pi/18
 %                        3*pi/4,  0,    0;...  %q3     3*pi/4,
 %                        pi/4,    0,    0;...  %q4      pi/4,
-% %                      0,       0,    0;...  %q5
+%                        0,       0,    0;...  %q5
 %                        0,       0,    0;...  %z1
 %                        0,       0,    0];    %z2
 startingParameters = [pi/18,   0,    0;...  %q1     %pi/18
@@ -59,6 +62,9 @@ yLineTerrain_old = yLineTerrain;
 % T = (981*cos(q(1)))/200 + (333*q_dot(1)^2)/2000;
 % mechanical energy 2 link
 % T = (981*cos(q(1) + q(2)))/200 + (2943*cos(q(1)))/200 + (q_dot(1)^2*cos(q(2)))/2 + (333*q_dot(1)*q_dot(2))/1000 + (833*q_dot(1)^2)/1000 + (333*q_dot(2)^2)/2000 + (q_dot(1)*q_dot(2)*cos(q(2)))/2;
+
+%just needed for initialization of the output for the controller y = h(q)
+h = zeros(n_link-1,1);
 %=======
 %=======
 set_plot;
@@ -120,9 +126,9 @@ if Links(swing_leg,2,2) <= yLineTerrain && Links_old(swing_leg,2,2) > yLineTerra
     control_flag = 1;
 end
 %============controller===============
-% if control_flag == 1
-% tau = controllerWalker(q,q_dot, D,C,G);
-% end
+if control_flag == 1
+    [tau,h] = controllerWalker(q,q_dot, D,C,G);
+end
 %=====================================
 
 %=========mechanicalenergy============

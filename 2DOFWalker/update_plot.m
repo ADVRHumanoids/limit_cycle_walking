@@ -36,4 +36,11 @@ set(plot_q_dot,'xdata',time_record,'ydata',q_dot_record(1,:));
 % p2_record = [p2_record, Links(n_link,2,2) - yLineTerrain];
 % set(plot_p2, 'xdata', time_record, 'ydata', p2_record)
 %===================================================
+
+%===========controller==============================
+% controller_record = [controller_record, h];
+% for i = 1:length(h)
+% set(plot_controller(i), 'xdata', time_record, 'ydata', controller_record(i,:));
+% end
+%===================================================
 drawnow;

@@ -6,6 +6,7 @@ newStr = strrep(charE2,'q1(t)','q(1)');
 newStr = strrep(newStr,'q2(t)','q(2)');
 newStr = strrep(newStr,'q3(t)','q(3)');
 newStr = strrep(newStr,'q4(t)','q(4)');
+newStr = strrep(newStr,'q5(t)','q(5)');
 
 newStr([1:7, end:end]) = [];
 E2 = str2sym(newStr);
@@ -17,12 +18,13 @@ newStr = strrep(charD,'q1(t)','q(1)');
 newStr = strrep(newStr,'q2(t)','q(2)');
 newStr = strrep(newStr,'q3(t)','q(3)');
 newStr = strrep(newStr,'q4(t)','q(4)');
+newStr = strrep(newStr,'q5(t)','q(5)');
 
 newStr = strrep(newStr,'q1_dot(t)','q_dot(1)');
 newStr = strrep(newStr,'q2_dot(t)','q_dot(2)');
 newStr = strrep(newStr,'q3_dot(t)','q_dot(3)');
 newStr = strrep(newStr,'q4_dot(t)','q_dot(4)');
-
+newStr = strrep(newStr,'q5_dot(t)','q_dot(5)');
 
 newStr([1:7, end:end]) = [];
 D = str2sym(newStr);
@@ -35,12 +37,13 @@ newStr = strrep(charC,'q1(t)','q(1)');
 newStr = strrep(newStr,'q2(t)','q(2)');
 newStr = strrep(newStr,'q3(t)','q(3)');
 newStr = strrep(newStr,'q4(t)','q(4)');
+newStr = strrep(newStr,'q5(t)','q(5)');
 
 newStr = strrep(newStr,'q1_dot(t)','q_dot(1)');
 newStr = strrep(newStr,'q2_dot(t)','q_dot(2)');
 newStr = strrep(newStr,'q3_dot(t)','q_dot(3)');
 newStr = strrep(newStr,'q4_dot(t)','q_dot(4)');
-
+newStr = strrep(newStr,'q5_dot(t)','q_dot(5)');
 
 newStr([1:7, end:end]) = [];
 C = str2sym(newStr);
@@ -54,7 +57,7 @@ newStr = strrep(charG,'q1(t)','q(1)');
 newStr = strrep(newStr,'q2(t)','q(2)');
 newStr = strrep(newStr,'q3(t)','q(3)');
 newStr = strrep(newStr,'q4(t)','q(4)');
-
+newStr = strrep(newStr,'q5(t)','q(5)');
 
 newStr([1:7, end:end]) = [];
 G = str2sym(newStr);
