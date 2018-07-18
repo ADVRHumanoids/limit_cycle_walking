@@ -52,8 +52,19 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 E2_ext = kinematics_ext.jacobian(:,:,swing_leg);
 E2 = kinematics.jacobian(:,:,swing_leg);
 
-[matD_ext, matC_ext, matG_ext, matE2_ext] = replaceMatricesExtended(D_ext, C_ext, G_ext, E2_ext);
-[matD, matC, matG, matE2, matT] = replaceMatrices(D, C, G, E2, dynamics.mechanicalEnergy);
+matrices.D = D_ext;
+matrices.C = C_ext;
+%this will autogenerate a file with the Dynamic Matrices in /sim_utilities/dynMatrices
+autogenfile_DM('DMsomethin', matrices);
+ 
+ 
+
+    
+% [matD_ext, matC_ext, matG_ext, matE2_ext] = replaceMatricesExtended(D_ext, C_ext, G_ext, E2_ext);
+% [matD, matC, matG, matE2, matT] = replaceMatrices(D, C, G, E2, dynamics.mechanicalEnergy);
+
+
+
 
 % K_dot = diff_t(dynamics.KineticEnergy,[q,q_dot], [q_dot, q_Ddot]);
 

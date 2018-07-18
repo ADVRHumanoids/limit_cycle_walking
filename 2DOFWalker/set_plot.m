@@ -5,9 +5,9 @@ set(fig1,'Position',[-1854          20        1211         954]);  %[2400, 400,5
 for i = 1:n_link
 Link(i) = plot(0,0,'LineWidth',2); grid on; hold on;
 end
-lims = 3;
-xlim([-lims lims]);
-ylim([-lims lims]);
+
+xlim([-1 5]);
+ylim([-1 4]);
 
 xLineTerrainLim = xlim;
 yLineTerrainLim = tan(slope) * (xLineTerrainLim);

@@ -24,7 +24,7 @@ for i = 2:n_link
     if i ~= waist_ind
            
         if relabelingMatrices.MatrixRelabel(i,n_link-j) == 0 
-            if n_link - j == waist
+            if (n_link - j) == waist
                 j = j + 1;
             end
             relabelingMatrices.MatrixRelabel(i,n_link-j) = -1;           

@@ -41,11 +41,11 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 %                        0,       0,    0;...  %q5
 %                        0,       0,    0;...  %z1
 %                        0,       0,    0];    %z2
-startingParameters = [pi/18,   0,    0;...  %q1     %pi/18
-                      3*pi/4,  0,    0;...  %q2      3*pi/4,    50,    0,...  %q2 -2*(pi/18)+pi
-                      0,       0,    0;...
-                      0,       0,    0;...  %z1
-                      0,       0,    0];    %z2
+startingParameters = [                      pi/18,  0,    0;...  %q1     %pi/18
+                      pi-(pi-2*(pi/2-(1/18*pi))),  0,    0;...  %q2      3*pi/4,    50,    0,...  %3*pi/4 + pi/18
+                                           -pi/18,  0,    0;...
+                                                0,  0,    0;...  %z1
+                                                0,  0,    0];    %z2
                   
 %=======================starting kinematics================================
 q = startingParameters(1:n_link+2,1);
@@ -81,7 +81,12 @@ k_d = 0.1;
 Base = [0,0];
 disp('push a button to continue'); pause;
 
+impact_detected = 0;
 control_flag = 0;
+first_impact = 0;
+distance_legs = 0;
+
+
  while 1
      
 j = j + 1;
@@ -115,22 +120,36 @@ yLineTerrain_old = yLineTerrain;
 yLineTerrain = double(tan(slope) * Links(swing_leg,1,2));
 [Links,kinematics] = KinematicsLinks(q,parent_tree,robotData);  %update kinematics
 %============impact========================================================
-step_condition = Links(swing_leg,1,2) > Base(1);
-if Links(swing_leg,2,2) <= yLineTerrain && Links_old(swing_leg,2,2) > yLineTerrain_old && step_condition %link,axis,begin/end  
+% step_condition = Links(swing_leg,1,2) > Base(1); %link,axis,begin/end  
+step_condition = Links(swing_leg,1,2) > Base(1) + distance_legs;
+if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_leg,2,2) > yLineTerrain_old  %link,axis,begin/end  
+    
+    if ~first_impact 
+        distance_legs = Links(swing_leg,1,2);
+        first_impact = 1;
+    end
     
     [q,q_dot] = impact_handler(q,q_dot,relabelingMatrices);
-
+    
+    %===========change base=====================================
     Base = [Links(swing_leg,1,2); yLineTerrain]; %TODO
     q(end-1:end) = Base;
     Links = KinematicsLinks(q,parent_tree,robotData); %update kinematics
+    %===========================================================
+
+    
     control_flag = 1;
+    impact_detected = 1;
+    
+%     qd = -pi - qd + q(2);
+
 end
 %============controller===============
 if control_flag == 1
     [tau,h] = controllerWalker(q,q_dot, D,C,G);
 end
 %=====================================
-
+impact_detected = 0;
 %=========mechanicalenergy============
 % mechanical energy 1 link
 % T = (981*cos(q(1)))/200 + (333*q_dot(1)^2)/2000;
