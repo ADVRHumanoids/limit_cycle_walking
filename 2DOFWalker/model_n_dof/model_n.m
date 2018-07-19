@@ -29,6 +29,7 @@ m = [0.3 0.3 1]; %0.3
 I = [0.03 0.03 0.1];
 g = 9.81;
 
+
 %==========================================================================
 robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSim', flagSim);
 
@@ -38,7 +39,7 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 [D,C,G,kinematics,dynamics] = createModelWalker(parent_tree,generalizedVariables,robotData);
 %======================
 % save('dynMatricesExtendedSymbolic.mat','D','C','G');
-%=============================che ck========================================
+%=============================check========================================
 % D_dot_ext = diff_t(D_ext,[qe,qe_dot], [qe_dot,qe_Ddot]);
 % 
 % N_ext = simplify(D_dot_ext - 2*C_ext);
@@ -52,11 +53,31 @@ robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com
 E2_ext = kinematics_ext.jacobian(:,:,swing_leg);
 E2 = kinematics.jacobian(:,:,swing_leg);
 
+
+%==========================================================================
 matrices.D = D_ext;
 matrices.C = C_ext;
-%this will autogenerate a file with the Dynamic Matrices in /sim_utilities/dynMatrices
-autogenfile_DM('DMsomethin', matrices);
- 
+matrices.G = G_ext;
+matrices.E2 = E2_ext;
+
+i = 1;
+fileName = sprintf('DM%dLink_par%d', length(D),i);
+startingFolder = what('dynMatrices');
+checkFile = fullfile(startingFolder.path, fileName);
+while exist(checkFile, 'file') == 2
+    previousPar = sprintf('_par%s',num2str(i));
+    nextPar = sprintf('_par%s',num2str(i+1));
+    checkFile = strrep(checkFile, previousPar, nextPar);
+    i = i+1;
+end
+
+fileName = strrep(fileName, previousPar, nextPar);
+
+%this will autogenerate a file with the Dynamic Matrices in:
+%>>.../sim_utilities/dynMatrices
+
+autogenfile_DM(fileName, matrices, robotData);
+%==========================================================================
  
 
     

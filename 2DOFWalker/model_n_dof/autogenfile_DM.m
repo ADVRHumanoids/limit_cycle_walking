@@ -1,15 +1,23 @@
-function autogenfile_DM(baseFileName, matrices)
+function autogenfile_DM(baseFileName, matrices, robotData)
     
+    matrixName = fieldnames(matrices);
 
-    
     FileName = sprintf('%s.m', baseFileName);
     startingFolder = what('dynMatrices');
     fullFileName = fullfile(startingFolder.path, FileName);
     % Open a new file.
     fileID = fopen(fullFileName, 'wt');
     % Load it up.
-    for i = 1:length(matrices)
-        fill_autogenFile(matrices(i),fileID)   %<---------------
+    fprintf(fileID, '%Dynamic matrices for a %d-link walker.\n', (size(matrices.(matrixName{1}))-2));
+    fprintf(fileID, '%Robot Parameters: \n');
+    fprintf(fileID, '%Number of links: %d\n',robotData.n_link);
+    fprintf(fileID, '%Length of links: %d\n',robotData.link_length);
+    fprintf(fileID, '%Position of CoM: %d\n',robotData.com_position);
+    fprintf(fileID, '%Mass of links: %d\n',robotData.mass);
+    fprintf(fileID, '%Inertia of links: %d\n',robotData.inertia);
+    fprintf(fileID, '%Gravity: %d\n\n',robotData.gravity);
+    for i = 1:numel(fieldnames(matrices))
+        fill_autogenFile(matrices.(matrixName{i}),matrixName{i},fileID)   %<---------------
     end
     % Close the file.
     fclose(fileID);
@@ -18,11 +26,11 @@ function autogenfile_DM(baseFileName, matrices)
 
 end
 
-function fill_autogenFile(matrix,fileID)
+function fill_autogenFile(matrix,matrixName,fileID)
     
-    matrixName = fieldnames(matrix);
+
     MatrixCell = remodelMatrix(matrix);
-    fprintf(fileID, '%s = [ \n', matrixName{1});
+    fprintf(fileID, '%s = [ \n', matrixName);
     for i = 1:length(MatrixCell)
     fprintf(fileID, '%s;\n',MatrixCell{i});
     end
@@ -33,8 +41,8 @@ end
 
 function MatrixCell = remodelMatrix(matrix)
 
-MyFieldNames = fieldnames(matrix);
-tempMatrix = getfield(matrix,MyFieldNames{1});
+
+tempMatrix = matrix;
 
 charMatrix = cell(size(tempMatrix,1),1);
 tempCell = cell(size(tempMatrix,1),1);

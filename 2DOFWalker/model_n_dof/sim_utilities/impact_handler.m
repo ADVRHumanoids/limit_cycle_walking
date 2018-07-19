@@ -3,8 +3,7 @@ function [q_After,q_dot_After] = impact_handler(q_Before,q_dot_Before,relabeling
 q_After = q_Before;
 n_link = length(q_Before)-2;
 %====================impact model===============
-[D,~,~] = calcDynMatrices(q_Before,q_dot_Before);
-E2 = calcJacobianMatrix(q_Before);
+[D,~,~,E2] = calcDynMatrices(q_Before,q_dot_Before);
 deltaF2 = -inv(E2 * inv(D) * E2.') * E2 * [eye(n_link); zeros(2,n_link)];
 deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2,n_link)];
 %===================================

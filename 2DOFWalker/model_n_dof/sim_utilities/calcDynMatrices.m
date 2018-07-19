@@ -1,4 +1,4 @@
-function [D,C,G] = calcDynMatrices(q,q_dot)
+function [D,C,G,E2] = calcDynMatrices(q,q_dot)
 
 
 if length(q) == 7 
