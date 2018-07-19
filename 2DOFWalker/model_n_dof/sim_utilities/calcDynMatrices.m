@@ -1,5 +1,8 @@
 function [D,C,G,E2] = calcDynMatrices(q,q_dot)
 
+%here you run only the name of the file from the folder dynMatrices,
+% run(fileName)
+
 
 if length(q) == 7 %5-link robot
 elseif length(q) == 6 %4-link robot

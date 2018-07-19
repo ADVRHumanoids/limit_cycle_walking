@@ -4,6 +4,11 @@ Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a n-link walker=====================
 robotTree; %change here parameters
+
+%here you probably know the name of the file, so you pass to
+%calcDynMatrices the filename
+
+%in calcDynMatrices...
 %==========================================================================
 slope = 0;
 n_link = length(parent_tree);
