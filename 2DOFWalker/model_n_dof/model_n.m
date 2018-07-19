@@ -69,9 +69,8 @@ while exist(checkFile, 'file') == 2
     nextPar = sprintf('_par%s',num2str(i+1));
     checkFile = strrep(checkFile, previousPar, nextPar);
     i = i+1;
+    fileName = strrep(fileName, previousPar, nextPar);
 end
-
-fileName = strrep(fileName, previousPar, nextPar);
 
 %this will autogenerate a file with the Dynamic Matrices in:
 %>>.../sim_utilities/dynMatrices
