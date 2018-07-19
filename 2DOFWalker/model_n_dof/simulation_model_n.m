@@ -1,38 +1,14 @@
 close all; clear all; clc;
-%check if parameters here are the same used in model_n
 
 Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
-%==================simulation model of a 2 link walker extended========================
-flagSim = 1;
-slope = 0; %-pi/28;
-parent_tree = [0 1 1];
-waist = [3];
-swing_leg = 2;
-n_link = length(parent_tree);
-relabeling;
-
-
-Base = [0;0];
-
-link_length = [1 1 0.5];
-com_position = [0.8 0.8 0.5/2]; %0.8
-m = [0.3 0.3 1]; %0.3
-I = [0.03 0.03 0.1];
-g = 9.81;
-
-% link_length = link_length * ones(1,length(parent_tree));
-% com_position = [1-com_position, com_position * ones(1,length(parent_tree)-1)];
-% m = mass * ones(1,length(parent_tree));
-% I = inertia * ones(1,length(parent_tree));
-% I = inertia;
-
+%==================simulation model of a n-link walker=====================
+robotTree; %change here parameters
 %==========================================================================
-robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSim', flagSim);
-
-
-
-
+slope = 0;
+n_link = length(parent_tree);
+relabelingMatrices = getRelabelingMatrices(parent_tree, waist);
+%==========================================================================
                       %pos / vel / acc
 % startingParameters = [ pi/18,   0,    0;...  %q1    pi/18
 %                       -pi/18,   0,    0;...  %q2     -pi/18
@@ -140,8 +116,6 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
     
     control_flag = 1;
     impact_detected = 1;
-    
-%     qd = -pi - qd + q(2);
 
 end
 %============controller===============
@@ -150,6 +124,7 @@ if control_flag == 1
 end
 %=====================================
 impact_detected = 0;
+
 %=========mechanicalenergy============
 % mechanical energy 1 link
 % T = (981*cos(q(1)))/200 + (333*q_dot(1)^2)/2000;
@@ -168,3 +143,10 @@ update_plot
 %==========
 %==========
  end
+ 
+ 
+ % link_length = link_length * ones(1,length(parent_tree));
+% com_position = [1-com_position, com_position * ones(1,length(parent_tree)-1)];
+% m = mass * ones(1,length(parent_tree));
+% I = inertia * ones(1,length(parent_tree));
+% I = inertia;

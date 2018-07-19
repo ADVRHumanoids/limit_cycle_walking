@@ -4,7 +4,7 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
 
 
     
-    if robotData.flagSim == 1
+    if robotData.flagSimulation == 1
         
         q = generalizedVariables;
         z = generalizedVariables(end-1:end);
@@ -24,7 +24,7 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
 
     end
     
-    if robotData.flagSim == 0
+    if robotData.flagSimulation == 0
 
         rp_rel = sym(zeros(3,length(parent_tree)));
         rc_rel = sym(zeros(3,length(parent_tree)));
@@ -92,7 +92,7 @@ function kinematics = kinematics_n(parent_tree, generalizedVariables, robotData)
 %==========================================================================
 
 %==========================================================================
-    if robotData.flagSim == 0
+    if robotData.flagSimulation == 0
         
         for i = 1:length(parent_tree)
             rc_abs(:,:,i) = R_abs(:,:,i) * rc_rel(:,i);

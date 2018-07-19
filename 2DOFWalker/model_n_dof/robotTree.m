@@ -1,56 +1,76 @@
-syms m1 m2 ...
-q1(t) q2(t) q3(t) q4(t)  q5(t) ...
-q1_dot(t) q2_dot(t) q3_dot(t) q4_dot(t) q5_dot(t) ...
-q1_Ddot(t) q2_Ddot(t) q3_Ddot(t) q4_Ddot(t) q5_Ddot(t) ...
-z1(t) z2(t) z1_dot(t) z2_dot(t) z1_Ddot(t) z2_Ddot(t) ...
-I1 I2 ...
-g ...
-slope ...
-I l lc
+%% robot walker tree
+% flagSim ---> 1 or 0; defines if model is for simulation or not
+% parent_tree ---> parent tree defining the links of the robot
+% swing_leg ---> swing leg of the robot
 
-flagSim = 0;
+% this script will create a full model (also extended with floating base)
+% and will generate dynamic matrices file in .../sim_utilities/dyMatrices for the
+% simulation.
+
+close all; clear all; clc;
+
+Folder = cd;
+addpath(genpath(fullfile(Folder, '..')));
+%==========================================================================
+%user defined ...
+
+flagSimulation = 1;
+% parent_tree = [0 1 1];
 % parent_tree = [0 1];
-parent_tree = [0 1];
-% parent_tree = [0 1 2 3];
-swing_leg = 2;
-n_link = length(parent_tree);
-% 
+parent_tree = [0 1 2 3];
+swing_leg = 3;
+waist = []; %needed for the relabeling
 
-% q = [q1(t)];
-% q_dot = [q1_dot(t)];
-% q_Ddot = [q1_Ddot(t)];
+% parameterSet = 1;
+% link_length = [1 1 0.5];
+% com_position = [0.8 0.8 0.5/2]; %0.8
+% m = [0.3 0.3 1]; %0.3
+% I = [0.03 0.03 0.1];
+% g = 9.81;
 
-% 
-q = [q1(t), q2(t)];
-q_dot = [q1_dot(t), q2_dot(t)];
-q_Ddot = [q1_Ddot(t), q2_Ddot(t)];
-
-% q = [q1(t), q2(t) q3(t)];
-% q_dot = [q1_dot(t), q2_dot(t) q3_dot(t)];
-% q_Ddot = [q1_Ddot(t), q2_Ddot(t) q3_Ddot(t)];
-
-% q = [q1(t), q2(t), q3(t), q4(t)];
-% q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t),];
-% q_Ddot = [q1_Ddot(t), q2_Ddot(t), q3_Ddot(t), q4_Ddot(t)];
-
-% q = [q1(t), q2(t), q3(t), q4(t), q5(t)];
-% q_dot = [q1_dot(t), q2_dot(t), q3_dot(t), q4_dot(t)  q5_dot(t)];
-% q_Ddot = [q1_Ddot(t), q2_Ddot(t), q3_Ddot(t), q4_Ddot(t), q5_Ddot(t)];
-
-z = [z1(t), z2(t)];
-z_dot = [z1_dot(t), z2_dot(t)];
-z_Ddot = [z1_Ddot(t), z2_Ddot(t)];
-
-qe = [q, z];
-qe_dot = [q_dot, z_dot];
-qe_Ddot = [q_Ddot, z_Ddot];
+parameterSet = 2;
+link_length = [1 1 1 1];
+com_position = [0.2 0.8 0.8 0.8];
+m = [0.3 0.3 0.3 0.3];
+I = [0.03 0.03 0.03 0.03];
+g = 9.81;
 
 
-generalizedVariablesExtended.qe = qe;
-generalizedVariablesExtended.qe_dot = qe_dot;
-generalizedVariablesExtended.qe_Ddot = qe_Ddot;
+%check if file with specified parameter set already exists
+
+fileName = ['DM',num2str(length(parent_tree)),'Link_par', num2str(parameterSet)];
+checkFile = what('sim_utilities/dynMatrices');
+%========================generate model and files==========================
+robotData = setRobotParameters(link_length,com_position,m,I,g,parent_tree,flagSimulation);
+
+if isempty(find(~cellfun('isempty',strfind(checkFile.m, fileName)), 1)) || ~flagSimulation
+    
+    if ~flagSimulation
+        disp('Creating model of the robot...');
+    end
+    if flagSimulation
+        disp('Dynamic matrices for simulation not found. Starting autogeneration...');
+    end
+    
+    robotData.flagSimulation = 0; %first, I have to create matrices, so I put simulation to zero
+    [generalizedVariables,generalizedVariablesExtended] = autogen_robotVariables(parent_tree);
+    model = generateModel(generalizedVariables,generalizedVariablesExtended,parent_tree,swing_leg,robotData);
+    if flagSimulation
+        robotData.flagSimulation = 1;
+        generateDynamicMatrices(model,fileName);
+    end
+    disp('Finished');
+end
+%==========================================================================
 
 
-generalizedVariables.q = q;
-generalizedVariables.q_dot = q_dot;
-generalizedVariables.q_Ddot = q_Ddot;
+
+
+
+
+
+
+
+
+
+
