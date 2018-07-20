@@ -16,24 +16,24 @@ addpath(genpath(fullfile(Folder, '..')));
 
 flagSimulation = 1;
 % parent_tree = [0 1 1];
-% parent_tree = [0 1];
-parent_tree = [0 1 2 3];
-swing_leg = 3;
+parent_tree = [0 1];
+% parent_tree = [0 1 2 3];
+swing_leg = 2;
 waist = []; %needed for the relabeling
 
-% parameterSet = 1;
-% link_length = [1 1 0.5];
-% com_position = [0.8 0.8 0.5/2]; %0.8
-% m = [0.3 0.3 1]; %0.3
-% I = [0.03 0.03 0.1];
-% g = 9.81;
-
-parameterSet = 2;
-link_length = [1 1 1 1];
-com_position = [0.2 0.8 0.8 0.8];
-m = [0.3 0.3 0.3 0.3];
-I = [0.03 0.03 0.03 0.03];
+parameterSet = 1;
+link_length = [1 1 0.5];
+com_position = [0.8 0.8 0.5/2]; %0.8
+m = [0.3 0.3 1]; %0.3
+I = [0.03 0.03 0.1];
 g = 9.81;
+
+% parameterSet = 2;
+% link_length = [1 1 1];
+% com_position = [0.2 0.8 0.8];
+% m = [0.3 0.3 0.3];
+% I = [0.03 0.03 0.03];
+% g = 9.81;
 
 
 %check if file with specified parameter set already exists

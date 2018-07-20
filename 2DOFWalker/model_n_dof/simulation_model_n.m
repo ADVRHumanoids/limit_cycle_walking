@@ -23,7 +23,7 @@ relabelingMatrices = getRelabelingMatrices(parent_tree, waist);
 %                        0,       0,    0;...  %z1
 %                        0,       0,    0];    %z2
 startingParameters = [                      pi/18,  0,    0;...  %q1     %pi/18
-                      pi-(pi-2*(pi/2-(1/18*pi))),  0,    0;...  %q2      3*pi/4,    50,    0,...  %3*pi/4 + pi/18
+                      pi-(pi-2*(pi/2-(1/18*pi))) ,  0,    0;...  %q2      3*pi/4,    50,    0,...  %pi-(pi-2*(pi/2-(1/18*pi)))
                                            -pi/18,  0,    0;...
                                                 0,  0,    0;...  %z1
                                                 0,  0,    0];    %z2
@@ -32,7 +32,6 @@ startingParameters = [                      pi/18,  0,    0;...  %q1     %pi/18
 q = startingParameters(1:n_link+2,1);
 q_dot = startingParameters(1:n_link+2,2);
 q_Ddot = startingParameters(1:n_link+2,3);
-
 
 Links = KinematicsLinks(q,parent_tree,robotData);  %update kinematics
 
@@ -73,7 +72,7 @@ distance_legs = 0;
 j = j + 1;
 time = (j-1)*dt;
 
-[D_ext,C_ext,G_ext] = calcDynMatrices(q,q_dot);
+[D_ext,C_ext,G_ext] = calcDynMatrices(q,q_dot,fileName);
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 D = D_ext(1:n_link,1:n_link);
 C = C_ext(1:n_link,1:n_link);
@@ -110,7 +109,7 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
         first_impact = 1;
     end
     
-    [q,q_dot] = impact_handler(q,q_dot,relabelingMatrices);
+    [q,q_dot] = impact_handler(q,q_dot,relabelingMatrices,fileName);
     
     %===========change base=====================================
     Base = [Links(swing_leg,1,2); yLineTerrain]; %TODO
@@ -124,9 +123,9 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
 
 end
 %============controller===============
-if control_flag == 1
-    [tau,h] = controllerWalker(q,q_dot, D,C,G);
-end
+% if control_flag == 1
+%     [tau,h] = controllerWalker(q,q_dot, D,C,G);
+% end
 %=====================================
 impact_detected = 0;
 

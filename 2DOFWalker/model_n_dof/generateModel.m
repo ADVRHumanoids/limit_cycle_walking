@@ -35,7 +35,5 @@ model.dynamicMatricesExtended.C = C_ext;
 model.dynamicMatricesExtended.G = G_ext;
 model.dynamicMatricesExtended.E2 = E2_ext;
 model.robotData = robotData;
-
-
-model_n_created = 1;
+%==========================================================================
 end
