@@ -1,4 +1,4 @@
-function [Links,kinematics] = KinematicsLinks(q,parent_tree,robotData)
+function [Links, kinematics] = KinematicsLinks(q,parent_tree,robotData)
 
 generalizedVariables = q;
 kinematics = kinematics_n(parent_tree, generalizedVariables, robotData);

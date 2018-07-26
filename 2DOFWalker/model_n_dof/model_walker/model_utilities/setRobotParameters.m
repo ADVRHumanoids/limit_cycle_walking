@@ -1,12 +1,18 @@
 function robotData = setRobotParameters(link_length,com_position,m,I,g,parent_tree,flagSimulation)
-%% return struct of parameters of the robot
-% n_link
-% link_length
-% com_position
-% mass
-% inertia
-% gravity
+%% returns struct of parameters of the robot
+% If flagSimulation is set to 1, this function uses symbolic values
 
+% Parameters:
+% >> n_link
+% >> link_length
+% >> com_position
+% >> mass
+% >> inertia
+% >> gravity
+
+    % author: Francesco Ruscelli
+    % e-mail: francesco.ruscelli@iit.it
+    
 n_link = length(parent_tree);
 
     if ~flagSimulation
@@ -15,6 +21,7 @@ n_link = length(parent_tree);
         com_position = sym('lc',[n_link,1]).';
         m = sym('m',[n_link,1]);
         I = sym('I',[n_link,1]);
+        g = sym('g');
 
     end
     

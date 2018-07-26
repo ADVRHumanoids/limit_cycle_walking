@@ -1,5 +1,13 @@
 function [D,C,G] = dynamicsRobot(eqMotion, generalizedVariables,robotData)
+%% generate the dynamic model of the PLANAR robot walker (without floating base)
+% It requires:
+% >> eqMotion --> equation of motion of the model of the robot walker
+% >> generalizedVariables --> symbolic variables of the robot
+% >> robotData --> struct with robot parameters
 
+    % author: Francesco Ruscelli
+    % e-mail: francesco.ruscelli@iit.it
+    
 g = robotData.gravity;
 
 q = generalizedVariables.q;

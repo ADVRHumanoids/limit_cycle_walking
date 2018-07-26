@@ -19,7 +19,7 @@ G = model.dynamicMatrices.G;
 %diffeomorphism onto its image
 
 % as you can see, the Zero Dynamics gotten in this way, with h = q1, are 
-% exactly the same as the ones got in simulation_n (part two)
+% exactly the same as the ones got in simulation_n (found in part two of this file)
 
 ksi = sym(zeros(2,1));
 kappa = sym(zeros(2,1));
@@ -52,7 +52,6 @@ ksi_Z_dot(2) = kappa_Z(2);
 
 q1_Ddot_ZeroDyn =  simplify((kappa_Z(1) * kappa_Z(2)));
 %% =====================zero dynamics (PART II)============================
-% 
 %zero dynamics from the simulation_n, given the input control to zero the
 %output. u = inv(LgLfh) * (L2fh);
 %Zero dynamics of the system is q1_Ddot_ZeroDyn1. q2 was chosen as the

@@ -1,7 +1,10 @@
 function relabelingMatrices = getRelabelingMatrices(parent_tree, waist)
-%% relabeling matrices
+%% relabeling matrices for the robot walker
 % get relabeling matrices from the parent tree
 
+    % author: Francesco Ruscelli
+    % e-mail: francesco.ruscelli@iit.it
+    
     n_link = length(parent_tree);
     relabelingMatrices.piMatrix = pi*[1; zeros(n_link-1,1)];
     relabelingMatrices.MatrixRelabel = zeros(n_link,n_link);

@@ -1,3 +1,9 @@
+%%  simulation of a n-link robot walker
+
+    % author: Francesco Ruscelli
+    % e-mail: francesco.ruscelli@iit.it
+    
+%==========================================================================
 close all; clear all; clc;
 
 Folder = cd;
@@ -5,10 +11,7 @@ addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a n-link walker=====================
 robotTree; %change here parameters
 
-%here you probably know the name of the file, so you pass to
-%calcDynMatrices the filename
 
-%in calcDynMatrices...
 %==========================================================================
 slope = 0;
 n_link = length(parent_tree);
@@ -33,7 +36,7 @@ q = startingParameters(1:n_link+2,1);
 q_dot = startingParameters(1:n_link+2,2);
 q_Ddot = startingParameters(1:n_link+2,3);
 
-Links = KinematicsLinks(q,parent_tree,robotData);  %update kinematics
+[Links,kinematics] = KinematicsLinks(q,parent_tree,robotData);  %update kinematics
 
 yLineTerrain = double(tan(slope) * Links(n_link,1,2));
 yLineTerrain_old = yLineTerrain;
@@ -103,7 +106,7 @@ yLineTerrain = double(tan(slope) * Links(swing_leg,1,2));
 % step_condition = Links(swing_leg,1,2) > Base(1); %link,axis,begin/end  
 step_condition = Links(swing_leg,1,2) > Base(1) + distance_legs;
 if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_leg,2,2) > yLineTerrain_old  %link,axis,begin/end  
-    
+% if q(1) >= pi/18
     if ~first_impact 
         distance_legs = Links(swing_leg,1,2);
         first_impact = 1;
@@ -114,12 +117,12 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
     %===========change base=====================================
     Base = [Links(swing_leg,1,2); yLineTerrain]; %TODO
     q(end-1:end) = Base;
-    Links = KinematicsLinks(q,parent_tree,robotData); %update kinematics
+    [Links,kinematics] = KinematicsLinks(q,parent_tree,robotData); %update kinematics
     %===========================================================
 
     
     control_flag = 1;
-    impact_detected = 1;
+%     impact_detected = 1;
 
 end
 %============controller===============
@@ -127,8 +130,9 @@ end
 %     [tau,h] = controllerWalker(q,q_dot, D,C,G);
 % end
 %=====================================
-impact_detected = 0;
+% impact_detected = 0;
 
+%=====================================
 %=========mechanicalenergy============
 % mechanical energy 1 link
 % T = (981*cos(q(1)))/200 + (333*q_dot(1)^2)/2000;
@@ -149,8 +153,3 @@ update_plot
  end
  
  
- % link_length = link_length * ones(1,length(parent_tree));
-% com_position = [1-com_position, com_position * ones(1,length(parent_tree)-1)];
-% m = mass * ones(1,length(parent_tree));
-% I = inertia * ones(1,length(parent_tree));
-% I = inertia;

@@ -1,9 +1,18 @@
 function model = generateModel(generalizedVariables,generalizedVariablesExtended,parent_tree,swing_leg,robotData)
-%% dynamic model of a n link walker
+%% dynamic model of a n link PLANAR walker
+% It requires:
+% >> generalizedVariables -->  symbolic variables of the robot
+% >> generalizedVariablesExtended --> symbolic variables of the robot + floating base
+% >> parent_tree --> an array describing how the links are connected
+% >> swing_leg --> which leg is the starting swinging leg
+% >> robotData --> struct with robot parameters
+
+    % author: Francesco Ruscelli
+    % e-mail: francesco.ruscelli@iit.it
+    
 [D_ext,C_ext,G_ext,kinematics_ext,dynamics_ext] = createModelExtendedWalker(parent_tree,generalizedVariablesExtended,robotData);
 [D,C,G,kinematics,dynamics] = createModelWalker(parent_tree,generalizedVariables,robotData);
-%======================
-% save('dynMatricesExtendedSymbolic.mat','D','C','G');
+
 %=============================check========================================
 % D_dot_ext = diff_t(D_ext,[generalizedVariablesExtended.qe,generalizedVariablesExtended.qe_dot], [generalizedVariablesExtended.qe_dot,generalizedVariablesExtended.qe_Ddot]);
 % 
@@ -21,7 +30,7 @@ E2_ext = kinematics_ext.jacobian(:,:,swing_leg);
 E2 = kinematics.jacobian(:,:,swing_leg);
 
 
-%==========================================================================
+%=======================create model struct================================
 model.kinematics_ext = kinematics_ext;
 model.kinematics = kinematics;
 model.dynamics_ext = dynamics_ext;

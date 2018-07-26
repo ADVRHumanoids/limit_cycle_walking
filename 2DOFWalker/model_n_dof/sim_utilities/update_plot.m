@@ -21,6 +21,14 @@ set(plot_q,'xdata',time_record,'ydata',q_record(1,:));
 set(plot_q_dot,'xdata',time_record,'ydata',q_dot_record(1,:));
 % end
 
+%==========CoM position=============================
+for i = 1:n_link
+set(plot_CoM(i),'xdata',kinematics.linksCoMPosition(1,:,i),'ydata', kinematics.linksCoMPosition(2,:,i));
+end
+set(plot_total_CoM1,'xdata',kinematics.CoM_position(1),'ydata', kinematics.CoM_position(2)); %2 plot to make cross inside circle
+set(plot_total_CoM2,'xdata',kinematics.CoM_position(1),'ydata', kinematics.CoM_position(2));
+%===================================================
+
 %=========mechanical energy=========================
 % T_record = [T_record T];
 % set(energyPlot, 'xdata', time_record,'ydata', T_record);
@@ -43,4 +51,7 @@ set(plot_q_dot,'xdata',time_record,'ydata',q_dot_record(1,:));
 % set(plot_controller(i), 'xdata', time_record, 'ydata', controller_record(i,:));
 % end
 %===================================================
+
+%===================================================
+
 drawnow;

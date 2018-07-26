@@ -24,6 +24,20 @@ set(Link(i),'xdata',Links(i,1,:),'ydata',Links(i,2,:));
 end
 %===========================================
 
+%==========CoM position=============================
+for i = 1:n_link
+    plot_CoM(i) = plot(0,0,'x'); hold on;
+end
+plot_total_CoM1 = plot(0,0,'ko','MarkerSize',7,'Linewidth',1); hold on; %2 plot to make cross inside circle
+plot_total_CoM2 = plot(0,0,'kx','MarkerSize',7,'Linewidth',1); hold on;
+
+for i = 1:n_link
+set(plot_CoM(i),'xdata',kinematics.linksCoMPosition(1,:,i),'ydata', kinematics.linksCoMPosition(2,:,i));
+end
+set(plot_total_CoM1,'xdata',kinematics.CoM_position(1),'ydata', kinematics.CoM_position(2)); %2 plot to make cross inside circle
+set(plot_total_CoM2,'xdata',kinematics.CoM_position(1),'ydata', kinematics.CoM_position(2));
+%===================================================
+
 fig2 = figure(2);
 set(fig2,'Position',[  -609   503   560   420])
 % set(fig2,'Position',[      8    42   560   420])
@@ -70,6 +84,7 @@ ylim([-100 100]);
 % ylim([-1 1]);
 % controller_record = zeros(n_link-1,1);
 %===================================================
+
 
 
 time_record = 0;

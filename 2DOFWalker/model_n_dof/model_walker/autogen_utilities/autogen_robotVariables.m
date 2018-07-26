@@ -1,11 +1,16 @@
 function [generalizedVariables,generalizedVariablesExtended] = autogen_robotVariables(parent_tree)
+%% This function auto-generates the generalized variables for a PLANAR robot walker
+% It generates both the robot variables and the floating base (extended model)
 
+    % author: Francesco Ruscelli
+    % e-mail: francesco.ruscelli@iit.it
+    
 n_link = length(parent_tree);
 fileName = sprintf('generalizedVariables_%glink', n_link);
-startingFolder = what('model_n_dof');
+startingFolder = what('autogen_generalizedVariables');
 checkFile = fullfile(startingFolder.path, fileName);
 if exist(checkFile, 'file') ~= 2
-   autogenGeneralizedVariables(fileName, n_link); 
+   autogenGeneralizedVariables(fileName, startingFolder, n_link); 
 end
 
 run(fileName);
@@ -25,10 +30,10 @@ generalizedVariables.q_Ddot = q_Ddot;
 end
 %==========================================================================
 
-function autogenGeneralizedVariables(baseFileName, n_link)
+function autogenGeneralizedVariables(baseFileName, startingFolder, n_link)
 
     FileName = sprintf('%s.m', baseFileName);
-    startingFolder = what('model_walker');
+%     startingFolder = what('model_walker');
     fullFileName = fullfile(startingFolder.path, FileName);
     % Open a new file.
     fileID = fopen(fullFileName, 'wt');
