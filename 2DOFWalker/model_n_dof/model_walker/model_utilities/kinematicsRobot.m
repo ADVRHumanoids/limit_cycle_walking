@@ -1,4 +1,4 @@
-function kinematics = kinematicsRobot(parent_tree, generalizedVariables, robotData)
+function kinematics = kinematicsRobot(generalizedVariables)
 %% generates kinematics of a PLANAR robot walker (without floating base)
 % It can be used for 
 % - simulation: calculates for each iteration the robot kinematics
@@ -11,6 +11,9 @@ function kinematics = kinematicsRobot(parent_tree, generalizedVariables, robotDa
 
     % author: Francesco Ruscelli
     % e-mail: francesco.ruscelli@iit.it
+    robotData = getRobotData;
+    parent_tree = robotData.parent_tree;
+    
     n_link = length(parent_tree);
     
     if robotData.flagSimulation == 1

@@ -18,7 +18,7 @@ addpath(genpath(fullfile(Folder, '..')));
 %user defined ...
 %change to 1 if this file is used for simulation (in simulation_model_n)
 %change to 0 if this file is used to generate symbolic model
-flagSimulation = 0; 
+flagSimulation = 1; 
 
 %define the parent tree of the robot walker
 % parent_tree = [0 1 1];
@@ -53,7 +53,8 @@ g = 9.81;
 fileName = ['DM',num2str(length(parent_tree)),'Link_par', num2str(parameterSet)];
 checkFile = what('sim_utilities/dynMatrices');
 %========================generate model and files==========================
-robotData = setRobotParameters(link_length,com_position,m,I,g,parent_tree,flagSimulation);
+setRobotParameters(link_length,com_position,m,I,g,parent_tree,flagSimulation); %global variable robotData
+robotData = getRobotData;
 
 if isempty(find(~cellfun('isempty',strfind(checkFile.m, fileName)), 1)) || ~flagSimulation
     
@@ -64,9 +65,10 @@ if isempty(find(~cellfun('isempty',strfind(checkFile.m, fileName)), 1)) || ~flag
         disp('Dynamic matrices for simulation not found. Starting autogeneration...');
     end
     
+
     robotData.flagSimulation = 0; %first, I have to create matrices, so I put simulation to zero
     [generalizedVariables,generalizedVariablesExtended] = autogen_robotVariables(parent_tree);
-    model = generateModel(generalizedVariables,generalizedVariablesExtended,parent_tree,swing_leg,robotData);
+    model = generateModel(generalizedVariables,generalizedVariablesExtended,swing_leg);
     
     if flagSimulation
         robotData.flagSimulation = 1;

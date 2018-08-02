@@ -1,4 +1,4 @@
-function model = generateModel(generalizedVariables,generalizedVariablesExtended,parent_tree,swing_leg,robotData)
+function model = generateModel(generalizedVariables,generalizedVariablesExtended,swing_leg)
 %% dynamic model of a n link PLANAR walker
 % It requires:
 % >> generalizedVariables -->  symbolic variables of the robot
@@ -9,9 +9,9 @@ function model = generateModel(generalizedVariables,generalizedVariablesExtended
 
     % author: Francesco Ruscelli
     % e-mail: francesco.ruscelli@iit.it
-    
-[D_ext,C_ext,G_ext,kinematics_ext,dynamics_ext] = createModelExtendedWalker(parent_tree,generalizedVariablesExtended,robotData);
-[D,C,G,kinematics,dynamics] = createModelWalker(parent_tree,generalizedVariables,robotData);
+    robotData = getRobotData;    
+    [D_ext,C_ext,G_ext,kinematics_ext,dynamics_ext] = createModelExtendedWalker(generalizedVariablesExtended);
+    [D,C,G,kinematics,dynamics] = createModelWalker(generalizedVariables);
 
 %=============================check========================================
 % D_dot_ext = diff_t(D_ext,[generalizedVariablesExtended.qe,generalizedVariablesExtended.qe_dot], [generalizedVariablesExtended.qe_dot,generalizedVariablesExtended.qe_Ddot]);
@@ -26,23 +26,23 @@ function model = generateModel(generalizedVariables,generalizedVariablesExtended
 %====================derivative of kinetic energy==========================
 % K_dot = diff_t(dynamics.KineticEnergy,[q,q_dot], [q_dot, q_Ddot]);
 %==========================================================================
-E2_ext = kinematics_ext.jacobian(:,:,swing_leg);
-E2 = kinematics.jacobian(:,:,swing_leg);
+    E2_ext = kinematics_ext.jacobian(:,:,swing_leg);
+    E2 = kinematics.jacobian(:,:,swing_leg);
 
 
 %=======================create model struct================================
-model.kinematics_ext = kinematics_ext;
-model.kinematics = kinematics;
-model.dynamics_ext = dynamics_ext;
-model.dynamics = dynamics;
-model.dynamicMatrices.D = D;
-model.dynamicMatrices.C = C;
-model.dynamicMatrices.G = G;
-model.dynamicMatrices.E2 = E2;
-model.dynamicMatricesExtended.D = D_ext;
-model.dynamicMatricesExtended.C = C_ext;
-model.dynamicMatricesExtended.G = G_ext;
-model.dynamicMatricesExtended.E2 = E2_ext;
-model.robotData = robotData;
+    model.kinematics_ext = kinematics_ext;
+    model.kinematics = kinematics;
+    model.dynamics_ext = dynamics_ext;
+    model.dynamics = dynamics;
+    model.dynamicMatrices.D = D;
+    model.dynamicMatrices.C = C;
+    model.dynamicMatrices.G = G;
+    model.dynamicMatrices.E2 = E2;
+    model.dynamicMatricesExtended.D = D_ext;
+    model.dynamicMatricesExtended.C = C_ext;
+    model.dynamicMatricesExtended.G = G_ext;
+    model.dynamicMatricesExtended.E2 = E2_ext;
+    model.robotData = robotData;
 %==========================================================================
 end

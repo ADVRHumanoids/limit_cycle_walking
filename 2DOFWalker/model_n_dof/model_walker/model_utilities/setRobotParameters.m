@@ -1,4 +1,4 @@
-function robotData = setRobotParameters(link_length,com_position,m,I,g,parent_tree,flagSimulation)
+function setRobotParameters(link_length,com_position,m,I,g,parent_tree,flagSimulation)
 %% returns struct of parameters of the robot
 % If flagSimulation is set to 1, this function uses symbolic values
 
@@ -13,7 +13,8 @@ function robotData = setRobotParameters(link_length,com_position,m,I,g,parent_tr
     % author: Francesco Ruscelli
     % e-mail: francesco.ruscelli@iit.it
     
-n_link = length(parent_tree);
+    global robotData;
+    n_link = length(parent_tree);
 
     if ~flagSimulation
 
@@ -34,6 +35,5 @@ n_link = length(parent_tree);
 %     error('Number of link is not compatible with robot parameters.')
 %     end
     
-    robotData = struct('n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSimulation', flagSimulation);
-
+    robotData = struct('parent_tree',parent_tree,'n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSimulation', flagSimulation);   
 end

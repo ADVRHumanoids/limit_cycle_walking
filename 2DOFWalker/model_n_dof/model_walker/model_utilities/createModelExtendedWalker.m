@@ -1,4 +1,4 @@
-function [D,C,G,kinematics,dynamics] = createModelExtendedWalker(parent_tree,generalizedVariables,robotData)
+function [D,C,G,kinematics,dynamics] = createModelExtendedWalker(generalizedVariables)
 %% generates the EXTENDED model of a PLANAR n-link model (with floating base)
 % It requires:
 % >> parent_tree --> an array describing how the links are connected
@@ -8,8 +8,9 @@ function [D,C,G,kinematics,dynamics] = createModelExtendedWalker(parent_tree,gen
     % author: Francesco Ruscelli
     % e-mail: francesco.ruscelli@iit.it
     
-kinematics = kinematics_n(parent_tree,generalizedVariables,robotData);
-[eqMotion,dynamics] = Lagrange_n(kinematics,generalizedVariables,robotData);
-[D,C,G] = dynamics_n(eqMotion,generalizedVariables,robotData);
+
+    kinematics = kinematics_n(generalizedVariables);
+    [eqMotion,dynamics] = Lagrange_n(kinematics,generalizedVariables);
+    [D,C,G] = dynamics_n(eqMotion,generalizedVariables);
 
 end

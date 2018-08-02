@@ -1,4 +1,4 @@
-function [eqMotion,dynamics] = Lagrange_n(kinematics, generalizedVariables, robotData)
+function [eqMotion,dynamics] = Lagrange_n(kinematics, generalizedVariables)
 %% uses Lagrange to obtain the equation of motion of a PLANAR robot walker (with floating base, extended model)
 % It requires:
 % >> kinematics --> all the robot kinematics (in a struct)
@@ -8,7 +8,8 @@ function [eqMotion,dynamics] = Lagrange_n(kinematics, generalizedVariables, robo
     % author: Francesco Ruscelli
     % e-mail: francesco.ruscelli@iit.it
 
-
+    robotData = getRobotData;
+    
 % if robotData.flagSym == 1
     K_terms = sym(zeros(robotData.n_link,1));
     P_terms = sym(zeros(robotData.n_link,1));
