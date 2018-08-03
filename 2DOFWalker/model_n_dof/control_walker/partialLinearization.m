@@ -1,6 +1,6 @@
 clear all;
 clc;
-% linearization of a walkin robot choosing the output %h as wanted
+% linearization of a walking robot choosing the output %h as wanted
 
 
 %partial linearization of order 2, since the input is explicitly function
@@ -8,7 +8,7 @@ clc;
 
 % model of robot:
 % M * q_Ddot + C * q_dot + G = B * u
-% 
+
 syms d11 d12 d13 ... 
      d21 d22 d23 ...
      d31 d32 d33 ...

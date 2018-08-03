@@ -27,13 +27,14 @@ deltaqDotBar = inv(D) * E2.' * deltaF2 + [eye(n_link); zeros(2,n_link)];
 %===================================
 q_After(1:n_link) = relabelingMatrices.MatrixRelabel*q_Before(1:n_link) - relabelingMatrices.piMatrix;
 %==================check relabeling========================
-q_dot_check1 = deltaqDotBar * q_dot_Before(1:n_link);
+% q_dot_check1 = deltaqDotBar * q_dot_Before(1:n_link);
 %===============================================
 q_dot_After = deltaqDotBar * q_dot_Before(1:n_link); %impact model changes velocities
+% q_dot_After = q_dot_Before; %without impact model
 q_dot_After(1:n_link) = relabelingMatrices.MatrixRelabel*q_dot_After(1:n_link);
 % ==================check relabeling=======================
-[~,~,~,E2] = calcDynMatrices(q_After,q_dot_After,fileName);
-q_dot_check2 = q_dot_After;
-q_dot_check2(end-1:end) = 0;
-p2_check2 = E2*q_dot_check2;
+% [~,~,~,E2] = calcDynMatrices(q_After,q_dot_After,fileName);
+% q_dot_check2 = q_dot_After;
+% q_dot_check2(end-1:end) = 0;
+% p2_check2 = E2*q_dot_check2;
 %===============================================

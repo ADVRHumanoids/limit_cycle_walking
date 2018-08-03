@@ -21,8 +21,8 @@ addpath(genpath(fullfile(Folder, '..')));
 flagSimulation = 1; 
 
 %define the parent tree of the robot walker
-% parent_tree = [0 1 1];
 parent_tree = [0 1];
+% parent_tree = [0 1];
 % parent_tree = [0 1 2 3];
 
 %choose which leg is the initial swinging leg
