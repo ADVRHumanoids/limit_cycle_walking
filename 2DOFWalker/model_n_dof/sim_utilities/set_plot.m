@@ -48,9 +48,9 @@ plot_q1_Ddot = plot(0,0); hold on;
 
 plotq1_legend = legend('$q_1$','$\dot{q_1}$','$\ddot{q_1}$');
 set(plotq1_legend, 'Interpreter', 'latex');
-
+lim_q = 30;
 % xlim([0 10]);
-ylim([-20 20]);
+ylim([-lim_q lim_q]);
 
 subplot(2,1,2)
 plot_q2 = plot(0,0); hold on;
@@ -61,7 +61,7 @@ plotq2_legend = legend('$q_2$','$\dot{q_2}$','$\ddot{q_2}$');
 set(plotq2_legend, 'Interpreter', 'latex');
 
 % xlim([0 10]);
-ylim([-20 20]);
+ylim([-lim_q lim_q]);
 
 
 
@@ -107,12 +107,12 @@ q_Ddot_record = zeros(length(q_dot),1);
 %===================================================
 
 %===============xi==================================
-% fig7 = figure(7);
-% set(fig7,'Position',[  -601     7   560   420])
-% for i = 1:5
-% plot_xi(i) = plot(0,0); hold on;
-% end
-% xi_record = zeros(5,1);
-% legend('xi(1)','xi(2)','xi(3)','xi(4)','xi(5)')
+fig7 = figure(7);
+set(fig7,'Position',[  -601     7   560   420])
+for i = 1:5
+plot_xi(i) = plot(0,0); hold on;
+end
+xi_record = zeros(5,1);
+legend('xi(1)','xi(2)','xi(3)','xi(4)','xi(5)')
 %===================================================
 time_record = 0;

@@ -26,11 +26,11 @@ function [torque,y] = controllerWalker(q,q_dot, D,C,G)
         
     elseif n_link == 2
         
-%         y(1) = q(1);
-        y(1) = q(1) - (-pi - q(1) - q(2)); %not working properly
+        y(1) = q(2) - 5; % q goes to 5
+%         y(1) = q(1) - (-pi - q(1) - q(2)); %not working properly
 %         y(1) = q(1) - (-pi - q(1) - q(2));
-%         h_dq = [0 1]; %>> h_dq = jacobian(h,q);
-        h_dq = [2 1];
+        h_dq = [0 1]; %>> h_dq = jacobian(h,q);
+%         h_dq = [2 1];
         
         %as long as there are no velocities in the y, I can write h_dq_dq like this
         h_dq_dq = [zeros(length(y), n_link) h_dq];
@@ -45,8 +45,8 @@ function [torque,y] = controllerWalker(q,q_dot, D,C,G)
     LgLfh =  h_dq * inv(D) * B;
 
     v = finiteTime_stabilizer(h,Lfh);
-%     v = -PD_controller(h,Lfh);
-
+%     v = -PD_controller(h,Lfh); %another working version of the stabilizer
+%     v = 5; % does't go to 5
     u = inv(LgLfh) * (v - L2fh);
 
     torque = [0;u];

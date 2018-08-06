@@ -59,10 +59,10 @@ set(plot_total_CoM2,'xdata',kinematics.CoM_position(1),'ydata', kinematics.CoM_p
 %===================================================
 
 %===============xi==================================
-% xi_record = [xi_record, xi];
-% for i = 1:5
-% set(plot_xi(i), 'xdata', time_record,'ydata', xi_record(i,:));
-% end
+xi_record = [xi_record, xi];
+for i = 1:5
+set(plot_xi(i), 'xdata', time_record,'ydata', xi_record(i,:));
+end
 %===================================================
 %===================================================
 

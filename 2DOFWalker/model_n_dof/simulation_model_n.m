@@ -25,12 +25,14 @@ relabelingMatrices = getRelabelingMatrices(parent_tree, waist);
 %                        0,       0,    0;...  %z1
 %                        0,       0,    0];    %z2
 if n_link == 3
+    
     startingParameters = [                      pi/18,  0,    0;...  %q1     %pi/18
                            pi-(pi-2*(pi/2-(1/18*pi))),  0,    0;...  %q2      3*pi/4,    50,    0,...  %pi-(pi-2*(pi/2-(1/18*pi)))
                                                -pi/18,  0,    0;...
                                                     0,  0,    0;...  %z1
                                                     0,  0,    0];    %z2
 elseif n_link == 2
+    
     cyclic_var_value =  pi/16;
 
     startingParameters = [cyclic_var_value,  0,    0;...  %q1     %pi/18
@@ -63,8 +65,8 @@ set_plot;
 %=======
 %=======
 %-------------initial conditions for walking and controller----------------
-% [controller, q_dot_0] = calculateInitialConditions(startingParameters,fileName, relabelingMatrices, distance);
-% q_dot(1:n_link) = q_dot_0;
+[controller, q_dot_0] = calculateInitialConditions(startingParameters,fileName, relabelingMatrices, distance);
+q_dot(1:n_link) = q_dot_0;
 %--------------------------------------------------------------------------
 j = 0;
 time = 0;
@@ -136,13 +138,15 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
 
 end
 %============controller===============
-% w = (controller(1) + controller(2)* time);
-    w = 50;
-% if control_flag == 1
+w = (controller(1) + controller(2)* time);
+
+% v = finiteTime_stabilizer(w,controller(2));
+% v = -PD_controller(w,controller(2));
+if control_flag == 1
     
 %     [tau,h] = controllerWalker(q,q_dot, D,C,G);
-    tau = controllerWalker_ver1(w,q,q_dot, D,C,G);
-% end
+    tau = controllerWalker_ver1(v,q,q_dot, D,C,G);
+end
 
 xi = variableXi(q,q_dot,q_Ddot); %seems that it gives -w
 
