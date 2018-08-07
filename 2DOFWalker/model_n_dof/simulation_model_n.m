@@ -116,8 +116,8 @@ yLineTerrain_old = yLineTerrain;
 yLineTerrain = double(tan(slope) * Links(swing_leg,1,2));
 [Links,kinematics] = KinematicsLinks(q);  %update kinematics
 %============impact========================================================
-% step_condition = Links(swing_leg,1,2) > Base(1); %link,axis,begin/end  
-step_condition = Links(swing_leg,1,2) > Base(1) + abs(distance);
+step_condition = Links(swing_leg,1,2) > Base(1); %link,axis,begin/end  
+% step_condition = Links(swing_leg,1,2) > Base(1) + abs(distance);
 if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_leg,2,2) > yLineTerrain_old  %link,axis,begin/end  
 % if q(1) >= pi/18
 %     if ~first_impact 
@@ -140,13 +140,13 @@ end
 %============controller===============
 w = (controller(1) + controller(2)* time);
 
-% v = finiteTime_stabilizer(w,controller(2));
+v = finiteTime_stabilizer(w,controller(2));
 % v = -PD_controller(w,controller(2));
-if control_flag == 1
+% if control_flag == 1
     
 %     [tau,h] = controllerWalker(q,q_dot, D,C,G);
     tau = controllerWalker_ver1(v,q,q_dot, D,C,G);
-end
+% end
 
 xi = variableXi(q,q_dot,q_Ddot); %seems that it gives -w
 

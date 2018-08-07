@@ -50,4 +50,8 @@ function [D,C,G] = dynamics_n(eqMotion, generalizedVariables)
         end
     end
 
+    D = simplify(D);
+    C = simplify(C);
+    G = simplify(G);
+    
 end

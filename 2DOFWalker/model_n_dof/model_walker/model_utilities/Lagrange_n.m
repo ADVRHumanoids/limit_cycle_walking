@@ -23,52 +23,54 @@ function [eqMotion,dynamics] = Lagrange_n(kinematics, generalizedVariables)
 
 % end
 
-g = robotData.gravity;
+    g = robotData.gravity;
 
-qe =  generalizedVariables.qe;
-qe_dot =  generalizedVariables.qe_dot;
-qe_Ddot =  generalizedVariables.qe_Ddot;
-z = generalizedVariables.qe(end-1:end);
+    qe =  generalizedVariables.qe;
+    qe_dot =  generalizedVariables.qe_dot;
+    qe_Ddot =  generalizedVariables.qe_Ddot;
+    z = generalizedVariables.qe(end-1:end);
 
-parent_tree = kinematics.parent_tree;
-w_abs = kinematics.angularVelocity_absolute;
-vc_abs = kinematics.velocityCoM_absolute;
+    parent_tree = kinematics.parent_tree;
+    w_abs = kinematics.angularVelocity_absolute;
+    vc_abs = kinematics.velocityCoM_absolute;
 
-m = robotData.mass;
-I = robotData.inertia;
-
-
-
-for i = 1:length(parent_tree)
-    
-    K_terms(i) =   1/2 * m(i) * vc_abs(:,:,i).'*vc_abs(:,:,i) ...
-                 + 1/2 * w_abs(:,:,i).' * I(i) * w_abs(:,:,i);
-end
-
-K = sum(K_terms);
+    m = robotData.mass;
+    I = robotData.inertia;
 
 
 
-for i = 1:length(parent_tree)
-P_terms(i,:) = m(i) * g * pc(2,:,i);
-end
+    for i = 1:length(parent_tree)
 
-P = sum(P_terms);
+        K_terms(i) =   1/2 * m(i) * vc_abs(:,:,i).'*vc_abs(:,:,i) ...
+                     + 1/2 * w_abs(:,:,i).' * I(i) * w_abs(:,:,i);
+    end
+
+    K = sum(K_terms);
 
 
-L = K - P;
+
+    for i = 1:length(parent_tree)
+    P_terms(i,:) = m(i) * g * pc(2,:,i);
+    end
+
+    P = sum(P_terms);
 
 
-mechanicalEnergy = K + P;
+    L = K - P;
 
-dynamics.mechanicalEnergy = mechanicalEnergy;
-dynamics.KineticEnergy = K;
-dynamics.PotentialEnergy = P;
+
+    mechanicalEnergy = K + P;
+
+    dynamics.mechanicalEnergy = simplify(mechanicalEnergy);
+    dynamics.KineticEnergy = simplify(K);
+    dynamics.PotentialEnergy = simplify(P);
 
 %==========================================================================
-dL_qe_dot = functionalDerivative(L,qe_dot);
-dL_qe_dot_dt = diff_t(dL_qe_dot,[qe,qe_dot], [qe_dot, qe_Ddot]);
-dL_qe = functionalDerivative(L,qe);
-eqMotion = dL_qe_dot_dt - dL_qe;
+    dL_qe_dot = functionalDerivative(L,qe_dot);
+    dL_qe_dot_dt = diff_t(dL_qe_dot,[qe,qe_dot], [qe_dot, qe_Ddot]);
+    dL_qe = functionalDerivative(L,qe);
+    eqMotion = dL_qe_dot_dt - dL_qe;
+
+    eqMotion = simplify(eqMotion);
 %==========================================================================
 end
