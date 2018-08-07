@@ -12,7 +12,7 @@ function [controller, q_dot_0] = calculateInitialConditions(startingParameters,f
     q_dot = startingParameters(1:n_link+2,2);
     
     q_T = relabelingMatrices.MatrixRelabel*q_0(1:n_link) - relabelingMatrices.piMatrix;
-
+    
     [~,~,G_0,~] = calcDynMatrices(q_0,q_dot,fileName);
     [D_T,~,~,E2_T] = calcDynMatrices(q_T,q_dot,fileName);
 
@@ -32,7 +32,7 @@ function [controller, q_dot_0] = calculateInitialConditions(startingParameters,f
     d = distance;
     T = 3;
     xi_0(1) = p; %with q(1) = 0; q(2) = 0;
-    xi_0(2) = 0.1; %!!! %chosen so that at t=T impact
+    xi_0(2) = 1.569; %!!! %chosen so that at t=T impact
     xi_0(3) = -G_0(1); %%with q(1) = 0; q(2) = 0;
 
     matrixA = [-T^3/12, -T^4/24;
@@ -62,7 +62,7 @@ function [controller, q_dot_0] = calculateInitialConditions(startingParameters,f
     b = controller(2);
 
     xi_0(4) = (d * g * 2 * m - a* T^2/2 - b* T^3/6)* inv(T);
-    q_dot_0 = inv(Phi2_0) * [xi_0(3); xi_0(4)];
+    q_dot_0 = inv(Phi2_0) * [xi_0(2); xi_0(4)];
 end
     
 
@@ -81,13 +81,13 @@ end
 function p = calc_p(q)
 
    theta = getTheta;
-%     integralq = q(2)/2 + ...
-%                 (theta(2) - theta(1))/sqrt((theta(1) + theta(2))^2 - 4*theta(3)^2) ...
-%                 *atan(sqrt((theta(1) + theta(2) - 2*theta(3))/(theta(1) + theta(2) + 2*theta(3))) * tan(q(2)/2));
-
     integralq = q(2)/2 + ...
-                (theta(1) - theta(2))/sqrt(4*theta(3)^2 - (theta(1) + theta(2))^2) ...
-                *atan((theta(1) + theta(2) - 2*theta(3))/sqrt(4*theta(3)^2 - (theta(1) + theta(2))^2) * tan(q(2)/2));
+                (theta(2) - theta(1))/sqrt((theta(1) + theta(2))^2 - 4*theta(3)^2) ...
+                *atan(sqrt((theta(1) + theta(2) - 2*theta(3))/(theta(1) + theta(2) + 2*theta(3))) * tan(q(2)/2));
+
+%     integralq = q(2)/2 + ...
+%                 (theta(1) - theta(2))/sqrt(4*theta(3)^2 - (theta(1) + theta(2))^2) ...
+%                 *atan((theta(1) + theta(2) - 2*theta(3))/sqrt(4*theta(3)^2 - (theta(1) + theta(2))^2) * tan(q(2)/2));
             
     p = q(1) + integralq;
 

@@ -64,6 +64,12 @@ for i = 1:5
 set(plot_xi(i), 'xdata', time_record,'ydata', xi_record(i,:));
 end
 %===================================================
+
+%============phase portrait=========================
+for i = 1:n_link
+set(plot_phasePortrait(i), 'xdata', abs(q_record(i,:)),'ydata', abs(q_dot_record(i,:)));
+end
 %===================================================
+
 
 drawnow;

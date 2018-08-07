@@ -33,7 +33,7 @@ term1 = - q_dot(1:n_link)' * dG_dDq * q_dot(1:n_link);
 term2 = dG_dq * inv(D) * B;
 term3 = dG_dq * inv(D) *(- C*q_dot - G);
 
-u = (v - term1 - term3)/ term2;
+u = inv(term2) * (v - term1 - term3);
 
 torque = [0;u];
 

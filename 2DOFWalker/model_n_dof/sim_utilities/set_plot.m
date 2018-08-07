@@ -115,4 +115,15 @@ end
 xi_record = zeros(5,1);
 legend('xi(1)','xi(2)','xi(3)','xi(4)','xi(5)')
 %===================================================
+
+%============phase portrait=========================
+fig8 = figure(8);
+set(fig8,'Position',[  -601     7   560   420])
+subplot(2,1,1)
+plot_phasePortrait(1) = plot(0,0); hold on;
+subplot(2,1,2)
+plot_phasePortrait(2) = plot(0,0); hold on;
+%===================================================
+
+
 time_record = 0;

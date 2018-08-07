@@ -18,7 +18,7 @@ addpath(genpath(fullfile(Folder, '..')));
 %user defined ...
 %change to 1 if this file is used for simulation (in simulation_model_n)
 %change to 0 if this file is used to generate symbolic model
-flagSimulation = 0; 
+flagSimulation = 1; 
 
 %define the parent tree of the robot walker
 parent_tree = [0 1];
@@ -47,6 +47,8 @@ g = 9.81;
 % m = [0.3 0.3 0.3];
 % I = [0.03 0.03 0.03];
 % g = 9.81;
+
+
 
 %==========================================================================
 %autocheck if file with specified parameter set already exists

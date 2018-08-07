@@ -33,7 +33,7 @@ if n_link == 3
                                                     0,  0,    0];    %z2
 elseif n_link == 2
     
-    cyclic_var_value =  pi/16;
+    cyclic_var_value =  -pi/16;
 
     startingParameters = [cyclic_var_value,  0,    0;...  %q1     %pi/18
                           pi - 2 *cyclic_var_value, 0,    0;...  %q2      3*pi/4,    50,    0,...  %pi-(pi-2*(pi/2-(1/18*pi)))
@@ -62,11 +62,13 @@ h = zeros(n_link-1,1);
 %=======
 %=======
 set_plot;
+%=======v - term1 - term3)
 %=======
-%=======
-%-------------initial conditions for walking and controller----------------
+%-------------initial conditions for walking v - term1 - term3)and controller----------------
 [controller, q_dot_0] = calculateInitialConditions(startingParameters,fileName, relabelingMatrices, distance);
 q_dot(1:n_link) = q_dot_0;
+
+xi_d = variableXi(q,q_dot,q_Ddot);
 %--------------------------------------------------------------------------
 j = 0;
 time = 0;
@@ -105,11 +107,11 @@ Links_old = Links;
 
 [q_Ddot(1:n_link), q_dot(1:n_link), q(1:n_link)] = integrator(dt,D,C,G, tau(1:n_link), q_dot(1:n_link), q(1:n_link));
 
-% for i  = 1:length(q)
-%     if q(i) >= 2*pi
-%         q(i) = q(i) - 2*pi;
-%     end
-% end
+for i  = 1:length(q)
+    if q(i) >= 2*pi
+        q(i) = q(i) - 2*pi;
+    end
+end
 
 
 yLineTerrain_old = yLineTerrain;
@@ -138,19 +140,21 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
 
 end
 %============controller===============
-w = (controller(1) + controller(2)* time);
+xi = variableXi(q,q_dot,q_Ddot); %xi(1) = p xi(2) = sigma xi(3) = sigma_dot xi(4) = = sigma_Ddot xi(5) = = sigma_DDdot
 
-v = finiteTime_stabilizer(w,controller(2));
-% v = -PD_controller(w,controller(2));
+
+w_d = (controller(1) + controller(2)* time);
+
+[xi_d(3), xi_d(2), xi_d(1)] = integrator_xi(dt, w_d, xi_d(3), xi_d(2), xi_d(1),D); %integrate xi_DDdot
+K = 1;
+D = .1;
+v = w_d + K*(xi_d(1) - xi(1)) + D*(xi_d(2) - xi(2));
+
 % if control_flag == 1
     
 %     [tau,h] = controllerWalker(q,q_dot, D,C,G);
     tau = controllerWalker_ver1(v,q,q_dot, D,C,G);
 % end
-
-xi = variableXi(q,q_dot,q_Ddot); %seems that it gives -w
-
-
 
 %=====================================
 % impact_detected = 0;

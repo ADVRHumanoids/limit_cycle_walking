@@ -26,7 +26,7 @@ function [torque,y] = controllerWalker(q,q_dot, D,C,G)
         
     elseif n_link == 2
         
-        y(1) = q(2) - 5; % q goes to 5
+        y(1) = q(2) - pi/2; % q goes to 5
 %         y(1) = q(1) - (-pi - q(1) - q(2)); %not working properly
 %         y(1) = q(1) - (-pi - q(1) - q(2));
         h_dq = [0 1]; %>> h_dq = jacobian(h,q);
