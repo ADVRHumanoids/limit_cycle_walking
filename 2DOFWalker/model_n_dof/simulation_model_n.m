@@ -12,6 +12,7 @@ addpath(genpath(fullfile(Folder, '..')));
 robotTree; %change here parameters
 
 %==========================================================================
+robotData = getRobotData;
 slope = 0;
 n_link = length(parent_tree);
 relabelingMatrices = getRelabelingMatrices(parent_tree, waist);
@@ -146,10 +147,12 @@ xi = variableXi(q,q_dot,q_Ddot); %xi(1) = p xi(2) = sigma xi(3) = sigma_dot xi(4
 w_d = (controller(1) + controller(2)* time);
 
 [xi_d(3), xi_d(2), xi_d(1)] = integrator_xi(dt, w_d, xi_d(3), xi_d(2), xi_d(1),D); %integrate xi_DDdot
+
+% q_dot_d = inv(Phi2_0) * [xi_d(2); xi_d(4)];
+
 K = 1;
 D = .1;
 v = w_d + K*(xi_d(1) - xi(1)) + D*(xi_d(2) - xi(2));
-
 % if control_flag == 1
     
 %     [tau,h] = controllerWalker(q,q_dot, D,C,G);
@@ -161,6 +164,7 @@ v = w_d + K*(xi_d(1) - xi(1)) + D*(xi_d(2) - xi(2));
 
 %=====================================
 %=========mechanicalenergy============
+[mechanicalEnergy,kineticEnergy,potentialEnergy] = calcMechanicalEnergy(q,q_dot,fileName);
 % mechanical energy 1 link
 % T = (981*cos(q(1)))/200 + (333*q_dot(1)^2)/2000;
 % mechanical energy 2 link

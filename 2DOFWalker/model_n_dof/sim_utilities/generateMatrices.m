@@ -1,5 +1,5 @@
-function generateDynamicMatrices(model, fileName)
-%% This function auto-generates a file with the dynamic matrices of the robot walker for simulation
+function generateMatrices(model, fileName)
+%% This function auto-generates a file with the dynamic matrices and energy of the robot walker for simulation
     %this function will autogenerate a file with the Dynamic Matrices in:
     %>>.../sim_utilities/dynMatrices
     
@@ -24,7 +24,7 @@ function generateDynamicMatrices(model, fileName)
 
         
     autogenfile_DM(fileName, model.dynamicMatricesExtended, model.robotData);
-    
+    autogenfile_energy(fileName,model.dynamics, model.robotData);
 
     %add success return %TODO
     %======================================================================

@@ -13,12 +13,13 @@ function kinematics = kinematics_n(generalizedVariables)
     % e-mail: francesco.ruscelli@iit.it
     
     robotData = getRobotData;
+    flagSimulation = get_flagSimulation;
     parent_tree = robotData.parent_tree;
     n_link = length(parent_tree);
     
     
     
-    if robotData.flagSimulation == 1
+    if flagSimulation == 1
         
         q = generalizedVariables;
         z = generalizedVariables(end-1:end);
@@ -38,7 +39,7 @@ function kinematics = kinematics_n(generalizedVariables)
 
     end
     
-    if robotData.flagSimulation == 0
+    if flagSimulation == 0
 
         rp_rel = sym(zeros(3,n_link));
         rc_rel = sym(zeros(3,n_link));
@@ -129,7 +130,7 @@ end
 totalCoM_position = temp_CoM/sum(robotData.mass);
 %==========================================================================
 
-    if robotData.flagSimulation == 0
+    if flagSimulation == 0
 %======================velocities==========================================
 
         for i = 1:n_link

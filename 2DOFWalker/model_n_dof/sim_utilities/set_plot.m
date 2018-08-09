@@ -68,13 +68,15 @@ ylim([-lim_q lim_q]);
 q_record = zeros(length(q),1);
 q_dot_record = zeros(length(q_dot),1);
 q_Ddot_record = zeros(length(q_dot),1);
+
+
 %==========mechanical energy========================
-% fig3 = figure(3);
-% set(fig3,'Position',[-601   525   560   420])
-% energyPlot = plot(0,0);
-% xlim([0 50]);
-% % ylim([-5 100]);
-% T_record = 0;
+fig3 = figure(3);
+set(fig3,'Position',[-601   525   560   420])
+energyPlot = plot(0,0);
+xlim([0 50]);
+% ylim([-5 100]);
+mechanicalEnergy_record = 0;
 %===================================================
 
 %==========check2 (K_dot = -q_dot' * G)=============

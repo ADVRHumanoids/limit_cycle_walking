@@ -36,8 +36,8 @@ set(plot_total_CoM2,'xdata',kinematics.CoM_position(1),'ydata', kinematics.CoM_p
 %===================================================
 
 %=========mechanical energy=========================
-% T_record = [T_record T];
-% set(energyPlot, 'xdata', time_record,'ydata', T_record);
+mechanicalEnergy_record = [mechanicalEnergy_record mechanicalEnergy];
+set(energyPlot, 'xdata', time_record,'ydata', mechanicalEnergy_record);
 
 %======check2=====(K_dot = -q_dot' * G)=============
 % K_dot_record = [K_dot_record K_dot];

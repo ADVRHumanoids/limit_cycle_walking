@@ -35,5 +35,5 @@ function setRobotParameters(link_length,com_position,m,I,g,parent_tree,flagSimul
 %     error('Number of link is not compatible with robot parameters.')
 %     end
     
-    robotData = struct('parent_tree',parent_tree,'n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g, 'flagSimulation', flagSimulation);   
+    robotData = struct('parent_tree',parent_tree,'n_link',n_link,'link_length',link_length, 'com_position',com_position, 'mass',m, 'inertia',I,'gravity', g);   
 end

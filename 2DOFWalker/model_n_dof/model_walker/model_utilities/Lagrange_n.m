@@ -62,8 +62,8 @@ function [eqMotion,dynamics] = Lagrange_n(kinematics, generalizedVariables)
     mechanicalEnergy = K + P;
 
     dynamics.mechanicalEnergy = simplify(mechanicalEnergy);
-    dynamics.KineticEnergy = simplify(K);
-    dynamics.PotentialEnergy = simplify(P);
+    dynamics.kineticEnergy = simplify(K);
+    dynamics.potentialEnergy = simplify(P);
 
 %==========================================================================
     dL_qe_dot = functionalDerivative(L,qe_dot);
