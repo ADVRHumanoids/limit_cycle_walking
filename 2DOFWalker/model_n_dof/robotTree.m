@@ -92,15 +92,3 @@ if isempty(find(~cellfun('isempty',strfind(checkFile.m, fileName)), 1)) || ~flag
     disp('Done');
 end
 %==========================================================================
-
-
-
-
-
-
-
-
-
-
-
-
