@@ -75,6 +75,13 @@ MatrixCell = cell(size(tempMatrix,1),1);
         tempCell{i} = strrep(tempCell{i},'q3_dot(t)','q_dot(3)');
         tempCell{i} = strrep(tempCell{i},'q4_dot(t)','q_dot(4)');
         tempCell{i} = strrep(tempCell{i},'q5_dot(t)','q_dot(5)');
+        
+        tempCell{i} = strrep(tempCell{i},'q1_Ddot(t)','q_Ddot(1)');
+        tempCell{i} = strrep(tempCell{i},'q2_Ddot(t)','q_Ddot(2)');
+        tempCell{i} = strrep(tempCell{i},'q3_Ddot(t)','q_Ddot(3)');
+        tempCell{i} = strrep(tempCell{i},'q4_Ddot(t)','q_Ddot(4)');
+        tempCell{i} = strrep(tempCell{i},'q5_Ddot(t)','q_Ddot(5)');
+        
         tempStr = tempCell{i};
         if contains(tempStr,'matrix')
             tempStr([1:7, end:end]) = [];

@@ -23,8 +23,7 @@ function model = generateModel(generalizedVariables,generalizedVariablesExtended
 % 
 % N = simplify(D_dot - 2*C);
 % ThisShouldbeZero = simplify(generalizedVariables.q_dot*N*generalizedVariables.q_dot.');
-%====================derivative of kinetic energy==========================
-% K_dot = diff_t(dynamics.KineticEnergy,[q,q_dot], [q_dot, q_Ddot]);
+
 %==========================================================================
     E2_ext = kinematics_ext.jacobian(:,:,swing_leg);
     E2 = kinematics.jacobian(:,:,swing_leg);

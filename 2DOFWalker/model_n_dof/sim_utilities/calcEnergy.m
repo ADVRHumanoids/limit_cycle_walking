@@ -1,4 +1,4 @@
-function [mechanicalEnergy,kineticEnergy,potentialEnergy] = calcMechanicalEnergy(q,q_dot,fileName)
+function [mechanicalEnergy,kineticEnergy,potentialEnergy,kineticEnergy_dot] = calcEnergy(q,q_dot,q_Ddot,fileName)
 
 fileName = sprintf('%s_energy.m', fileName);
 %>> files are in:

@@ -20,3 +20,7 @@ potentialEnergy = ...
 (26487*cos(q(1)))/5000 + (2943*cos(q(1) + q(2)))/5000;
 
 
+kineticEnergy_dot = ... 
+(141*q_dot(1)*q_Ddot(1))/250 + (21*q_dot(1)*q_Ddot(2))/500 + (21*q_dot(2)*q_Ddot(1))/500 + (21*q_dot(2)*q_Ddot(2))/500 + (3*cos(q(2))*q_dot(1)*q_Ddot(1))/25 + (3*cos(q(2))*q_dot(1)*q_Ddot(2))/50 + (3*cos(q(2))*q_dot(2)*q_Ddot(1))/50 - (3*sin(q(2))*q_dot(1)*q_dot(2)^2)/50 - (3*sin(q(2))*q_dot(1)^2*q_dot(2))/50;
+
+

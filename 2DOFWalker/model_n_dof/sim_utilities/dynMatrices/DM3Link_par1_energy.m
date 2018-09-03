@@ -20,3 +20,7 @@ potentialEnergy = ...
 (75537*cos(q(1)))/5000 + (2943*cos(q(1) + q(2)))/5000 + (981*cos(q(1) + q(3)))/400;
 
 
+kineticEnergy_dot = ... 
+(3453*q_dot(1)*q_Ddot(1))/2000 + (521*q_dot(1)*q_Ddot(2))/500 + (521*q_dot(2)*q_Ddot(1))/500 + (13*q_dot(1)*q_Ddot(3))/80 + (521*q_dot(2)*q_Ddot(2))/500 + (13*q_dot(3)*q_Ddot(1))/80 + (13*q_dot(3)*q_Ddot(3))/80 + (q_dot(1)*q_Ddot(1)*cos(q(2) - q(3)))/2 + (q_dot(1)*q_Ddot(2)*cos(q(2) - q(3)))/4 + (q_dot(2)*q_Ddot(1)*cos(q(2) - q(3)))/4 + (q_dot(1)*q_Ddot(3)*cos(q(2) - q(3)))/4 + (q_dot(3)*q_Ddot(1)*cos(q(2) - q(3)))/4 + (q_dot(2)*q_Ddot(3)*cos(q(2) - q(3)))/4 + (q_dot(3)*q_Ddot(2)*cos(q(2) - q(3)))/4 + (3*cos(q(2))*q_dot(1)*q_Ddot(1))/25 + (3*cos(q(2))*q_dot(1)*q_Ddot(2))/50 + (3*cos(q(2))*q_dot(2)*q_Ddot(1))/50 - (q_dot(1)*q_dot(2)^2*sin(q(2) - q(3)))/4 - (q_dot(1)^2*q_dot(2)*sin(q(2) - q(3)))/4 + (q_dot(1)*q_dot(3)^2*sin(q(2) - q(3)))/4 + (q_dot(1)^2*q_dot(3)*sin(q(2) - q(3)))/4 + (q_dot(2)*q_dot(3)^2*sin(q(2) - q(3)))/4 - (q_dot(2)^2*q_dot(3)*sin(q(2) - q(3)))/4 - (3*sin(q(2))*q_dot(1)*q_dot(2)^2)/50 - (3*sin(q(2))*q_dot(1)^2*q_dot(2))/50;
+
+
