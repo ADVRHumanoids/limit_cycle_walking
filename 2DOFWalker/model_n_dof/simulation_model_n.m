@@ -11,6 +11,13 @@ addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a n-link walker=====================
 robotTree; %change here parameters
 
+%========================plot settings=====================================
+plot_xi = 1;
+plot_phasePortrait = 0;
+plot_q = 1;
+plot_check_model = 0; %mechanical energy and kineticEnergy_dot = -q_dot * G
+plot_CoMPosition = 1;
+%==========================================================================
 %==========================================================================
 robotData = getRobotData;
 slope = 0;
@@ -74,7 +81,7 @@ set_plot;
 q_dot(1:n_link) = q_dot_0;
 
 xi_d = variableXi(q,q_dot,q_Ddot);
-%--------------------------------------------------------------------------
+% %--------------------------------------------------------------------------
 j = 0;
 time = 0;
 dt = 0.005; %0.001
@@ -104,6 +111,7 @@ C = C_ext(1:n_link,1:n_link);
 G = G_ext(1:n_link);
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Links_old = Links;
+
 
 % [q_Ddot, q_dot, q] = integrator(dt,D,C,G, tau, q_dot, q);
 % q_Ddot(n_link+1:end) = 0;
@@ -151,9 +159,11 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
 
 end
 %============controller===============
+if plot_xi
 %%% transformation to xi variables
 [xi, Phi1_0, Phi2_0] = variableXi(q,q_dot,q_Ddot); % xi(1) = p / xi(2) = sigma / xi(3) = sigma_dot / xi(4) = = sigma_Ddot / xi(5) = = sigma_DDdot
-
+end
+% 
 %%% desired trajectory planning, computed offline
 w_d = (controller(1) + controller(2)* time); %xi_DDot
 
@@ -179,18 +189,15 @@ q_dot_d = inv(Phi2_0) * [xi_d(2); xi_d(4)];
 % impact_detected = 0;
 
 %=====================================
-%=========mechanicalenergy============
-[mechanicalEnergy,kineticEnergy,potentialEnergy] = calcMechanicalEnergy(q,q_dot,fileName);
-% mechanical energy 1 link
-% T = (981*cos(q(1)))/200 + (333*q_dot(1)^2)/2000;
-% mechanical energy 2 link
-% T = (981*cos(q(1) + q(2)))/200 + (2943*cos(q(1)))/200 + (q_dot(1)^2*cos(q(2)))/2 + (333*q_dot(1)*q_dot(2))/1000 + (833*q_dot(1)^2)/1000 + (333*q_dot(2)^2)/2000 + (q_dot(1)*q_dot(2)*cos(q(2)))/2;
-%=====================================
+if plot_check_model
+    %=========mechanicalenergy============
+    [mechanicalEnergy,kineticEnergy,potentialEnergy, kineticEnergy_dot] = calcEnergy(q,q_dot,q_Ddot,fileName);
+    %=====================================
 
-%===============check2================
-% K_dot = ((sin(q(1))*q_dot(1))/2 + (sin(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2))/2)*(sin(q(1))*q_Ddot(1) + sin(q(1) + q(2))*(q_Ddot(1)/2 + q_Ddot(2)/2) + cos(q(1))*q_dot(1)^2 + cos(q(1) + q(2))*(q_dot(1) + q_dot(2))*(q_dot(1)/2 + q_dot(2)/2)) + (sin(q(1))*q_dot(1) + sin(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2))*((sin(q(1))*q_Ddot(1))/2 + (sin(q(1) + q(2))*(q_Ddot(1)/2 + q_Ddot(2)/2))/2 + (cos(q(1))*q_dot(1)^2)/2 + (cos(q(1) + q(2))*(q_dot(1) + q_dot(2))*(q_dot(1)/2 + q_dot(2)/2))/2) + (83*q_dot(1)*q_Ddot(1))/1000 + (q_dot(1) + q_dot(2))*((83*q_Ddot(1))/2000 + (83*q_Ddot(2))/2000) + (q_Ddot(1) + q_Ddot(2))*((83*q_dot(1))/2000 + (83*q_dot(2))/2000) + ((cos(q(1))*q_dot(1))/2 + (cos(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2))/2)*(cos(q(1))*q_Ddot(1) + cos(q(1) + q(2))*(q_Ddot(1)/2 + q_Ddot(2)/2) - sin(q(1))*q_dot(1)^2 - sin(q(1) + q(2))*(q_dot(1) + q_dot(2))*(q_dot(1)/2 + q_dot(2)/2)) + (cos(q(1))*q_dot(1) + cos(q(1) + q(2))*(q_dot(1)/2 + q_dot(2)/2))*((cos(q(1))*q_Ddot(1))/2 + (cos(q(1) + q(2))*(q_Ddot(1)/2 + q_Ddot(2)/2))/2 - (sin(q(1))*q_dot(1)^2)/2 - (sin(q(1) + q(2))*(q_dot(1) + q_dot(2))*(q_dot(1)/2 + q_dot(2)/2))/2) + (cos(q(1))^2*q_dot(1)*q_Ddot(1))/4 + (sin(q(1))^2*q_dot(1)*q_Ddot(1))/4;
-% check2 = -q_dot' * G;
-%=====================================
+    %===============check2================
+    check2 = -q_dot' * G_ext; %must be equal to kineticEnergy_dot
+    %=====================================
+end
 %==========
 %==========
 update_plot

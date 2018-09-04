@@ -58,9 +58,17 @@ function [eqMotion,dynamics] = LagrangeRobot(kinematics, generalizedVariables)
     L = K - P;
     mechanicalEnergy = K + P;
 
+%====================derivative of kinetic energy==========================
+K_dot = diff_t(K,[q,q_dot], [q_dot, q_Ddot]);
+%==========================================================================
+
     dynamics.mechanicalEnergy = simplify(mechanicalEnergy);
     dynamics.kineticEnergy = simplify(K);
     dynamics.potentialEnergy = simplify(P);
+    dynamics.kineticEnergy_dot = simplify(K_dot);
+    
+
+
 %==========================================================================
     dL_q_dot = functionalDerivative(L,q_dot);
     dL_q_dot_dt = diff_t(dL_q_dot,[q,q_dot], [q_dot, q_Ddot]);
