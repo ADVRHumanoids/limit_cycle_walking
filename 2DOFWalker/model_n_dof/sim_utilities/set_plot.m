@@ -127,5 +127,17 @@ subplot(2,1,2)
 plot_phasePortrait(2) = plot(0,0); hold on;
 %===================================================
 
+%================q_d & q_dot_d======================
+fig9 = figure(9);
+set(fig9,'Position',[  -601     7   560   420])
+% subplot(2,1,1)
+plot_q_d(1) = plot(0,0); hold on;
+plot_q_d(2) = plot(0,0); hold on;
+% subplot(2,1,2)
+% plot_q_dot_d = plot(0,0); hold on;
+q_d_record = zeros(length(q_d),1);
+q_d1_record = zeros(length(q_d),1);
+q_dot_d_record = zeros(length(q_dot_d),1);
+%===================================================
 
 time_record = 0;

@@ -1,4 +1,4 @@
-function [xi, Phi2] = variableXi(q,q_dot,q_Ddot)
+function [xi, Phi1, Phi2] = variableXi(q,q_dot,q_Ddot)
 
     robotData = getRobotData;
     n_link = robotData.n_link;
@@ -31,6 +31,7 @@ function [xi, Phi2] = variableXi(q,q_dot,q_Ddot)
     theta(4) = m1 * lc1 + m2 * l1;
     theta(5) = m2 * lc2;
     %`````````````````````````````````````
+    
         dG_dq = [ - g*lc2*m2*cos(q(1) + q(2)) - g*l1*m2*cos(q(1)) - g*lc1*m1*cos(q(1)), ...
                                                     -g*lc2*m2*cos(q(1) + q(2))];
                                                   
@@ -45,10 +46,13 @@ function [xi, Phi2] = variableXi(q,q_dot,q_Ddot)
 %                     *atan((theta(1) + theta(2) - 2*theta(3))/sqrt(4*theta(3)^2 - (theta(1) + theta(2))^2) * tan(q(2)/2));
 
     p = q(1) + integralq;
-
-    Phi2 = [  theta(1) + theta(2) + 2* theta(3) * cos(q(2)),  theta(2) + theta(3) * cos(q(2))
+%     Phi2a = [D(1,1) D(1,2); same as the following
+%             -dG_dq];
+    Phi2 = [    theta(1) + theta(2) + 2* theta(3) * cos(q(2)),   theta(2) + theta(3) * cos(q(2))
              theta(4)*g*cos(q(1)) + theta(5)*g*cos(q(1)+q(2)),     theta(5) * g* cos(q(1)+q(2))];
 
+    Phi1 = [ 1                                               ,    (theta(2) + theta(3) * cos(q(2)))/(theta(1) + theta(2) + 2 * theta(3) * cos(q(2)) )
+             theta(4)*g*cos(q(1)) + theta(5)*g*cos(q(1)+q(2)),                                                          theta(5) * g* cos(q(1)+q(2))];
     xi(1,:) = p;
     xi(3,:) = theta(4) * g * sin(q(1)) + theta(5) * g * sin(q(1)+q(2));
     tempT = Phi2 * q_dot;

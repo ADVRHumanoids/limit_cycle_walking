@@ -71,5 +71,16 @@ set(plot_phasePortrait(i), 'xdata', abs(q_record(i,:)),'ydata', abs(q_dot_record
 end
 %===================================================
 
+%================q_d & q_dot_d======================
+% q_d_record = [q_d_record, q_d];
+% q_d1_record = [q_d1_record, q_d1];
+q_dot_d_record = [q_dot_d_record, q_dot_d];
+set(plot_q_d(1),'xdata',time_record,'ydata',q_dot_d_record(1,:));
+set(plot_q_d(2),'xdata',time_record,'ydata',q_dot_record(1,:));
+% set(plot_q_dot_d,'xdata',time_record,'ydata',q_dot_d_record(1,:));
 
+% set(plot_q_d(1),'xdata',time_record,'ydata',q_d_record(2,:));
+% set(plot_q_d(2),'xdata',time_record,'ydata',q_d1_record(2,:));
+% set(plot_q_dot_d,'xdata',time_record,'ydata',q_dot_d_record(2,:));
+%===================================================
 drawnow;
