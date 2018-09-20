@@ -10,11 +10,12 @@ Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a n-link walker=====================
 robotTree; %change here parameters
-
+%=========================step_lenght======================================
+step_lenght = 0.2;
 %========================plot settings=====================================
-plot_xi = 1;
+plot_xi = 0;
 plot_phasePortrait = 0;
-plot_q = 1;
+plot_q = 0;
 plot_check_model = 0; %mechanical energy and kineticEnergy_dot = -q_dot * G
 plot_CoMPosition = 1;
 %==========================================================================
@@ -23,6 +24,9 @@ robotData = getRobotData;
 slope = 0;
 n_link = length(parent_tree);
 relabelingMatrices = getRelabelingMatrices(parent_tree, waist);
+%==========================================================================
+q1_des = -asin(step_lenght^2/(2*robotData.link_length(1)*step_lenght));
+q2_des = (pi - 2 *q1_des);
 %==========================================================================
                       %pos / vel / acc
 % startingParameters = [ pi/18,   0,    0;...  %q1    pi/18
@@ -41,10 +45,9 @@ if n_link == 3
                                                     0,  0,    0];    %z2
 elseif n_link == 2
     
-    cyclic_var_value =  -pi/16;
-
-    startingParameters = [cyclic_var_value,  0,    0;...  %q1     %pi/18
-                          pi - 2 *cyclic_var_value, 0,    0;...  %q2      3*pi/4,    50,    0,...  %pi-(pi-2*(pi/2-(1/18*pi)))
+%     cyclic_var_value =  -pi/16;
+    startingParameters = [q1_des,  0,    0;...  %q1     %cyclic_var_value
+                          q2_des, 0,    0;...   %q2     %pi - 2 *cyclic_var_value
                           0,  0,    0;...  %z1
                           0,  0,    0];    %z2
 end
@@ -63,32 +66,38 @@ yLineTerrain = double(tan(slope) * Links(n_link,1,2));
 yLineTerrain_old = yLineTerrain;
 
 % distance = Links(2,1,2) - Links(1,1,1);
-distance = robotData.link_length(1) * cos(pi/2 - q(1)) + robotData.link_length(2) * sin(pi - q(1) - q(2));
-% mechanical energy 1 link
-% T = (981*cos(q(1)))/200 + (333*q_dot(1)^2)/2000;
-% mechanical energy 2 link
-% T = (981*cos(q(1) + q(2)))/200 + (2943*cos(q(1)))/200 + (q_dot(1)^2*cos(q(2)))/2 + (333*q_dot(1)*q_dot(2))/1000 + (833*q_dot(1)^2)/1000 + (333*q_dot(2)^2)/2000 + (q_dot(1)*q_dot(2)*cos(q(2)))/2;
+% distance = robotData.link_length(1) * cos(pi/2 - q(1)) + robotData.link_length(2) * sin(pi - q(1) - q(2));
 
 %just needed for initialization of the output for the controller y = h(q)
 h = zeros(n_link-1,1);
 %=======
 %=======
+v_record = 0;
+w_d_record = 0;
+fig10 = figure(10);
+set(fig10,'Position',[  -601     7   560   420])
+plot_error = plot(0,0); hold on;
+plot_error1 = plot(0,0); hold on;
+
+
 set_plot;
-%=======v - term1 - term3)
+%=======
 %=======
 %-------------initial conditions for walking v - term1 - term3) and controller----------------
-[controller, q_dot_0] = calculateInitialConditions(startingParameters,fileName, relabelingMatrices, distance);
+[traj, q_dot_0] = calculateInitialConditions(startingParameters,fileName, relabelingMatrices, step_lenght);
 q_dot(1:n_link) = q_dot_0;
 
 xi_d = variableXi(q,q_dot,q_Ddot);
 % %--------------------------------------------------------------------------
 j = 0;
+jj = 0;
 time = 0;
+time_reset = 0;
 dt = 0.005; %0.001
 
 tau = zeros(length(q),1);
-k_p = 1;
-k_d = 0.1;
+% k_p = 1;
+% k_d = 0.1;
 Base = [0,0];
 disp('push a button to continue'); pause;
 
@@ -96,13 +105,16 @@ impact_detected = 0;
 control_flag = 0;
 first_impact = 0;
 distance_legs = 0;
-PI = pi;
 
-
+%===============
+%===============
  while 1
      
 j = j + 1;
 time = (j-1)*dt;
+
+jj = jj + 1;
+time_reset = (jj-1)*dt;
 
 [D_ext,C_ext,G_ext] = calcDynMatrices(q,q_dot,fileName);
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,6 +143,8 @@ yLineTerrain_old = yLineTerrain;
 yLineTerrain = double(tan(slope) * Links(swing_leg,1,2));
 [Links,kinematics] = KinematicsLinks(q);  %update kinematics
 %============impact========================================================
+% control : F2_T <= mu*F2_N and F2_N > 0
+%           stance leg p1_dot_vertical >= 0
 step_condition = Links(swing_leg,1,2) > Base(1); %link,axis,begin/end  
 % step_condition = Links(swing_leg,1,2) > Base(1) + abs(distance);
 if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_leg,2,2) > yLineTerrain_old  %link,axis,begin/end  
@@ -141,44 +155,46 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
 %     end
     
     [q,q_dot] = impact_handler(q,q_dot,relabelingMatrices,fileName);
-
+    
     %------stay inside 2*pi-----
-%     for i  = 1:length(q)
-%         if abs(q(i)) >= 2*pi
-%             q(i) = sign(q(i))*((q(i)*sign(q(i))) - 2*pi);
-%         end
-%     end
+    for i  = 1:length(q)
+        if abs(q(i)) >= 2*pi
+            q(i) = sign(q(i))*((q(i)*sign(q(i))) - 2*pi);
+        end
+    end
     %===========change base=====================================
     Base = [Links(swing_leg,1,2); yLineTerrain]; %TODO
     q(end-1:end) = Base;
     [Links,kinematics] = KinematicsLinks(q); %update kinematics
     %===========================================================
-    
+
+    jj = 0;
     control_flag = 1;
 %     impact_detected = 1;
 
+
 end
 %============controller===============
-if plot_xi
 %%% transformation to xi variables
 [xi, Phi1_0, Phi2_0] = variableXi(q,q_dot,q_Ddot); % xi(1) = p / xi(2) = sigma / xi(3) = sigma_dot / xi(4) = = sigma_Ddot / xi(5) = = sigma_DDdot
-end
-% 
+
 %%% desired trajectory planning, computed offline
-w_d = (controller(1) + controller(2)* time); %xi_DDot
+w_d = (traj(1) + traj(2)* time_reset); %xi_DDot _reset
 
 %%% controller to follow trajectory
 [xi_d(3), xi_d(2), xi_d(1)] = integrator_xi(dt, w_d, xi_d(3), xi_d(2), xi_d(1), D); %integrate xi_DDdot
-K = 1;
-D = .1;
-v = w_d + K*(xi_d(1) - xi(1)) + D*(xi_d(2) - xi(2));
+k_p = .1;
+k_d = .01;
+v = w_d + k_p*(xi_d(1) - xi(1)) + k_d*(xi_d(2) - xi(2));
+
 
 %%% partial linearization controller
 % if control_flag == 1
-%     [tau,h] = controllerWalker(q,q_dot, D,C,G);
+%     [tau,h] = controllerWalker(q,q_dot, D,C,G); %linearizing normal model robot system
     tau = controllerWalker_ver1(v,q,q_dot, D,C,G); %linearizing xi system
 % end
 
+%%% trying to get q and q_dot
 % q_d1 = inv(Phi1_0) * [xi_d(1); xi_d(3)]; NOPE
 q_dot_d = inv(Phi2_0) * [xi_d(2); xi_d(4)];
 
@@ -200,7 +216,13 @@ if plot_check_model
 end
 %==========
 %==========
+
 update_plot
+
+v_record = [v_record, v];
+w_d_record = [w_d_record, w_d];
+set(plot_error,'xdata',time_record,'ydata', v_record);%- w_d_record
+set(plot_error1,'xdata',time_record,'ydata', w_d_record);%- w_d_record
 %==========
 %==========
  end

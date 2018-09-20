@@ -1,12 +1,12 @@
 fig1 = figure(1);
-% set(fig1,'Position',[-1854          20        1211         954]);  %[2400, 400,560,420]
+set(fig1,'Position',[-1854          20        1211         954]);  %[2400, 400,560,420]
 % set(fig1,'Position',[ 6   552   560   420]);  %[2400, 400,560,420]
 
 for i = 1:n_link
 Link(i) = plot(0,0,'LineWidth',2); grid on; hold on;
 end
 
-xlim([-1 5]);
+xlim([-2 5]);
 ylim([-1 4]);
 
 xLineTerrainLim = xlim;
@@ -41,7 +41,7 @@ end
 %===================================================
 if plot_q
     fig2 = figure(2);
-%     set(fig2,'Position', [  -609   503   560   420])
+    set(fig2,'Position', [  -609   503   560   420])
 
     subplot(2,1,1)    
     plot_q1 = plot(0,0); hold on;
@@ -75,7 +75,7 @@ end
 %==========check1 (mechanical energy)===============
 if plot_check_model
     fig3 = figure(3);
-    % set(fig3,'Position',[-601   525   560   420])
+    set(fig3,'Position',[-601   525   560   420])
     energyPlot = plot(0,0);
     xlim([0 50]);
     % ylim([-5 100]);
@@ -84,7 +84,7 @@ if plot_check_model
 
 %==========check2 (K_dot = -q_dot' * G)=============
     fig4 = figure(4);
-    % set(fig4,'Position',[  -601     7   560   420])
+    set(fig4,'Position',[  -601     7   560   420])
     plotCheck2(1) = plot(0,0); hold on;
     plotCheck2(2) = plot(0,0);
     kineticEnergy_dot_record = 0;
@@ -115,7 +115,7 @@ end
 %===============xi==================================
 if plot_xi
     fig7 = figure(7);
-%     set(fig7,'Position',[  -601     7   560   420])
+    set(fig7,'Position',[  -601     7   560   420])
     for i = 1:5
     plot_xi(i) = plot(0,0); hold on;
     end
@@ -127,7 +127,7 @@ end
 %============phase portrait=========================
 if plot_phasePortrait
     fig8 = figure(8);
-%     set(fig8,'Position',[  -601     7   560   420])
+    set(fig8,'Position',[  -601     7   560   420])
     subplot(2,1,1)
     plot_phasePortrait(1) = plot(0,0); hold on;
     subplot(2,1,2)
@@ -136,6 +136,7 @@ end
 %===================================================
 
 %================q_d & q_dot_d======================
+if plot_q
 fig9 = figure(9);
 set(fig9,'Position',[  -601     7   560   420])
 % subplot(2,1,1)
@@ -146,6 +147,7 @@ plot_q_d(2) = plot(0,0); hold on;
 q_d_record = zeros(length(q_d),1);
 q_d1_record = zeros(length(q_d),1);
 q_dot_d_record = zeros(length(q_dot_d),1);
+end
 %===================================================
 
 time_record = 0;
