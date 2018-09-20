@@ -32,7 +32,7 @@ function [controller, q_dot_0] = calculateInitialConditions(startingParameters,f
     d = abs(distance);
     T = 0.25; %0.515;
     xi_0(1) = p; %with q(1) = 0; q(2) = 0;
-    xi_0(2) = .5821; %!!! %chosen so that at t=T impact 1.569 1.139 .48115 .57
+    xi_0(2) = .581; %!!! %chosen so that at t=T impact 1.569 1.139 .48115 .57
     xi_0(3) = -G_0(1); %%with q(1) = 0; q(2) = 0;
 
     matrixA = [-T^3/12, -T^4/24;

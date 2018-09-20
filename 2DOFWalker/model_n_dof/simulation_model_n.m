@@ -75,7 +75,8 @@ h = zeros(n_link-1,1);
 v_record = 0;
 w_d_record = 0;
 fig10 = figure(10);
-set(fig10,'Position',[  -601     7   560   420])
+
+set(fig10,'Position',[1341         446         560         420]);
 plot_error = plot(0,0); hold on;
 plot_error1 = plot(0,0); hold on;
 
@@ -153,7 +154,11 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
 %         distance_legs = Links(swing_leg,1,2);
 %         first_impact = 1;
 %     end
-    
+%        startingParameters = [q(1),  q_dot(1), 0;...
+%                              q(2),  q_dot(2), 0;...
+%                             0,      0,       0;...
+%                             0,      0,       0];
+                      
     [q,q_dot] = impact_handler(q,q_dot,relabelingMatrices,fileName);
     
     %------stay inside 2*pi-----
@@ -168,6 +173,9 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
     [Links,kinematics] = KinematicsLinks(q); %update kinematics
     %===========================================================
 
+
+%     [traj, q_dot_0] = calculateInitialConditions(startingParameters,fileName, relabelingMatrices, step_lenght);
+    
     jj = 0;
     control_flag = 1;
 %     impact_detected = 1;
