@@ -1,13 +1,13 @@
 fig1 = figure(1);
-set(fig1,'Position',[-1854          20        1211         954]);  %[2400, 400,560,420]
+% set(fig1,'Position',[-1854          20        1211         954]);  %[2400, 400,560,420]
 % set(fig1,'Position',[ 6   552   560   420]);  %[2400, 400,560,420]
 
 for i = 1:n_link
 Link(i) = plot(0,0,'LineWidth',2); grid on; hold on;
 end
 
-xlim([-2 5]);
-ylim([-1 4]);
+xlim([-0.5 2.5]);
+ylim([-0.5 2.5]);
 
 xLineTerrainLim = xlim;
 yLineTerrainLim = tan(slope) * (xLineTerrainLim);
@@ -25,7 +25,7 @@ end
 %===========================================
 
 %==========CoM position=============================
-if plot_CoMPosition
+if plot_CoM
     for i = 1:n_link
         plot_CoM(i) = plot(0,0,'x'); hold on;
     end
@@ -41,7 +41,7 @@ end
 %===================================================
 if plot_q
     fig2 = figure(2);
-    set(fig2,'Position', [  -609   503   560   420])
+    set(fig2,'Position', [ -609   503   560   420])
 
     subplot(2,1,1)    
     plot_q1 = plot(0,0); hold on;
@@ -65,7 +65,9 @@ if plot_q
     % xlim([0 10]);
     ylim([-lim_q lim_q]);
 
+end
 
+if plot_q || plot_phasePort
 
     q_record = zeros(length(q),1);
     q_dot_record = zeros(length(q_dot),1);
@@ -75,18 +77,25 @@ end
 %==========check1 (mechanical energy)===============
 if plot_check_model
     fig3 = figure(3);
-    set(fig3,'Position',[-601   525   560   420])
+%     set(fig3,'Position',[-601   525   560   420])
     energyPlot = plot(0,0);
     xlim([0 50]);
     % ylim([-5 100]);
+    xlabel('$t$', 'Interpreter', 'latex')
+    ylabel('$Mechanical\>Energy$', 'Interpreter', 'latex')
     mechanicalEnergy_record = 0;
+    
 %===================================================
 
 %==========check2 (K_dot = -q_dot' * G)=============
     fig4 = figure(4);
-    set(fig4,'Position',[  -601     7   560   420])
+%     set(fig4,'Position',[  -601     7   560   420])
     plotCheck2(1) = plot(0,0); hold on;
+    xlabel('$t$', 'Interpreter', 'latex')
     plotCheck2(2) = plot(0,0);
+    xlabel('$t$', 'Interpreter', 'latex')
+    plotCheck_legend = legend('$\dot{K}$','$-\dot{q} \cdot G$');
+    set(plotCheck_legend, 'Interpreter', 'latex');
     kineticEnergy_dot_record = 0;
     check2_record = 0;
 end
@@ -115,23 +124,32 @@ end
 %===============xi==================================
 if plot_xi
     fig7 = figure(7);
-    set(fig7,'Position',[  -601     7   560   420])
+%     set(fig7,'Position',[  -601     7   560   420])
+
     for i = 1:5
     plot_xi(i) = plot(0,0); hold on;
     end
     xi_record = zeros(5,1);
-    legend('xi(1)','xi(2)','xi(3)','xi(4)','xi(5)')
+    legend('xi(1)','xi(2)','xi(3)','xi(4)','xi(5)','Interpreter','latex');
+    
+    xlabel('$t$','Interpreter','latex');
+    ylabel('$\xi$','Interpreter','latex');
+
 end
 %===================================================
 
 %============phase portrait=========================
-if plot_phasePortrait
+if plot_phasePort
     fig8 = figure(8);
-    set(fig8,'Position',[  -601     7   560   420])
+%     set(fig8,'Position',[  -601     7   560   420])
     subplot(2,1,1)
     plot_phasePortrait(1) = plot(0,0); hold on;
+    xlabel('$_1q$','Interpreter','latex');
+    ylabel('$\dot{q}_1$','Interpreter','latex');
     subplot(2,1,2)
     plot_phasePortrait(2) = plot(0,0); hold on;
+    xlabel('$q_2$','Interpreter','latex');
+    ylabel('$\dot{q}_2$','Interpreter','latex');
 end
 %===================================================
 
@@ -150,4 +168,12 @@ q_dot_d_record = zeros(length(q_dot_d),1);
 end
 %===================================================
 
+%================CoM Position=======================
+if plot_CoM_pos
+CoM_record = [0 0];
+fig10 = figure(10);
+plot_CoM_position_x = plot(0,0); hold on;
+plot_CoM_position_y = plot(0,0); hold on;
+end
+%===================================================
 time_record = 0;

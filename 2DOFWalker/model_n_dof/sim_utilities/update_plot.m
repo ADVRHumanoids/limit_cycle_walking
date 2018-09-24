@@ -11,7 +11,7 @@ if size(time_record,2) >= buffer
     time_record = [time_record(:,2:end) time];
 end
 %===================q q_dot q_Ddot=====================
-if plot_q
+if plot_q || plot_phasePort
     q_record = [q_record q];
     q_dot_record = [q_dot_record q_dot];
     q_Ddot_record = [q_Ddot_record q_Ddot];
@@ -23,7 +23,8 @@ if plot_q
         q_Ddot_record = [q_Ddot_record(:,2:end) q_Ddot];
     %     T_record = [T_record(:,2:end) T];
     end
-
+end
+if plot_q
     % for loop = 1:size(q,1)
     set(plot_q1,'xdata',time_record,'ydata',q_record(1,:));
     set(plot_q1_dot,'xdata',time_record,'ydata',q_dot_record(1,:));
@@ -34,7 +35,7 @@ if plot_q
     set(plot_q2_Ddot,'xdata',time_record,'ydata',q_Ddot_record(2,:));
 end
 %==========CoM position=============================
-if plot_CoMPosition
+if plot_CoM
     for i = 1:n_link
     set(plot_CoM(i),'xdata',kinematics.linksCoMPosition(1,:,i),'ydata', kinematics.linksCoMPosition(2,:,i));
     end
@@ -51,7 +52,7 @@ if plot_check_model
     kineticEnergy_dot_record = [kineticEnergy_dot_record kineticEnergy_dot];
     check2_record = [check2_record check2];
     set(plotCheck2(1), 'xdata', time_record, 'ydata', kineticEnergy_dot_record);
-    set(plotCheck2(2), 'xdata', time_record, 'ydata', check2_record);
+%     set(plotCheck2(2), 'xdata', time_record, 'ydata', check2_record); %-q_dot' * G
 end
 %===================================================
 
@@ -59,7 +60,7 @@ end
 % p2_record = [p2_record, Links(n_link,2,2) - yLineTerrain];
 % set(plot_p2, 'xdata', time_record, 'ydata', p2_record)
 %===================================================
-
+% plotq2_legend = legend('$q_2$','$\dot{q_2}$','$\ddot{q_2}$');
 %===========controller==============================
 % controller_record = [controller_record, h];
 % for i = 1:length(h)
@@ -77,7 +78,7 @@ end
 %===================================================
 
 %============phase portrait=========================
-if plot_phasePortrait
+if plot_phasePort
     for i = 1:n_link
     set(plot_phasePortrait(i), 'xdata', abs(q_record(i,:)),'ydata', abs(q_dot_record(i,:)));
     end
@@ -96,5 +97,13 @@ end
 % set(plot_q_d(1),'xdata',time_record,'ydata',q_d_record(2,:));
 % set(plot_q_d(2),'xdata',time_record,'ydata',q_d1_record(2,:));
 % set(plot_q_dot_d,'xdata',time_record,'ydata',q_dot_d_record(2,:));
+%===================================================
+
+%=====================================
+if plot_CoM_pos
+    CoM_record = [CoM_record; kinematics.CoM_position'];
+    set(plot_CoM_position_x, 'xdata', time_record, 'ydata', CoM_record(:,1));
+    set(plot_CoM_position_y, 'xdata', time_record, 'ydata', CoM_record(:,2));
+end
 %===================================================
 drawnow;

@@ -14,10 +14,11 @@ robotTree; %change here parameters
 step_lenght = 0.2;
 %========================plot settings=====================================
 plot_xi = 0;
-plot_phasePortrait = 0;
-plot_q = 0;
+plot_phasePort = 0; 
+plot_q = 0; %q, q_dot, q_ddot
 plot_check_model = 0; %mechanical energy and kineticEnergy_dot = -q_dot * G
-plot_CoMPosition = 1;
+plot_CoM = 1;
+plot_CoM_pos = 1;
 %==========================================================================
 %==========================================================================
 robotData = getRobotData;
@@ -72,14 +73,16 @@ yLineTerrain_old = yLineTerrain;
 h = zeros(n_link-1,1);
 %=======
 %=======
-v_record = 0;
-w_d_record = 0;
-fig10 = figure(10);
-
-set(fig10,'Position',[1341         446         560         420]);
-plot_error = plot(0,0); hold on;
-plot_error1 = plot(0,0); hold on;
-
+% v_record = 0;
+% w_d_record = 0;
+% fig10 = figure(10);
+% 
+% set(fig10,'Position',[1341         446         560         420]);
+% plot_error = plot(0,0); hold on;
+% plot_error1 = plot(0,0); hold on;
+writerObj = VideoWriter('walker1.avi');
+writerObj.FrameRate = 60;
+open(writerObj);
 
 set_plot;
 %=======
@@ -109,7 +112,8 @@ distance_legs = 0;
 
 %===============
 %===============
- while 1
+%  while 1
+ for j = 1:250
      
 j = j + 1;
 time = (j-1)*dt;
@@ -227,10 +231,12 @@ end
 
 update_plot
 
-v_record = [v_record, v];
-w_d_record = [w_d_record, w_d];
-set(plot_error,'xdata',time_record,'ydata', v_record);%- w_d_record
-set(plot_error1,'xdata',time_record,'ydata', w_d_record);%- w_d_record
+frame = getframe;
+writeVideo(writerObj,frame);
+% v_record = [v_record, v];
+% w_d_record = [w_d_record, w_d];
+% set(plot_error,'xdata',time_record,'ydata', v_record);%- w_d_record
+% set(plot_error1,'xdata',time_record,'ydata', w_d_record);%- w_d_record
 %==========
 %==========
  end
@@ -238,4 +244,4 @@ set(plot_error1,'xdata',time_record,'ydata', w_d_record);%- w_d_record
  
  
  
- 
+ close(writerObj);
