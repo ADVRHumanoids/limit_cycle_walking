@@ -135,8 +135,13 @@ for i = 1:10 % run five steps
 	ieout = [ieout; ie];
 
 	% Set the new initial conditions (after impact).
+    
 	x0=transition_three_link(x(nt,:));
-
+    
+    if i >= 3
+        x0 = x0 + 0.1*i;
+    end
+        
 	% display some useful information to the user
 	disp(['step: ',num2str(i),', impact ratio:  ',num2str(x0(7)/x0(8))])
 
