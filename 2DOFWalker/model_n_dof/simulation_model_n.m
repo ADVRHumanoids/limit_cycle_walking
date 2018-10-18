@@ -5,7 +5,7 @@
     
 %==========================================================================
 close all; clear all; clc;
-
+                                                                                                                                                                                                                               
 Folder = cd;
 addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a n-link walker=====================
@@ -15,10 +15,10 @@ step_lenght = 0.2;
 %========================plot settings=====================================
 plot_xi = 0;
 plot_phasePort = 0; 
-plot_q = 0; %q, q_dot, q_ddot
+plot_q = 1; %q, q_dot, q_ddot
 plot_check_model = 0; %mechanical energy and kineticEnergy_dot = -q_dot * G
 plot_CoM = 1;
-plot_CoM_pos = 1;
+plot_CoM_pos = 0;
 %==========================================================================
 %==========================================================================
 robotData = getRobotData;
@@ -80,18 +80,18 @@ h = zeros(n_link-1,1);
 % set(fig10,'Position',[1341         446         560         420]);
 % plot_error = plot(0,0); hold on;
 % plot_error1 = plot(0,0); hold on;
-writerObj = VideoWriter('walker1.avi');
-writerObj.FrameRate = 60;
-open(writerObj);
+% writerObj = VideoWriter('walker1.avi');
+% writerObj.FrameRate = 60;
+% open(writerObj);
 
 set_plot;
 %=======
 %=======
 %-------------initial conditions for walking v - term1 - term3) and controller----------------
-[traj, q_dot_0] = calculateInitialConditions(startingParameters,fileName, relabelingMatrices, step_lenght);
-q_dot(1:n_link) = q_dot_0;
+% [traj, q_dot_0] = calculateInitialConditions(startingParameters,fileName, relabelingMatrices, step_lenght);
+% q_dot(1:n_link) = q_dot_0;
 
-xi_d = variableXi(q,q_dot,q_Ddot);
+% xi_d = variableXi(q,q_dot,q_Ddot);
 % %--------------------------------------------------------------------------
 j = 0;
 jj = 0;
@@ -112,8 +112,8 @@ distance_legs = 0;
 
 %===============
 %===============
-%  while 1
- for j = 1:250
+ while 1
+%  for j = 1:250
      
 j = j + 1;
 time = (j-1)*dt;
@@ -150,7 +150,7 @@ yLineTerrain = double(tan(slope) * Links(swing_leg,1,2));
 %============impact========================================================
 % control : F2_T <= mu*F2_N and F2_N > 0
 %           stance leg p1_dot_vertical >= 0
-step_condition = Links(swing_leg,1,2) > Base(1); %link,axis,begin/end  
+step_condition = Links(swing_leg,1,2) > Base(1) + 100; %link,axis,begin/end  
 % step_condition = Links(swing_leg,1,2) > Base(1) + abs(distance);
 if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_leg,2,2) > yLineTerrain_old  %link,axis,begin/end  
 % if q(1) >= pi/18
@@ -188,27 +188,27 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
 end
 %============controller===============
 %%% transformation to xi variables
-[xi, Phi1_0, Phi2_0] = variableXi(q,q_dot,q_Ddot); % xi(1) = p / xi(2) = sigma / xi(3) = sigma_dot / xi(4) = = sigma_Ddot / xi(5) = = sigma_DDdot
+% [xi, Phi1_0, Phi2_0] = variableXi(q,q_dot,q_Ddot); % xi(1) = p / xi(2) = sigma / xi(3) = sigma_dot / xi(4) = = sigma_Ddot / xi(5) = = sigma_DDdot
 
 %%% desired trajectory planning, computed offline
-w_d = (traj(1) + traj(2)* time_reset); %xi_DDot _reset
+% w_d = (traj(1) + traj(2)* time_reset); %xi_DDot _reset
 
 %%% controller to follow trajectory
-[xi_d(3), xi_d(2), xi_d(1)] = integrator_xi(dt, w_d, xi_d(3), xi_d(2), xi_d(1), D); %integrate xi_DDdot
-k_p = .1;
-k_d = .01;
-v = w_d + k_p*(xi_d(1) - xi(1)) + k_d*(xi_d(2) - xi(2));
+% [xi_d(3), xi_d(2), xi_d(1)] = integrator_xi(dt, w_d, xi_d(3), xi_d(2), xi_d(1), D); %integrate xi_DDdot
+% k_p = .1;
+% k_d = .01;
+% v = w_d + k_p*(xi_d(1) - xi(1)) + k_d*(xi_d(2) - xi(2));
 
 
 %%% partial linearization controller
 % if control_flag == 1
-%     [tau,h] = controllerWalker(q,q_dot, D,C,G); %linearizing normal model robot system
-    tau = controllerWalker_ver1(v,q,q_dot, D,C,G); %linearizing xi system
+    [tau,h] = controllerWalker(q,q_dot, D,C,G); %linearizing normal model robot system
+%     tau = controllerWalker_ver1(v,q,q_dot, D,C,G); %linearizing xi system
 % end
 
 %%% trying to get q and q_dot
 % q_d1 = inv(Phi1_0) * [xi_d(1); xi_d(3)]; NOPE
-q_dot_d = inv(Phi2_0) * [xi_d(2); xi_d(4)];
+% q_dot_d = inv(Phi2_0) * [xi_d(2); xi_d(4)];
 
 % q_d = integrator_q_d(dt, q_dot_d, q_d); NOPE
 
@@ -230,9 +230,9 @@ end
 %==========
 
 update_plot
-
-frame = getframe;
-writeVideo(writerObj,frame);
+% 
+% frame = getframe;
+% writeVideo(writerObj,frame);
 % v_record = [v_record, v];
 % w_d_record = [w_d_record, w_d];
 % set(plot_error,'xdata',time_record,'ydata', v_record);%- w_d_record
@@ -244,4 +244,4 @@ writeVideo(writerObj,frame);
  
  
  
- close(writerObj);
+%  close(writerObj);
