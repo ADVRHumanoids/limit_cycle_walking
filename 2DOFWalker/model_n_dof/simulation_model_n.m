@@ -80,9 +80,9 @@ h = zeros(n_link-1,1);
 % set(fig10,'Position',[1341         446         560         420]);
 % plot_error = plot(0,0); hold on;
 % plot_error1 = plot(0,0); hold on;
-writerObj = VideoWriter('walker1.avi');
-writerObj.FrameRate = 60;
-open(writerObj);
+% writerObj = VideoWriter('walker1.avi');
+% writerObj.FrameRate = 60;
+% open(writerObj);
 
 set_plot;
 %=======
@@ -231,8 +231,8 @@ end
 
 update_plot
 
-frame = getframe;
-writeVideo(writerObj,frame);
+% frame = getframe;
+% writeVideo(writerObj,frame);
 % v_record = [v_record, v];
 % w_d_record = [w_d_record, w_d];
 % set(plot_error,'xdata',time_record,'ydata', v_record);%- w_d_record
@@ -244,4 +244,4 @@ writeVideo(writerObj,frame);
  
  
  
- close(writerObj);
+%  close(writerObj);
