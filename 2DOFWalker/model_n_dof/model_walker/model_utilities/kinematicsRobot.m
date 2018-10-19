@@ -131,7 +131,7 @@ totalCoM_position = temp_CoM/sum(robotData.mass);
         v_abs(:,:,1) = sym([0; 0; 0]);
         %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for i = 2:n_link
-            v_abs(:,:,i) = v_abs(:,:,parent_tree(i)) + cross(w_abs(:,:,i-1), rp_abs(:,:,i-1));
+            v_abs(:,:,i) = v_abs(:,:,parent_tree(i)) + cross(w_abs(:,:,parent_tree(i)), rp_abs(:,:,parent_tree(i)));
         end
 
 

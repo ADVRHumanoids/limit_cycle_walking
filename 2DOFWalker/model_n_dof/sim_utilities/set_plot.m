@@ -6,8 +6,8 @@ for i = 1:n_link
 Link(i) = plot(0,0,'LineWidth',2); grid on; hold on;
 end
 
-xlim([-0.5 2.5]);
-ylim([-0.5 2.5]);
+xlim([-2 2]);
+ylim([-2 2]);
 
 xLineTerrainLim = xlim;
 yLineTerrainLim = tan(slope) * (xLineTerrainLim);
@@ -42,8 +42,8 @@ end
 if plot_q
     fig2 = figure(2);
     set(fig2,'Position', [ -609   503   560   420])
-
-    subplot(2,1,1)    
+    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    subplot(3,1,1)    
     plot_q1 = plot(0,0); hold on;
     plot_q1_dot = plot(0,0); hold on;
     plot_q1_Ddot = plot(0,0); hold on;
@@ -53,14 +53,25 @@ if plot_q
     lim_q = 30;
     % xlim([0 10]);
     ylim([-lim_q lim_q]);
-
-    subplot(2,1,2)
+    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    subplot(3,1,2)
     plot_q2 = plot(0,0); hold on;
     plot_q2_dot = plot(0,0); hold on;
     plot_q2_Ddot = plot(0,0); hold on;
 
     plotq2_legend = legend('$q_2$','$\dot{q_2}$','$\ddot{q_2}$');
     set(plotq2_legend, 'Interpreter', 'latex');
+
+    % xlim([0 10]);
+    ylim([-lim_q lim_q]);
+    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    subplot(3,1,3)
+    plot_q3 = plot(0,0); hold on;
+    plot_q3_dot = plot(0,0); hold on;
+    plot_q3_Ddot = plot(0,0); hold on;
+
+    plotq3_legend = legend('$q_3$','$\dot{q_3}$','$\ddot{q_3}$');
+    set(plotq3_legend, 'Interpreter', 'latex');
 
     % xlim([0 10]);
     ylim([-lim_q lim_q]);
@@ -174,6 +185,17 @@ CoM_record = [0 0];
 fig10 = figure(10);
 plot_CoM_position_x = plot(0,0); hold on;
 plot_CoM_position_y = plot(0,0); hold on;
+end
+%===================================================
+
+%================tau=======================
+if plot_tau
+tau_record = zeros(1, n_link);
+fig11 = figure(11);
+set(fig11,'Position',[1336 204 560 420])
+for i = 1:n_link
+    plot_tau(i) = plot(0,0); hold on;
+end
 end
 %===================================================
 time_record = 0;

@@ -33,6 +33,10 @@ if plot_q
     set(plot_q2,'xdata',time_record,'ydata',q_record(2,:));
     set(plot_q2_dot,'xdata',time_record,'ydata',q_dot_record(2,:));
     set(plot_q2_Ddot,'xdata',time_record,'ydata',q_Ddot_record(2,:));
+    
+    set(plot_q3,'xdata',time_record,'ydata',q_record(3,:));
+    set(plot_q3_dot,'xdata',time_record,'ydata',q_dot_record(3,:));
+    set(plot_q3_Ddot,'xdata',time_record,'ydata',q_Ddot_record(3,:));
 end
 %==========CoM position=============================
 if plot_CoM
@@ -104,6 +108,15 @@ if plot_CoM_pos
     CoM_record = [CoM_record; kinematics.CoM_position'];
     set(plot_CoM_position_x, 'xdata', time_record, 'ydata', CoM_record(:,1));
     set(plot_CoM_position_y, 'xdata', time_record, 'ydata', CoM_record(:,2));
+end
+%===================================================
+
+%================tau=======================
+if plot_tau
+tau_record = [tau_record; tau'];
+for i = 1:n_link
+    set(plot_tau(i), 'xdata', time_record,'ydata', tau_record(:,i));
+end
 end
 %===================================================
 drawnow;

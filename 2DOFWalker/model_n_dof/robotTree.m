@@ -21,15 +21,14 @@ addpath(genpath(fullfile(Folder, '..')));
 flagSim = 1; 
 
 %define the parent tree of the robot walker
-% parent_tree = [0 1 1];
-parent_tree = [0 1];
+parent_tree = [0 1 2];
 % parent_tree = [0 1 2 3];
 
 %choose which leg is the initial swinging leg
 swing_leg = 2;
 
 %choose which link is the waist (if there is no waist, leave it an empty array [])
-waist = []; %needed for the relabeling
+waist = [3]; %needed for the relabeling
 
 
 %physical parameters of the robot walker:
@@ -37,10 +36,10 @@ waist = []; %needed for the relabeling
 if length(parent_tree) == 3
     
     parameterSet = 1;
-    link_length = [1 1 0.5];
-    com_position = [0.8 0.2 0.5/2]; %0.8
-    m = [0.3 0.3 1]; %0.3
-    I = [0.03 0.03 0.1];
+    link_length = [1 1 1];
+    com_position = [0.5 0.5 0.5]; %0.8
+    m = [5 5 5]; %0.3
+    I = [0.5 0.5 0.5];
     g = 9.81;
     
 elseif length(parent_tree) == 2

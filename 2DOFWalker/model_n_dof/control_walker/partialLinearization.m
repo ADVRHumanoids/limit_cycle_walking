@@ -55,11 +55,11 @@ h(1) = q(2)- (pi- q(1) - q(2)); %%output of the system
 h(2) = q(3);
 h_dq = jacobian(h,q);  % h_dq = functionalDerivative(h,q)';
 
-Lfh = h_dq * q_dot;
+Lfh = h_dq * q_dot; % -------> dh/dq * d_dot
 
 h_dq_dq = [jacobian(Lfh, q) h_dq]; % h_dq_dq = [functionalDerivative(Lfh,q)'  h_dq];
 
-L2fh  = simplify(-h_dq_dq(:,end-n_controlled_variables:end)* inv(D) * C* q_dot - h_dq_dq(:,end-n_controlled_variables:end) * inv(D) * G);
+L2fh  = simplify(-h_dq_dq(:,end-n_controlled_variables:end)* inv(D) * C* q_dot - h_dq_dq(:,end-n_controlled_variables:end) * inv(D) * G); %dh/dq * d_dot
 LgLfh = h_dq * inv(D) * B;
 
 v = [0;

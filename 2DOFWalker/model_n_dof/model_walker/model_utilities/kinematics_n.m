@@ -99,7 +99,8 @@ function kinematics = kinematics_n(generalizedVariables)
 %         rp_abs(:,:,i) = [z; 0] + rp_abs(:,:,i);
 %     end
 %==========forward kinematics==============================================
-    p(:,:,1) = z + rp_abs(1:2,:,1);
+% position of end point of link i
+    p(:,:,1) = z + rp_abs(1:2,:,1); 
     for i = 2:n_link
         p(:,:,i) = p(1:2,:,parent_tree(i)) + rp_abs(1:2,:,i);
     end
@@ -118,7 +119,7 @@ function kinematics = kinematics_n(generalizedVariables)
 %==========forward kinematics CoM==========================================
     pc(:,:,1) = z + rc_abs(1:2,:,1);
     for i = 2:n_link
-        pc(:,:,i) = z + rp_abs(1:2,:,parent_tree(i)) + rc_abs(1:2,:,i);
+        pc(:,:,i) = p(1:2,:,parent_tree(i)) + rc_abs(1:2,:,i);
     end
     
 %==========CoM position====================================================
@@ -143,14 +144,15 @@ totalCoM_position = temp_CoM/sum(robotData.mass);
             w_abs(:,:,i) = w_abs(:,:,(parent_tree(i))) + R_abs(:,:,i) * w_rel(:,:,i);
         end
 
+        %velocity of starting point of link (which is the end point of the previous)
         %base~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        v_abs(:,:,1) = [z_dot(1); z_dot(2); 0];
+        v_abs(:,:,1) = [z_dot(1); z_dot(2); 0]; 
         %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for i = 2:n_link
-            v_abs(:,:,i) = v_abs(:,:,parent_tree(i)) + cross(w_abs(:,:,i-1), rp_abs(:,:,i-1));
+            v_abs(:,:,i) = v_abs(:,:,parent_tree(i)) + cross(w_abs(:,:,parent_tree(i)), rp_abs(:,:,parent_tree(i)));
         end
 
-
+        %velocity of CoM for each link
         for i = 1:n_link
             vc_abs(:,:,i) = v_abs(:,:,i) + cross(w_abs(:,:,i),rc_abs(:,:,i));
         end
