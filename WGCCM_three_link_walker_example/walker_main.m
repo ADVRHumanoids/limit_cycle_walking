@@ -106,8 +106,9 @@ tfinal = 20;
 
 %% The optimization parameters
 %
-a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+% a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
 
+a = [0.512 0 0 0 0 0 0 0];
 omega_1 = 1.55;
 x0 = sigma_three_link(omega_1,a);
 x0 = transition_three_link(x0).';
@@ -130,7 +131,7 @@ for i = 1:10 % run five steps
 	nt = length(t);
 	tout = [tout; t(2:nt)];
 	xout = [xout;x(2:nt,:)];
-	teout = [teout; te]; % Events at tstart are never reported.
+	teout = [teout; te];  % Events at tstart are never reported.
 	xeout = [xeout; xe];
 	ieout = [ieout; ie];
 
@@ -139,7 +140,7 @@ for i = 1:10 % run five steps
 	x0=transition_three_link(x(nt,:));
     
     if i >= 3
-        x0 = x0 + 0.1*i;
+        x0 = x0 + 0.01*i;
     end
         
 	% display some useful information to the user

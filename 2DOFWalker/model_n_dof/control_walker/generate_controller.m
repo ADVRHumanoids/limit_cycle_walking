@@ -11,9 +11,9 @@ a_waist = [a01 a11 a21 a31];
 q=[q1;q2;q3];
 dq=[q1_dot;q2_dot;q3_dot];
 
-th(1) = q(1);
-th(2) = - (-pi - q(1) - q(2));
-th(3) = q(3);
+    th(1) = q(1);
+    th(2) = - (pi - q(1) - q(2));
+    th(3) = q(3);
 
 
 thd(1) = th1d;
