@@ -108,7 +108,7 @@ tfinal = 20;
 %
 % a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
 
-a = [0.512 0 0 0 0 0 0 0];
+a = [0.3 0 0 0 0 0 0 0];
 omega_1 = 1.55;
 x0 = sigma_three_link(omega_1,a);
 x0 = transition_three_link(x0).';
@@ -139,9 +139,9 @@ for i = 1:10 % run five steps
     
 	x0=transition_three_link(x(nt,:));
     
-    if i >= 3
-        x0 = x0 + 0.01*i;
-    end
+%     if i >= 3
+%         x0 = x0 + 0.01*i;
+%     end
         
 	% display some useful information to the user
 	disp(['step: ',num2str(i),', impact ratio:  ',num2str(x0(7)/x0(8))])

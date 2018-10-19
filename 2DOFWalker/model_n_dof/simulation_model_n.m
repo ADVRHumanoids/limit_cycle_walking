@@ -19,6 +19,7 @@ plot_q = 1; %q, q_dot, q_ddot
 plot_check_model = 0; %mechanical energy and kineticEnergy_dot = -q_dot * G
 plot_CoM = 1;
 plot_CoM_pos = 0;
+plot_tau = 1;
 %==========================================================================
 %==========================================================================
 robotData = getRobotData;
@@ -98,12 +99,14 @@ Base = [0,0];
 disp('push a button to continue'); pause;
 
 impact_detected = 0;
+impact_counter = 0;
+
 control_flag = 0;
 first_impact = 0;
 distance_legs = 0;
 
 offset_leg = pi;
-offset_waist = 1;
+offset_waist = 0;
 %===============
 %===============
  while 1
@@ -131,11 +134,11 @@ Links_old = Links;
 
 [q_Ddot(1:n_link), q_dot(1:n_link), q(1:n_link)] = integrator(dt,D,C,G, tau(1:n_link), q_dot(1:n_link), q(1:n_link));
 
-for i  = 1:length(q)
-    if q(i) >= 2*pi
-        q(i) = q(i) - 2*pi;
-    end
-end
+% for i  = 1:length(q)
+%     if q(i) >= 2*pi
+%         q(i) = q(i) - 2*pi;
+%     end
+% end
 
 
 yLineTerrain_old = yLineTerrain;
@@ -146,8 +149,9 @@ yLineTerrain = double(tan(slope) * Links(swing_leg,1,2));
 %           stance leg p1_dot_vertical >= 0
 step_condition = Links(swing_leg,1,2) > Base(1) + step_lenght; %link,axis,begin/end  
 % step_condition = Links(swing_leg,1,2) > Base(1) + abs(distance);
-if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_leg,2,2) > yLineTerrain_old  %link,axis,begin/end  
-% if q(1) >= pi/18
+% if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_leg,2,2) > yLineTerrain_old  %link,axis,begin/end  
+if 0
+    % if q(1) >= pi/18
 %     if ~first_impact 
 %         distance_legs = Links(swing_leg,1,2);
 %         first_impact = 1;
@@ -177,16 +181,20 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
     jj = 0;
     control_flag = 1;
     impact_detected = 1;
+    impact_counter = impact_counter + 1;
 
 
 end
 
 if impact_detected
-offset_leg = -offset_leg;
-offset_waist = -1;
+    impact_detected = 0;
+    offset_leg = -offset_leg;
+    offset_waist =  - (relabelingMatrices.MatrixRelabel(3,:)*[0; 0; q(3)]);
+    
 end
 %============controller===============
-    [tau,h] = controllerWalker(q,q_dot, D,C,G, offset_leg, offset_waist); %linearizing normal model robot system
+%     [tau,h] = controllerWalker(q,q_dot, D,C,G, offset_leg, offset_waist); %linearizing normal model robot system
+    tau = [0;0;0];
 %=====================================
 
 
