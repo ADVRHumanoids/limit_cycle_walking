@@ -56,7 +56,7 @@ if plot_check_model
     kineticEnergy_dot_record = [kineticEnergy_dot_record kineticEnergy_dot];
     check2_record = [check2_record check2];
     set(plotCheck2(1), 'xdata', time_record, 'ydata', kineticEnergy_dot_record);
-%     set(plotCheck2(2), 'xdata', time_record, 'ydata', check2_record); %-q_dot' * G
+    set(plotCheck2(2), 'xdata', time_record, 'ydata', check2_record); %-q_dot' * G
 end
 %===================================================
 

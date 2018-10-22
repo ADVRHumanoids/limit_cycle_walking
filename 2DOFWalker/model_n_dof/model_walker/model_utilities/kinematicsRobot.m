@@ -101,9 +101,9 @@ function kinematics = kinematicsRobot(generalizedVariables)
     end
 
 %==========forward kinematics CoM==========================================
-    pc(:,:,1) =  rc_abs(1:2,:,1);
+    pc(:,:,1) = rc_abs(1:2,:,1);
     for i = 2:n_link
-        pc(:,:,i) = rp_abs(1:2,:,parent_tree(i)) + rc_abs(1:2,:,i);
+        pc(:,:,i) = p(1:2,:,parent_tree(i)) + rc_abs(1:2,:,i);
     end
 
 %==========CoM position====================================================

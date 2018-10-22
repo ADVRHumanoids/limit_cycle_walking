@@ -6,8 +6,8 @@ for i = 1:n_link
 Link(i) = plot(0,0,'LineWidth',2); grid on; hold on;
 end
 
-xlim([-2 2]);
-ylim([-2 2]);
+xlim([-1 5]);
+ylim([-1 5]);
 
 xLineTerrainLim = xlim;
 yLineTerrainLim = tan(slope) * (xLineTerrainLim);
@@ -103,7 +103,7 @@ if plot_check_model
 %     set(fig4,'Position',[  -601     7   560   420])
     plotCheck2(1) = plot(0,0); hold on;
     xlabel('$t$', 'Interpreter', 'latex')
-    plotCheck2(2) = plot(0,0);
+    plotCheck2(2) = plot(0,0,'LineWidth',2);
     xlabel('$t$', 'Interpreter', 'latex')
     plotCheck_legend = legend('$\dot{K}$','$-\dot{q} \cdot G$');
     set(plotCheck_legend, 'Interpreter', 'latex');

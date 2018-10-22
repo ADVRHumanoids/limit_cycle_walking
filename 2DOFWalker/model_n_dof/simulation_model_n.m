@@ -34,7 +34,7 @@ if n_link == 3
     
     startingParameters = [ q1_des,  0,    0;...  %q1     %pi/18
                            q2_des,  0,    0;...  %q2    pi-(pi-2*(pi/2-(1/18*pi)))
-                           -q1_des,  0,    0;...
+                           -q1_des + pi/4,  0,    0;...
                                 0,  0,    0;...  %z1
                                 0,  0,    0];    %z2
 elseif n_link == 2
@@ -149,8 +149,8 @@ yLineTerrain = double(tan(slope) * Links(swing_leg,1,2));
 %           stance leg p1_dot_vertical >= 0
 step_condition = Links(swing_leg,1,2) > Base(1) + step_lenght; %link,axis,begin/end  
 % step_condition = Links(swing_leg,1,2) > Base(1) + abs(distance);
-% if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_leg,2,2) > yLineTerrain_old  %link,axis,begin/end  
-if 0
+if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_leg,2,2) > yLineTerrain_old  %link,axis,begin/end  
+% if 0
     % if q(1) >= pi/18
 %     if ~first_impact 
 %         distance_legs = Links(swing_leg,1,2);
@@ -193,8 +193,8 @@ if impact_detected
     
 end
 %============controller===============
-%     [tau,h] = controllerWalker(q,q_dot, D,C,G, offset_leg, offset_waist); %linearizing normal model robot system
-    tau = [0;0;0];
+    [tau,h] = controllerWalker(q,q_dot, D,C,G, offset_leg, offset_waist); %linearizing normal model robot system
+%     tau = [0;0;0];
 %=====================================
 
 
