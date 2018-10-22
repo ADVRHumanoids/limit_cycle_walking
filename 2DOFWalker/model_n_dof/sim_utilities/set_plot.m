@@ -6,8 +6,9 @@ for i = 1:n_link
 Link(i) = plot(0,0,'LineWidth',2); grid on; hold on;
 end
 
-xlim([-1 5]);
-ylim([-1 5]);
+xlim([-1 7]);
+ylim([-1 2.5]);
+pbaspect([7/2.5 1 1])
 
 xLineTerrainLim = xlim;
 yLineTerrainLim = tan(slope) * (xLineTerrainLim);
@@ -43,7 +44,7 @@ end
 %===================================================
 if plot_q
     fig2 = figure(2);
-    set(fig2,'Position', [ -609   503   560   420])
+    set(fig2,'Position', [76   537   560   420])
     %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     subplot(3,1,1)    
     plot_q1 = plot(0,0); hold on;
@@ -134,36 +135,24 @@ end
 % controller_record = zeros(n_link-1,1);
 %===================================================
 
-%===============xi==================================
-if plot_xi
-    fig7 = figure(7);
-%     set(fig7,'Position',[  -601     7   560   420])
-
-    for i = 1:5
-    plot_xi(i) = plot(0,0); hold on;
-    end
-    xi_record = zeros(5,1);
-    legend('xi(1)','xi(2)','xi(3)','xi(4)','xi(5)','Interpreter','latex');
-    
-    xlabel('$t$','Interpreter','latex');
-    ylabel('$\xi$','Interpreter','latex');
-
-end
-%===================================================
 
 %============phase portrait=========================
 if plot_phasePort
     fig8 = figure(8);
-%     set(fig8,'Position',[  -601     7   560   420])
+    set(fig8,'Position',[1322          25         560         420])
     subplot(2,1,1)
-    plot_phasePortrait(1) = plot(0,0); hold on;
-    xlabel('$_1q$','Interpreter','latex');
-    ylabel('$\dot{q}_1$','Interpreter','latex');
-    subplot(2,1,2)
-    plot_phasePortrait(2) = plot(0,0); hold on;
-    xlabel('$q_2$','Interpreter','latex');
-    ylabel('$\dot{q}_2$','Interpreter','latex');
+    for i = 1:n_link
+    subplot(n_link,1,i)
+    plot_phasePortrait(i) = plot(0,0); hold on;
+    xlabel(['$q_', num2str(i), '$'],'Interpreter','latex');
+    ylabel(['$\dot{q}_', num2str(i), '$'],'Interpreter','latex');
+    end
 end
+
+%     subplot(2,1,2)
+%     plot_phasePortrait(2) = plot(0,0); hold on;
+%     xlabel('$q_2$','Interpreter','latex');
+%     ylabel('$\dot{q}_2$','Interpreter','latex');
 %===================================================
 
 %================q_d & q_dot_d======================
@@ -194,7 +183,7 @@ end
 if plot_tau
 tau_record = zeros(1, n_link);
 fig11 = figure(11);
-set(fig11,'Position',[1336 204 560 420])
+set(fig11,'Position',[1320         544         560         420])
 for i = 1:n_link
     plot_tau(i) = plot(0,0); hold on;
 end

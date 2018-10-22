@@ -73,15 +73,6 @@ end
 % end
 %===================================================
 
-%===============xi==================================
-if plot_xi
-    xi_record = [xi_record, xi];
-    for i = 1:5
-    set(plot_xi(i), 'xdata', time_record,'ydata', xi_record(i,:));
-    end
-end
-%===================================================
-
 %============phase portrait=========================
 if plot_phasePort
     for i = 1:n_link

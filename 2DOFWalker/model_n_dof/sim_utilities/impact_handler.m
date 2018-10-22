@@ -1,4 +1,4 @@
-function [q_After,q_dot_After] = impact_handler(q_Before,q_dot_Before,relabelingMatrices,fileName)
+function [q_After,q_dot_After, deltaqDotBar] = impact_handler(q_Before,q_dot_Before,relabelingMatrices,fileName)
 %% impact model + relabeling
 % for the dynamic model:
 % D*q_Ddot + C*q_dot + G = B*u + F_implusive,

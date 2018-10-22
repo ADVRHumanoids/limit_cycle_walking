@@ -13,7 +13,6 @@ robotTree; %change here parameters
 %=========================step_lenght======================================
 step_lenght = 0.5;
 %========================plot settings=====================================
-plot_xi = 0;
 plot_phasePort = 0; 
 plot_q = 0; %q, q_dot, q_ddot
 plot_check_model = 0; %mechanical energy and kineticEnergy_dot = -q_dot * G
@@ -151,9 +150,9 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
 %                              q(2),  q_dot(2), 0;...
 %                             0,      0,       0;...
 %                             0,      0,       0];
-                      
-    [q,q_dot] = impact_handler(q,q_dot,relabelingMatrices,fileName);
-    
+                     
+    [q,q_dot, deltaqDotBar] = impact_handler(q,q_dot,relabelingMatrices,fileName);
+%     deltaqDotBar_previous = deltaqDotBar ;
     %------stay inside 2*pi-----
     for i  = 1:length(q)
         if abs(q(i)) >= 2*pi
@@ -185,13 +184,13 @@ if impact_detected
     
 end
 %============controller===============
-    [tau,h] = controllerWalker(q,q_dot, D,C,G, offset_leg, offset_waist); %linearizing normal model robot system
+    [tau,h] = controllerWalker(q,q_dot, D,C,G, offset_leg, offset_waist, q1_des); %linearizing normal model robot system
 %     tau = [0;0;0];
 %=====================================
 
 %===========disturbance===============
 % if time >= 1
-%     tau = tau + 100;
+%     tau = tau + 50;
 % end
 %=====================================
 if plot_check_model
