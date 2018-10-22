@@ -23,6 +23,8 @@ for i = 1:n_link
 set(Link(i),'xdata',Links(i,1,:),'ydata',Links(i,2,:));
 end
 %===========================================
+% title(['t = ',num2str(time)]);
+xlabel(['t = ', num2str(time)]);
 
 %==========CoM position=============================
 if plot_CoM

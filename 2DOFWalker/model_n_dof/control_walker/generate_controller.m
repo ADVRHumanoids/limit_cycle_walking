@@ -19,10 +19,11 @@ dq=[q1_dot;q2_dot;q3_dot];
 thd(1) = th1d;
 
 %output function h
-y = [th(2)-(-th(1)+(a_leg(1) + a_leg(2)*th(1) + a_leg(3)*th(1)^2+a_leg(4)*th(1)^3)*(th(1)-thd(1))*(th(1)+thd(1)));%leg virtual constraint
-                                  th(3)-(a_waist(1) + a_waist(2)*th(1) + a_waist(3)*th(1)^2 + a_waist(4)*th(1)^3)]; %waist virtual constraint
+y = sym(zeros(2,1));
 
-                         
+y(1) = th(2)-(-th(1)+(a_leg(1) + a_leg(2)*th(1) + a_leg(3)*th(1)^2+a_leg(4)*th(1)^3)*(th(1)-thd(1))*(th(1)+thd(1)));%leg virtual constraint
+y(2) = th(3)-(a_waist(1) + a_waist(2)*th(1) + a_waist(3)*th(1)^2 + a_waist(4)*th(1)^3); %waist virtual constraint
+
 h_dq = jacobian(y,q); 
 h_dq_dq = [jacobian(h_dq * dq, q), h_dq]; %RIGHT
 

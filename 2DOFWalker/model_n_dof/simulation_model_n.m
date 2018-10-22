@@ -29,22 +29,12 @@ relabelingMatrices = getRelabelingMatrices(parent_tree, waist);
 %==========================================================================
 q1_des = -asin(step_lenght^2/(2*robotData.link_length(1)*step_lenght));
 q2_des = (pi - 2 *q1_des);
-%==========================================================================
-if n_link == 3
-    
+%========================================================================== 
     startingParameters = [ q1_des,  0,    0;...  %q1     %pi/18
                            q2_des,  0,    0;...  %q2    pi-(pi-2*(pi/2-(1/18*pi)))
                            -q1_des + pi/2,  0,    0;...
                                 0,  0,    0;...  %z1
                                 0,  0,    0];    %z2
-elseif n_link == 2
-    
-%     cyclic_var_value =  -pi/16;
-    startingParameters = [q1_des,  0,    0;...  %q1     %cyclic_var_value
-                          q2_des, 0,    0;...   %q2     %pi - 2 *cyclic_var_value
-                          0,  0,    0;...  %z1
-                          0,  0,    0];    %z2
-end
 %=======================starting kinematics================================
 q = startingParameters(1:n_link+2,1);
 q_dot = startingParameters(1:n_link+2,2);
@@ -77,15 +67,8 @@ h = zeros(n_link-1,1);
 % writerObj.FrameRate = 60;
 % open(writerObj);
 
-set_plot;
-%=======
-%=======
-%-------------initial conditions for walking v - term1 - term3) and controller----------------
-% [traj, q_dot_0] = calculateInitialConditions(startingParameters,fileName, relabelingMatrices, step_lenght);
-% q_dot(1:n_link) = q_dot_0;
 
-% xi_d = variableXi(q,q_dot,q_Ddot);
-% %--------------------------------------------------------------------------
+
 j = 0;
 jj = 0;
 time = 0;
@@ -96,6 +79,14 @@ tau = zeros(length(q),1);
 % k_p = 1;
 % k_d = 0.1;
 Base = [0,0];
+
+%=======
+%=======
+set_plot;
+%=======
+%=======
+
+
 disp('push a button to continue'); pause;
 
 impact_detected = 0;
@@ -198,7 +189,10 @@ end
 %     tau = [0;0;0];
 %=====================================
 
-
+%===========disturbance===============
+% if time >= 1
+%     tau = tau + 100;
+% end
 %=====================================
 if plot_check_model
     %=========mechanicalenergy============

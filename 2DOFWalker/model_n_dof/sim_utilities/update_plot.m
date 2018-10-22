@@ -2,6 +2,7 @@ for i = 1:n_link
 set(Link(i),'xdata',Links(i,1,:),'ydata',Links(i,2,:));
 end   
 
+xlabel(['t = ', num2str(round(time,1))]);
 % set(p2plot,'xdata',phi(1),'ydata',phi(2));
 
 buffer = 100000;

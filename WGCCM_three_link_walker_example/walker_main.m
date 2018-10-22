@@ -106,9 +106,9 @@ tfinal = 20;
 
 %% The optimization parameters
 %
-% a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
+a = [0.512 0.073 0.035 -0.819 -2.27 3.26 3.11 1.89];
 
-a = [0.3 0 0 0 0 0 0 0];
+% a = [0.3 0 0 0 0 0 0 0];
 omega_1 = 1.55;
 x0 = sigma_three_link(omega_1,a);
 x0 = transition_three_link(x0).';
