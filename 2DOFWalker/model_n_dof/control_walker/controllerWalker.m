@@ -17,7 +17,7 @@ function [torque,y] = controllerWalker(q,q_dot, D,C,G,offset_leg, offset_waist)
 
         y(1) = q(1) - (offset_leg - q(1) - q(2)); %leg virtual constraint
 %         y(2) =  q(3) +  (offset_waist + pi/8); %q(1) + q(3) + 2 * pi; %waist virtual constraint
-        y(2) =  q(3) +  (offset_waist + q(1) - pi/4);
+        y(2) =  q(3) +  (offset_waist + q(1) - pi/2);
         
         h_dq = [2 1 0;
                 1 0 1];

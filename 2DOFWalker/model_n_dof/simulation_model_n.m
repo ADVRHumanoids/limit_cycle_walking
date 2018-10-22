@@ -15,11 +15,11 @@ step_lenght = 0.5;
 %========================plot settings=====================================
 plot_xi = 0;
 plot_phasePort = 0; 
-plot_q = 1; %q, q_dot, q_ddot
+plot_q = 0; %q, q_dot, q_ddot
 plot_check_model = 0; %mechanical energy and kineticEnergy_dot = -q_dot * G
 plot_CoM = 1;
 plot_CoM_pos = 0;
-plot_tau = 1;
+plot_tau = 0;
 %==========================================================================
 %==========================================================================
 robotData = getRobotData;
@@ -34,7 +34,7 @@ if n_link == 3
     
     startingParameters = [ q1_des,  0,    0;...  %q1     %pi/18
                            q2_des,  0,    0;...  %q2    pi-(pi-2*(pi/2-(1/18*pi)))
-                           -q1_des + pi/4,  0,    0;...
+                           -q1_des + pi/2,  0,    0;...
                                 0,  0,    0;...  %z1
                                 0,  0,    0];    %z2
 elseif n_link == 2
@@ -189,7 +189,8 @@ end
 if impact_detected
     impact_detected = 0;
     offset_leg = -offset_leg;
-    offset_waist =  - (relabelingMatrices.MatrixRelabel(3,:)*[0; 0; q(3)]);
+%     offset_waist =  - (relabelingMatrices.MatrixRelabel(3,:)*[0; 0; q(3)]);
+    offset_waist =  2*pi;
     
 end
 %============controller===============
