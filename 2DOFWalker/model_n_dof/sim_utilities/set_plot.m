@@ -6,9 +6,12 @@ for i = 1:n_link
 Link(i) = plot(0,0,'LineWidth',2); grid on; hold on;
 end
 
-xlim([-1 7]);
+lim_x_min = -1;
+lim_x_max = 4;
+
+xlim([lim_x_min lim_x_max]);
 ylim([-1 2.5]);
-pbaspect([7/2.5 1 1])
+pbaspect([4/2.5 1 1]);
 
 xLineTerrainLim = xlim;
 yLineTerrainLim = tan(slope) * (xLineTerrainLim);

@@ -1,6 +1,16 @@
 for i = 1:n_link
 set(Link(i),'xdata',Links(i,1,:),'ydata',Links(i,2,:));
-end   
+end
+
+ax = fig1.CurrentAxes;
+if Link(1).XData(1) >= lim_x_max - 2
+    lim_x_min = lim_x_min + 2;
+    lim_x_max = lim_x_max + 2;
+    ax.XLim = [lim_x_min, lim_x_max];
+    xLineTerrainLim = xLineTerrainLim + 2;
+    figure(1); LineTerrain = plot(xLineTerrainLim,yLineTerrainLim);
+end
+
 
 xlabel(['t = ', num2str(round(time,1))]);
 % set(p2plot,'xdata',phi(1),'ydata',phi(2));

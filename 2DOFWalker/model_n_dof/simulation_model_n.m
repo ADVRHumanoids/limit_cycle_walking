@@ -13,7 +13,7 @@ robotTree; %change here parameters
 %=========================step_lenght======================================
 step_lenght = 0.5;
 %========================plot settings=====================================
-plot_phasePort = 0; 
+plot_phasePort = 1; 
 plot_q = 0; %q, q_dot, q_ddot
 plot_check_model = 0; %mechanical energy and kineticEnergy_dot = -q_dot * G
 plot_CoM = 1;
@@ -58,7 +58,6 @@ h = zeros(n_link-1,1);
 % v_record = 0;
 % w_d_record = 0;
 % fig10 = figure(10);
-% 
 % set(fig10,'Position',[1341         446         560         420]);
 % plot_error = plot(0,0); hold on;
 % plot_error1 = plot(0,0); hold on;
@@ -140,19 +139,10 @@ yLineTerrain = double(tan(slope) * Links(swing_leg,1,2));
 step_condition = Links(swing_leg,1,2) > Base(1) + step_lenght; %link,axis,begin/end  
 % step_condition = Links(swing_leg,1,2) > Base(1) + abs(distance);
 if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_leg,2,2) > yLineTerrain_old  %link,axis,begin/end  
-% if 0
-    % if q(1) >= pi/18
-%     if ~first_impact 
-%         distance_legs = Links(swing_leg,1,2);
-%         first_impact = 1;
-%     end
-%        startingParameters = [q(1),  q_dot(1), 0;...
-%                              q(2),  q_dot(2), 0;...
-%                             0,      0,       0;...
-%                             0,      0,       0];
+
                      
     [q,q_dot, deltaqDotBar] = impact_handler(q,q_dot,relabelingMatrices,fileName);
-%     deltaqDotBar_previous = deltaqDotBar ;
+%     deltaqDotBar_previous = deltaqDotBar;
     %------stay inside 2*pi-----
     for i  = 1:length(q)
         if abs(q(i)) >= 2*pi
@@ -165,8 +155,6 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
     [Links,kinematics] = KinematicsLinks(q); %update kinematics
     %===========================================================
 
-
-%     [traj, q_dot_0] = calculateInitialConditions(startingParameters,fileName, relabelingMatrices, step_lenght);
     
     jj = 0;
     control_flag = 1;
@@ -179,7 +167,6 @@ end
 if impact_detected
     impact_detected = 0;
     offset_leg = -offset_leg;
-%     offset_waist =  - (relabelingMatrices.MatrixRelabel(3,:)*[0; 0; q(3)]);
     offset_waist =  2*pi;
     
 end
@@ -189,9 +176,9 @@ end
 %=====================================
 
 %===========disturbance===============
-% if time >= 1
-%     tau = tau + 50;
-% end
+if time >= 4 && time <=6
+    tau = tau + 50;
+end
 %=====================================
 if plot_check_model
     %=========mechanicalenergy============

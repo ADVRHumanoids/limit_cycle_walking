@@ -28,12 +28,12 @@ function [torque,y] = controllerWalker(q,q_dot, D,C,G,offset_leg, offset_waist, 
 %     %       as long as there are no velocities in the y, I can write h_dq_dq like this
 %     h_dq_dq = [zeros(length(y), n_link) h_dq];
 %==========================================================================
-    H0 = [0 1 0;
-          0 0 1];
-      
-    c = [1 0 0];
-    
-    H = [H0; c];
+%     H0 = [0 1 0;
+%           0 0 1];
+%       
+%     c = [1 0 0];
+%     
+%     H = [H0; c];
 
 
     thd(1) = pi/8; %pi/8
