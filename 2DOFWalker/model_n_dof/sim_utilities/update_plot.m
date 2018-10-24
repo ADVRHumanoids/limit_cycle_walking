@@ -12,7 +12,7 @@ if Link(1).XData(1) >= lim_x_max - 2
 end
 
 
-xlabel(['t = ', num2str(round(time,1))]);
+figure(1); xlabel(['t = ', num2str(round(time,1))]);
 % set(p2plot,'xdata',phi(1),'ydata',phi(2));
 
 buffer = 100000;

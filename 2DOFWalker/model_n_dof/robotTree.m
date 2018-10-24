@@ -39,7 +39,7 @@ if length(parent_tree) == 3
 
     parameterSet = 4; %real par from COMAN+
     link_length = [0.811 0.811 0.685];
-    com_position = [0.8 - 0.461778, 0.461778, 0.194568]; %0.8
+    com_position = [0.8 - 0.461778, 0.461778, 0.168 + 0.194568]; %distance from joint to base_link + distance from base_link to CoM
     m = [9.3 9.3 40.56]; %0.3
     I = [0.811 0.811  0.97];
     g = 9.81;

@@ -11,7 +11,9 @@ addpath(genpath(fullfile(Folder, '..')));
 %==================simulation model of a n-link walker=====================
 robotTree; %change here parameters
 %=========================step_lenght======================================
-step_lenght = 0.5;
+initial_step = 0.3;
+step_lenght = 0.3;
+angle_impact = pi/17;
 %========================plot settings=====================================
 plot_phasePort = 1; 
 plot_q = 0; %q, q_dot, q_ddot
@@ -26,12 +28,18 @@ slope = 0;
 n_link = length(parent_tree);
 relabelingMatrices = getRelabelingMatrices(parent_tree, waist);
 %==========================================================================
-q1_des = -asin(step_lenght^2/(2*robotData.link_length(1)*step_lenght));
+q1_des = -asin(initial_step^2/(2*robotData.link_length(1)*initial_step));
 q2_des = (pi - 2 *q1_des);
 %========================================================================== 
     startingParameters = [ q1_des,  0,    0;...  %q1     %pi/18
                            q2_des,  0,    0;...  %q2    pi-(pi-2*(pi/2-(1/18*pi)))
                            -q1_des + pi/2,  0,    0;...
+                                0,  0,    0;...  %z1
+                                0,  0,    0];    %z2
+                            
+    startingParameters = [ 0,  0,    0;...  %q1     %pi/18
+                           pi,  0,    0;...  %q2    pi-(pi-2*(pi/2-(1/18*pi)))
+                           0,  0,    0;...
                                 0,  0,    0;...  %z1
                                 0,  0,    0];    %z2
 %=======================starting kinematics================================
@@ -69,6 +77,7 @@ h = zeros(n_link-1,1);
 
 j = 0;
 jj = 0;
+global time;
 time = 0;
 time_reset = 0;
 dt = 0.005; %0.001
@@ -100,7 +109,7 @@ offset_waist = 0;
 %===============
  while 1
 %  for j = 1:250
-     
+
 j = j + 1;
 time = (j-1)*dt;
 
@@ -150,7 +159,7 @@ if Links(swing_leg,2,2) <= yLineTerrain  && step_condition %&& Links_old(swing_l
         end
     end
     %===========change base=====================================
-    Base = [Links(swing_leg,1,2); yLineTerrain]; %TODO
+    Base = [Links(swing_leg,1,2); yLineTerrain]; %TODOstep_lenght
     q(end-1:end) = Base;
     [Links,kinematics] = KinematicsLinks(q); %update kinematics
     %===========================================================
@@ -176,8 +185,14 @@ end
 %=====================================
 
 %===========disturbance===============
-if time >= 4 && time <=6
-    tau = tau + 50;
+% if time >= 4 && time <=6
+%     tau = tau + 50;
+% end
+%=====================================
+
+%===========start_movement===============
+if time >= .3
+    q(3) = q(3) + 0.01;
 end
 %=====================================
 if plot_check_model

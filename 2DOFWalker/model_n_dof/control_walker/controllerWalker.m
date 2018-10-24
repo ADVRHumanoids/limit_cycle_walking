@@ -1,4 +1,4 @@
-function [torque,y] = controllerWalker(q,q_dot, D,C,G,offset_leg, offset_waist, q1_des)
+function [torque,y] = controllerWalker(q,q_dot, D,C,G,offset_leg, offset_waist, angle_impact)
 
     n_link = length(q)-2;
     
@@ -7,14 +7,19 @@ function [torque,y] = controllerWalker(q,q_dot, D,C,G,offset_leg, offset_waist, 
     n_controlled_variables = length(q) - n_base_variables - n_unactuated_variable; %-base z1 z2 // -underactuated var
     B = [zeros(1,n_controlled_variables); eye(n_controlled_variables)];
     
-% 
-   a_leg = [-2.27 3.26 3.11 1.89];
-   a_waist = [0.512 0.073 0.035 -0.819];
-   
-%    a_leg = [1 -1 0 0];
-%    a_waist = [1 -1 0 0];
-   
-   
+    time = getTime;
+    % 
+    %    a_leg = [-2.27 3.26 3.11 1.89];
+    %    a_waist = [0.512 0.073 0.035 -0.819];
+    %    
+    %    a_leg = [1 -1 0 0]; %[-3 5 3 2];
+    %    a_waist = [0.8 -1 0 0];
+    a_leg = [0 0 0 0]; %[-3 5 3 2];
+    a_waist = [0 0 0 0];  
+
+    if time >= 1.5
+        a_waist = [1 0 0 0];
+    end
 %==========finite time controller & partial linearization==================
     y = zeros(n_controlled_variables, 1);
 
@@ -28,20 +33,15 @@ function [torque,y] = controllerWalker(q,q_dot, D,C,G,offset_leg, offset_waist, 
 %     %       as long as there are no velocities in the y, I can write h_dq_dq like this
 %     h_dq_dq = [zeros(length(y), n_link) h_dq];
 %==========================================================================
-%     H0 = [0 1 0;
-%           0 0 1];
-%       
-%     c = [1 0 0];
-%     
-%     H = [H0; c];
 
 
-    thd(1) = pi/8; %pi/8
+
+    thd(1) = angle_impact; %pi/8
 %     
     th(1) = q(1); %2*q(1) + q(2) - offset_leg
     th(2) =  - (offset_leg - q(1) - q(2));   % -(offset_leg - q(1) - q(2)); 
 %     th(3) = q(3) +  (offset_waist + q(1) - pi/2);
-    th(3) = q(3) +  (offset_waist - pi/2);
+    th(3) = q(3) +  (offset_waist);
 
 % 
     y(1) = th(2)-(-th(1)+(a_leg(1) + a_leg(2)*th(1) + a_leg(3)*th(1)^2+a_leg(4)*th(1)^3)*(th(1)-thd(1))*(th(1)+thd(1)));%leg virtual constraint 
@@ -60,7 +60,10 @@ h_dq_dq = [
 ];
 
 
-
+    if time >= 1.6
+        y(2) =  q(3) +  (offset_waist + q(1));
+        
+    end
 %===========================linearization==================================
     Fx = (inv(D)*(-C* q_dot(1:n_link) - G));
     Gx = inv(D) * B;
