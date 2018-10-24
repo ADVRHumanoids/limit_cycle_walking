@@ -36,25 +36,12 @@ waist = [3]; %needed for the relabeling
 if length(parent_tree) == 3
 %don't change parameters of a set!
 %if you want new parameters, just create 
-%     parameterSet = 1;
-%     link_length = [1 1 1];
-%     com_position = [0.5 0.5 0.5]; %0.8
-%     m = [5 5 5]; %0.3
-%     I = [0.5 0.5 0.5];
-%     g = 9.81;
 
-%     parameterSet = 2;
-%     link_length = [1 1 0.5];
-%     com_position = [0.5 0.5 0.5/2]; %0.8
-%     m = [5 5 15]; %0.3
-%     I = [0.5 0.5 1.5];
-%     g = 9.81;
-   
-    parameterSet = 3;
-    link_length = [1 1 1];
-    com_position = [0.5 0.5 0.8]; %0.8
-    m = [5 5 15]; %0.3
-    I = [0.5 0.5 1.5];
+    parameterSet = 4; %real par from COMAN+
+    link_length = [0.811 0.811 0.685];
+    com_position = [0.8 - 0.461778, 0.461778, 0.194568]; %0.8
+    m = [9.3 9.3 40.56]; %0.3
+    I = [0.811 0.811  0.97];
     g = 9.81;
 
 elseif length(parent_tree) == 2
