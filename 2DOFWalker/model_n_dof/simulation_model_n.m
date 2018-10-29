@@ -207,7 +207,7 @@ end
 %==========
 %==========
 
-update_plot;
+update_plot
 
 % frame = getframe;
 % writeVideo(writerObj,frame);
