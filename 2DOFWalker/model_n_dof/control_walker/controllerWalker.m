@@ -49,6 +49,7 @@ function [torque,y] = controllerWalker(q,q_dot, D,C,G,offset_leg, offset_waist, 
 
 
 %Controller based on Bezier curves for virtual constraints.
+%generated with generate_controller in control_walker
 h_dq = [ 
 a_leg(2)*thd(1)^2 - 3*a_leg(2)*q(1)^2 - 4*a_leg(3)*q(1)^3 - 5*a_leg(4)*q(1)^4 - 2*a_leg(1)*q(1) + 2*a_leg(3)*q(1)*thd(1)^2 + 3*a_leg(4)*q(1)^2*thd(1)^2 + 2, 1, 0;
 - a_waist(2) - 2*a_waist(3)*q(1) - 3*a_waist(4)*q(1)^2, 0, 1;
