@@ -29,30 +29,30 @@ public:
         tf::TransformListener ankle_to_com_listener;
         
         
-        cartesian_solution_sub = n.subscribe("/cartesian/solution", 1000, &virtualConstraintsNode::joints_state_callback, this); /*subscribe to cartesian/solution topic*/
-        com_sub = n.subscribe("/cartesian/com/state", 1000, &virtualConstraintsNode::com_state_callback, this); /*subscribe to cartesian/solution topic*/
+        _cartesian_solution_sub = n.subscribe("/cartesian/solution", 1000, &virtualConstraintsNode::joints_state_callback, this); /*subscribe to cartesian/solution topic*/
+        _com_sub = n.subscribe("/cartesian/com/state", 1000, &virtualConstraintsNode::com_state_callback, this); /*subscribe to cartesian/solution topic*/
         
-        com_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com/reference", 1000); /*publish to /cartesian/com/reference*/
+        _com_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com/reference", 1000); /*publish to /cartesian/com/reference*/
         ankle_to_com_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time::now(), ros::Duration(3.0));
-        ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), ankle_to_com_transform);
+        ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), _ankle_to_com_transform);
     }
     
 
     void joints_state_callback(const sensor_msgs::JointState msg_rcv) //this is called by ros
     {
 //         TODO: here do all state, also orientation
-        joints_state = msg_rcv.position;
+        _joints_state = msg_rcv.position;
     }
 
     void com_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        com_state = msg_rcv.pose.position;
+        _com_state = msg_rcv.pose.position;
     }
     
     double get_q1()
     {
         double q1_state;
-        q1_state = joints_state[10];
+        q1_state = _joints_state[_joint_number];
     
         ROS_INFO("var is %f", q1_state);
         return q1_state;
@@ -71,18 +71,20 @@ public:
     void publish_x_position_com(double pos) 
     {
         geometry_msgs::PoseStamped msg_cmd;
-        msg_cmd.pose.position = com_state;
-        msg_cmd.pose.position.x = pos;
+        msg_cmd.pose.position = _com_state;
+        msg_cmd.pose.position.x = _com_state.x + pos; //wrong
+//         ROS_INFO("%f", _com_state);
 //         ROS_INFO("%f", msg_cmd.pose.position.x);
-        com_pub.publish(msg_cmd);
+        _com_pub.publish(msg_cmd);
     }
     
     double listen_z_distance_ankle_com()
     {
         double z_distance;
-        z_distance = ankle_to_com_transform.getOrigin().z();
+        z_distance = _ankle_to_com_transform.getOrigin().z();
+//         ROS_INFO("val is: %f",  _distance);
         return z_distance;
-//         ROS_INFO("val is: %f",  transform.getOrigin().z());
+        
     }
     
     void run()
@@ -92,7 +94,7 @@ public:
         z_distance = this->listen_z_distance_ankle_com();
         ROS_INFO("distance_z: %f",  z_distance);
 //         q1 = this->get_q1();
-        q1 = PI/12;
+        q1 = PI/20;
 
         pos = z_distance * tan(q1);
         ROS_INFO("distance_x: %f",  pos);
@@ -101,17 +103,17 @@ public:
     }
 protected:
     
-    ros::Subscriber cartesian_solution_sub;
-    ros::Subscriber com_sub;
-    ros::Publisher com_pub;
+    ros::Subscriber _cartesian_solution_sub;
+    ros::Subscriber _com_sub;
+    ros::Publisher _com_pub;
     
-    std::vector<double> joints_state;
+    std::vector<double> _joints_state;
     
-    geometry_msgs::Point com_state;
+    geometry_msgs::Point _com_state;
     
-    tf::StampedTransform ankle_to_com_transform;
+    tf::StampedTransform _ankle_to_com_transform;
     
-    int joint_number = 10; /*ankle_pitch_angle*/
+    int _joint_number = 10; /*ankle_pitch_angle*/
     
 };
 
@@ -129,7 +131,7 @@ int main(int argc, char **argv)
         
     ros::spinOnce();
 //     VC.get_q1();
-//     VC.listen();
+//     VC.listen_z_distance_ankle_com();
     
     
 //     VC.publish();
