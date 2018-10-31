@@ -1,0 +1,3 @@
+[Project]
+Manager=KDevCMakeManager
+Name=virtual_constraints_walker

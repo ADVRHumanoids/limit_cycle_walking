@@ -1,0 +1,46 @@
+solver_options:
+    regularization: 1e-6
+    back_end: "qpoases"
+
+stack:
+    - ["LFoot", "RFoot", "PosturalPennacchio"]
+    - ["CoM", "WaistOrient"]
+    - ["Postural"]
+    
+constraints: ["JointLimits", "VelocityLimits"]
+
+
+################################################
+############### TASK DEFINITIONS ###############
+################################################
+
+LFoot:
+    type: "Cartesian"
+    distal_link: "l_sole"
+    base_link: "world"
+
+RFoot:
+    type: "Cartesian"
+    distal_link: "r_sole"
+    base_link: "world"
+
+WaistOrient:
+    type: "Cartesian"
+    distal_link: "Waist"
+    base_link: "world"
+    lambda: 0.1
+    indices: [3,4,5]
+
+CoM:
+    type: "Com"
+    lambda: 0.1
+    
+    
+PosturalPennacchio:
+    type: "Postural"
+    lambda: 1.0
+    indices: [18]
+
+Postural:
+    type: "Postural"
+    lambda: .01
