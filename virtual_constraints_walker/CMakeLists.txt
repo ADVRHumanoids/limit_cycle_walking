@@ -10,6 +10,7 @@ add_compile_options(-std=c++11)
 #find_package(XBotInterface REQUIRED)
 #find_package(cmake_modules REQUIRED)
 #find_package(Eigen3 REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
@@ -47,24 +48,51 @@ find_package(XBotInterface REQUIRED)
 #)
 
 
+
+include_directories(${EIGEN3_INCLUDE_DIR})
+
+
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(${XBotInterface_INCLUDE_DIRS})
+include_directories(include/)
 
-add_executable(VC_publisher src/VC_publisher.cpp)
-add_executable(VC_subscriber src/VC_subscriber.cpp)
-add_executable(VC_listener src/VC_listener.cpp)
-add_executable(virtual_constraints src/virtual_constraints.cpp)
 
-target_link_libraries(VC_publisher ${catkin_LIBRARIES})
-target_link_libraries(VC_subscriber ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
-target_link_libraries(VC_listener ${catkin_LIBRARIES})
-target_link_libraries(virtual_constraints ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
+add_library(virtual_constraints_walker STATIC
+              src/virtualConstraintsNode.cpp
+              src/mainNode.cpp)
 
+              
+#add_executable(VC_publisher src/VC_publisher.cpp)
+#add_executable(VC_subscriber src/VC_subscriber.cpp)
+#add_executable(VC_listener src/VC_listener.cpp)
+
+
+add_executable(main_virtualConstraints src/main_virtualConstraints.cpp)
+
+
+#target_link_libraries(VC_publisher ${catkin_LIBRARIES})
+#target_link_libraries(VC_subscriber ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
+#target_link_libraries(VC_listener ${catkin_LIBRARIES})
+
+target_link_libraries(main_virtualConstraints virtual_constraints_walker ${catkin_LIBRARIES})
+ 
 #add_dependencies(VC_publisher)
 #add_dependencies(VC_subscriber)
 #add_dependencies(VC_listener)
 
-install(TARGETS VC_publisher RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
-install(TARGETS VC_subscriber RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
-install(TARGETS VC_listener RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
-install(TARGETS virtual_constraints RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
+
+#install(TARGETS VC_publisher 
+#         RUNTIME DESTINATION lib/${PROJECT_NAME} #${CATKIN_PACKAGE_BIN_DESTINATION}
+#         LIBRARY DESTINATION lib/${PROJECT_NAME})
+#install(TARGETS VC_subscriber 
+#         RUNTIME DESTINATION lib/${PROJECT_NAME} #${CATKIN_PACKAGE_BIN_DESTINATION}
+#         LIBRARY DESTINATION lib/${PROJECT_NAME})
+#install(TARGETS VC_listener 
+#         RUNTIME DESTINATION lib/${PROJECT_NAME} #${CATKIN_PACKAGE_BIN_DESTINATION}
+#         LIBRARY DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS main_virtualConstraints RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
+
+
+#install(TARGETS virtualConstraintsNode RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
+#install(TARGETS mainNode RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
