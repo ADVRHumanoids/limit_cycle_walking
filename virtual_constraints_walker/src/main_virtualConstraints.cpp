@@ -13,9 +13,11 @@ int main(int argc, char **argv)
 //     VC.get_q1();
 //     VC.listen_z_distance_ankle_com();
     
+        VC.publish_x_position_com();
+        VC.publish_x_position_r_sole();
+//         VC.step();
     
-//     VC.publish();
-    VC.run();
+//     VC.incline();
 //     loop_rate.sleep();
     }
 
