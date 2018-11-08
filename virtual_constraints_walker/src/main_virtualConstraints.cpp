@@ -13,8 +13,9 @@ int main(int argc, char **argv)
 //     VC.get_q1();
 //     VC.listen_z_distance_ankle_com();
     
-        VC.publish_x_position_com();
-        VC.publish_x_position_r_sole();
+//         VC.publish_x_position_com();
+//         VC.publish_x_position_r_sole();
+            VC.run();
 //         VC.get_q1();
 //         VC.step();
     

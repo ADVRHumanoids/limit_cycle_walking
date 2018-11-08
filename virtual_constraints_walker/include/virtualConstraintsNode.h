@@ -31,6 +31,8 @@ public:
        geometry_msgs::Point com;
        geometry_msgs::Point l_sole;
        geometry_msgs::Point r_sole;
+       tf::StampedTransform com_heigth;
+       
     }; 
     
     virtualConstraintsNode(int argc, char **argv, const char *node_name);
@@ -53,15 +55,16 @@ public:
     
 //     double calc_VC_legs ();
 
-    
-    void publish_x_position_com();
-    void publish_x_position_r_sole();
+    geometry_msgs::PoseStamped update_x_position(geometry_msgs::Point current_pose, double update_x);
 
     
     double listen_z_distance_ankle_com();
     
-    double incline();
-    double step();
+//     double incline();
+//     double step();
+    void step(double q1, double* x_com_distance, double* step_distance);   
+    
+    void run();
     
   
     
