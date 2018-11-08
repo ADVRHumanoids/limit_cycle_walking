@@ -15,6 +15,7 @@ int main(int argc, char **argv)
     
         VC.publish_x_position_com();
         VC.publish_x_position_r_sole();
+//         VC.get_q1();
 //         VC.step();
     
 //     VC.incline();

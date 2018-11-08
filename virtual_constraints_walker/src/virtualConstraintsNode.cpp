@@ -17,7 +17,8 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
         _com_sub = n.subscribe("/cartesian/com/state", 1000, &virtualConstraintsNode::com_state_callback, this); /*subscribe to cartesian/solution topic*/
         _l_sole_sub = n.subscribe("/cartesian/l_sole/state", 1000, &virtualConstraintsNode::l_sole_state_callback, this); /*subscribe to cartesian/solution topic*/
         _r_sole_sub = n.subscribe("/cartesian/r_sole/state", 1000, &virtualConstraintsNode::r_sole_state_callback, this); /*subscribe to cartesian/solution topic*/
-
+        _q1_sub = n.subscribe("/q1", 1000, &virtualConstraintsNode::q1_callback, this); /*subscribe to /q1 topic*/
+        
 //      prepare advertiser node
         _com_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com/reference", 1000); /*publish to /cartesian/com/reference*/
         _r_sole_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 1000); /*publish to /cartesian/com/reference*/
@@ -28,7 +29,10 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
         
     }
     
-
+void virtualConstraintsNode::q1_callback(const std_msgs::Float64 msg_rcv)
+    {
+       _q1_state = msg_rcv.data;
+    }
 void virtualConstraintsNode::joints_state_callback(const sensor_msgs::JointState msg_rcv) //this is called by ros
     {
 //         TODO: here do all state, also orientation
@@ -64,21 +68,13 @@ void virtualConstraintsNode::get_initial_pose()
     
 double virtualConstraintsNode::get_q1()
     {
-        double q1_state;
-        q1_state = _joints_state[_joint_number];
+//         double q1_state;
+//         q1_state = _joints_state[_joint_number];
     
-        ROS_INFO("var is %f", q1_state);
-        return q1_state;
+//         ROS_INFO("var is %f", _q1_state);
+        return _q1_state;
     }
     
-    
-//     virtualConstraintsNode::calc_VC_legs ()
-//     {
-//         double pos;
-// //         pos = 2 * leg_length * sin(q1_state);
-//         pos = -0.2;
-//         return pos;
-//     }
     
     
 void virtualConstraintsNode::publish_x_position_com() 
@@ -128,8 +124,8 @@ double virtualConstraintsNode::incline()
         
         z_distance = this->listen_z_distance_ankle_com();
 
-//         q1 = this->get_q1();
-        q1 = PI/20;
+        q1 = this->get_q1();
+//         q1 = PI/20;
         x_distance = z_distance * tan(q1);
 
         return x_distance;

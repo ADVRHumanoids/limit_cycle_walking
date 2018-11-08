@@ -7,6 +7,7 @@
 #include <tf/transform_listener.h>
 #include "cartesian_interface/CartesianInterface.h"
 #include <sensor_msgs/JointState.h>
+#include "std_msgs/Float64.h"
 
 #include <mainNode.h>
 
@@ -34,15 +35,16 @@ public:
     
     virtualConstraintsNode(int argc, char **argv, const char *node_name);
     
-
+    void q1_callback(const std_msgs::Float64 msg_rcv); //this is called by ros
+    
     void joints_state_callback(const sensor_msgs::JointState msg_rcv); //this is called by ros
 
 
     void com_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
     
-    void l_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv);
+    void l_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
     
-    void r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv);
+    void r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
 
     void get_initial_pose();
     
@@ -70,6 +72,7 @@ protected:
     ros::Subscriber _cartesian_solution_sub; 
     ros::Subscriber _com_sub;
     ros::Subscriber _l_sole_sub, _r_sole_sub;
+    ros::Subscriber _q1_sub;
     
     ros::Publisher _com_pub;     
     ros::Publisher _r_sole_pub;
@@ -81,10 +84,12 @@ protected:
     geometry_msgs::Point _com_state;
     geometry_msgs::Point _l_sole_state, _r_sole_state;
     geometry_msgs::PoseStamped _initial_com_pose;
+    double _q1_state;
     
     tf::StampedTransform _ankle_to_com_transform;
     
     int _joint_number = 10; /*ankle_pitch_angle*/
+    
     
 
     
