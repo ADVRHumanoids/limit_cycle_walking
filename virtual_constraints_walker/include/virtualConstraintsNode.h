@@ -58,14 +58,18 @@ public:
     geometry_msgs::PoseStamped update_x_position(geometry_msgs::Point current_pose, double update_x);
 
     
-    double listen_z_distance_ankle_com();
+    tf::Vector3 listen_distance_ankle_to_com();
+    tf::Vector3 listen_distance_r_to_l_foot();
     
 //     double incline();
 //     double step();
     void step(double q1, double* x_com_distance, double* step_distance);   
     
-    void run();
+    void left_move();
+    void right_move();
     
+    void impact_detected();
+
   
     
 protected:
@@ -74,11 +78,12 @@ protected:
     
     ros::Subscriber _cartesian_solution_sub; 
     ros::Subscriber _com_sub;
-    ros::Subscriber _l_sole_sub, _r_sole_sub;
+    ros::Subscriber _r_sole_sub, _l_sole_sub;
     ros::Subscriber _q1_sub;
     
     ros::Publisher _com_pub;     
-    ros::Publisher _r_sole_pub;
+    ros::Publisher _r_sole_pub, _l_sole_pub;
+    
     
     std::vector<double> _joints_state;
     
@@ -90,8 +95,9 @@ protected:
     double _q1_state;
     
     tf::StampedTransform _ankle_to_com_transform;
-    
+    tf::StampedTransform _l_to_r_foot_transform;
     int _joint_number = 10; /*ankle_pitch_angle*/
+
     
     
 
