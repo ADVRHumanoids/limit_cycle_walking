@@ -31,7 +31,7 @@ public:
        geometry_msgs::Point com;
        geometry_msgs::Point l_sole;
        geometry_msgs::Point r_sole;
-       tf::StampedTransform com_heigth;
+       tf::Vector3 ankle_to_com;
        
     }; 
     
@@ -59,7 +59,7 @@ public:
 
     
     tf::Vector3 listen_distance_ankle_to_com();
-    tf::Vector3 listen_distance_r_to_l_foot();
+    tf::Vector3 listen_distance_l_to_r_foot();
     
 //     double incline();
 //     double step();
@@ -70,7 +70,7 @@ public:
     
     void impact_detected();
 
-  
+
     
 protected:
     
@@ -98,8 +98,7 @@ protected:
     tf::StampedTransform _l_to_r_foot_transform;
     int _joint_number = 10; /*ankle_pitch_angle*/
 
-    
-    
+    tf::TransformListener _ankle_to_com_listener, _l_to_r_foot_listener;
 
     
 };

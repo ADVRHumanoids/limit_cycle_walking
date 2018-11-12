@@ -9,9 +9,7 @@
 virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char *node_name) : mainNode(argc, argv, node_name)
     {
         ros::NodeHandle n;
-
-        tf::TransformListener ankle_to_com_listener, l_to_r_foot_listener;
-        
+ 
 //      prepare subscribers node
         _cartesian_solution_sub = n.subscribe("/cartesian/solution", 1000, &virtualConstraintsNode::joints_state_callback, this); /*subscribe to cartesian/solution topic*/
         _com_sub = n.subscribe("/cartesian/com/state", 1000, &virtualConstraintsNode::com_state_callback, this); /*subscribe to cartesian/solution topic*/
@@ -27,12 +25,9 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
         _r_sole_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 1000); /*publish to /r_sole/reference*/
         
 //      prepare listener node
-        ankle_to_com_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time::now(), ros::Duration(3.0));
-        ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), _ankle_to_com_transform);
-        
-        l_to_r_foot_listener.waitForTransform("ci/l_ankle", "ci/r_ankle", ros::Time::now(), ros::Duration(3.0));
-        l_to_r_foot_listener.lookupTransform("ci/l_ankle", "ci/r_ankle", ros::Time(0), _l_to_r_foot_transform);
-        
+       
+        _ankle_to_com_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time::now(), ros::Duration(3.0)); /*why here??*/
+        _l_to_r_foot_listener.waitForTransform("ci/l_ankle", "ci/r_ankle", ros::Time::now(), ros::Duration(3.0));  
     }
     
 void virtualConstraintsNode::q1_callback(const std_msgs::Float64 msg_rcv)
@@ -63,15 +58,23 @@ void virtualConstraintsNode::r_sole_state_callback(const geometry_msgs::PoseStam
 tf::Vector3 virtualConstraintsNode::listen_distance_ankle_to_com()
     {
         tf::Vector3 ankle_to_com_distance;
+
+        _ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), _ankle_to_com_transform);
+  
         ankle_to_com_distance = _ankle_to_com_transform.getOrigin();
+//         ROS_INFO("var: %f", ankle_to_com_distance.z());
         return ankle_to_com_distance;
-        
     }
 
-tf::Vector3 virtualConstraintsNode::listen_distance_r_to_l_foot()
+tf::Vector3 virtualConstraintsNode::listen_distance_l_to_r_foot()
     {
         tf::Vector3 l_to_r_foot_distance;
+
+        _l_to_r_foot_listener.lookupTransform("ci/l_ankle", "ci/r_ankle", ros::Time(0), _l_to_r_foot_transform);
+        
         l_to_r_foot_distance = _l_to_r_foot_transform.getOrigin();
+//         ROS_INFO("var: %f", l_to_r_foot_distance.x());
+        
         return l_to_r_foot_distance;
     }
     
@@ -81,7 +84,7 @@ void virtualConstraintsNode::get_initial_pose()
             _initial_pose.com = _com_state;
             _initial_pose.l_sole = _l_sole_state;
             _initial_pose.r_sole = _r_sole_state;
-            _initial_pose.com_heigth =_ankle_to_com_transform;
+            _initial_pose.ankle_to_com = this->listen_distance_ankle_to_com();
 //             virtualConstraintsNode::intial_state_robot::com = _com_state;              /*is this bad coding practice? (or wrong, even)*/
 //             virtualConstraintsNode::intial_state_robot::l_sole = _l_sole_state;
 //             virtualConstraintsNode::intial_state_robot::r_sole = _r_sole_state;
@@ -122,6 +125,7 @@ void virtualConstraintsNode::left_move()
        cmd_com = this->update_x_position(_initial_pose.com, x_com_distance);
        cmd_l_sole = this->update_x_position(_initial_pose.l_sole, step_distance);
        
+       
 //        ROS_INFO("initial_com_pose: %f", _initial_pose.com.x);
 //        ROS_INFO("current_com_pose: %f", cmd_com.pose.position.x);
        
@@ -137,28 +141,22 @@ void virtualConstraintsNode::right_move()
     {
        geometry_msgs::PoseStamped cmd_com, cmd_r_sole;
        double x_com_distance, step_distance;
-       
+       tf::Vector3 distance_foots;
        
        this->get_initial_pose(); /*TODO as soon as I start the node, it moves! I don't want!*/
        
 //        double q1 = -atan(_initial_pose.com.x/_initial_pose.com_heigth.getOrigin().z());
        
        double q1 = this->get_q1();
-       
+ 
        this->step(q1, &x_com_distance, &step_distance);
 //        cmd_com = this->update_x_position(_initial_pose.com, this->incline());
 //        cmd_r_sole = this->update_x_position(_initial_pose.r_sole, this->step());
        cmd_com = this->update_x_position(_initial_pose.com, x_com_distance);
        cmd_r_sole = this->update_x_position(_initial_pose.r_sole, step_distance);
        
-//        ROS_INFO("initial_com_pose: %f", _initial_pose.com.x);
-//        ROS_INFO("current_com_pose: %f", cmd_com.pose.position.x);
-       
-//        ROS_INFO("initial_step_pose: %f", _initial_pose.com.pose.position.x);
-//        ROS_INFO("current_step_pose: %f", cmd_com.pose.position.x);
-       tf::Vector3 distancelr = this->listen_distance_r_to_l_foot();
-       ROS_INFO("step_distance: %f", cmd_r_sole.pose.position.x);
-       ROS_INFO("distancelr: %f", distancelr.x());
+       distance_foots = this->listen_distance_l_to_r_foot();
+       ROS_INFO("distance is %f", distance_foots.x());
        _com_pub.publish(cmd_com);
        _r_sole_pub.publish(cmd_r_sole);
        
@@ -171,10 +169,8 @@ void virtualConstraintsNode::step(double q1, double *x_com_distance, double *ste
         
         double lenght_leg = ankle_to_com_distance.length();
         
-        
         *x_com_distance = ankle_to_com_distance.z() * tan(q1); /*calc x com distance from given angle q1*/
         *step_distance = 2* lenght_leg * sin(q1); /*calc step distance given q1*/
-        
 //         step_distance = 2*(_initial_pose.com.x + *x_com_distance); /*calc step distance constrained to x-position of com*/
 //         step_distance = 2*(_com_state.x + *x_com_distance); /*TODO is this right??*/
     }
