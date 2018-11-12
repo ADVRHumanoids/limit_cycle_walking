@@ -30,6 +30,18 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
         _l_to_r_foot_listener.waitForTransform("ci/l_ankle", "ci/r_ankle", ros::Time::now(), ros::Duration(3.0));  
     }
     
+void virtualConstraintsNode::straighten_up()
+    {
+        geometry_msgs::PoseStamped cmd_initial;
+            
+        cmd_initial.pose.position = _com_state;
+        cmd_initial.pose.position.x = 0.00;
+        _com_pub.publish(cmd_initial);
+        
+        _flag_straight = true;
+            
+    }
+    
 void virtualConstraintsNode::q1_callback(const std_msgs::Float64 msg_rcv)
     {
        _q1_state = msg_rcv.data;
@@ -80,14 +92,22 @@ tf::Vector3 virtualConstraintsNode::listen_distance_l_to_r_foot()
     
 void virtualConstraintsNode::get_initial_pose()
     {   
-        if (initialized) {
+        if (_flag_straight)
+        {
+            if (initialized)
+            {
             _initial_pose.com = _com_state;
+            
+//             _initial_pose.com = cmd_initial.pose.position;
+            _initial_pose.com.x = 0;
+        
             _initial_pose.l_sole = _l_sole_state;
             _initial_pose.r_sole = _r_sole_state;
             _initial_pose.ankle_to_com = this->listen_distance_ankle_to_com();
 //             virtualConstraintsNode::intial_state_robot::com = _com_state;              /*is this bad coding practice? (or wrong, even)*/
 //             virtualConstraintsNode::intial_state_robot::l_sole = _l_sole_state;
 //             virtualConstraintsNode::intial_state_robot::r_sole = _r_sole_state;
+            };
         };
     }
     
@@ -96,7 +116,15 @@ double virtualConstraintsNode::get_q1()
         return _q1_state;
     }
     
-    
+double virtualConstraintsNode::calc_q1()
+    {         
+
+       tf::Vector3 ankle_to_com;
+       ankle_to_com = this->listen_distance_ankle_to_com();
+       double q1 = atan(_com_state.x/ankle_to_com.z()); /*calc angle q1*/
+//        ROS_INFO("q1 is: %f", q1);
+       return q1;
+    }  
 
 geometry_msgs::PoseStamped virtualConstraintsNode::update_x_position(geometry_msgs::Point current_pose, double update_x) 
     {   
@@ -113,9 +141,8 @@ void virtualConstraintsNode::left_move()
        double x_com_distance, step_distance;
        double q1 = 0;
        
-       this->get_initial_pose(); /*TODO as soon as I start the node, it moves! I don't want!*/
-       
-//        double q1 = -atan(_initial_pose.com.x/_initial_pose.com_heigth.getOrigin().z());
+       this->get_initial_pose();
+
        
        q1 = this->get_q1();
        
@@ -143,9 +170,7 @@ void virtualConstraintsNode::right_move()
        double x_com_distance, step_distance;
        tf::Vector3 distance_foots;
        
-       this->get_initial_pose(); /*TODO as soon as I start the node, it moves! I don't want!*/
-       
-//        double q1 = -atan(_initial_pose.com.x/_initial_pose.com_heigth.getOrigin().z());
+       this->get_initial_pose();
        
        double q1 = this->get_q1();
  
@@ -156,7 +181,7 @@ void virtualConstraintsNode::right_move()
        cmd_r_sole = this->update_x_position(_initial_pose.r_sole, step_distance);
        
        distance_foots = this->listen_distance_l_to_r_foot();
-       ROS_INFO("distance is %f", distance_foots.x());
+//        ROS_INFO("distance is %f", distance_foots.x());
        _com_pub.publish(cmd_com);
        _r_sole_pub.publish(cmd_r_sole);
        

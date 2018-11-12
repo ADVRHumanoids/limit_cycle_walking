@@ -33,9 +33,11 @@ public:
        geometry_msgs::Point r_sole;
        tf::Vector3 ankle_to_com;
        
-    }; 
+    };
     
     virtualConstraintsNode(int argc, char **argv, const char *node_name);
+    
+    void straighten_up();
     
     void q1_callback(const std_msgs::Float64 msg_rcv); //this is called by ros
     
@@ -51,7 +53,7 @@ public:
     void get_initial_pose();
     
     double get_q1();
-
+    double calc_q1();
     
 //     double calc_VC_legs ();
 
@@ -69,8 +71,6 @@ public:
     void right_move();
     
     void impact_detected();
-
-
     
 protected:
     
@@ -99,6 +99,9 @@ protected:
     int _joint_number = 10; /*ankle_pitch_angle*/
 
     tf::TransformListener _ankle_to_com_listener, _l_to_r_foot_listener;
+    
+    bool _flag_straight = false;
+    
 
     
 };
