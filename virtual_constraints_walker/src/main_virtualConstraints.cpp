@@ -12,6 +12,7 @@ int main(int argc, char **argv)
     {
     ros::spinOnce();
     VC.straighten_up_action();
+
     }
 //---------------------------------------------------------
     

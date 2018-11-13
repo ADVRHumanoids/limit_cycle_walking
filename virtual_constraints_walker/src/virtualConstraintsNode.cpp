@@ -147,9 +147,6 @@ void virtualConstraintsNode::get_initial_pose()
             if (initialized)
             {
             _initial_pose.com = _com_state;
-            
-            _initial_pose.com.x = 0; /*TODO change this horrible hack*/
-        
             _initial_pose.l_sole = _l_sole_state;
             _initial_pose.r_sole = _r_sole_state;
             _initial_pose.ankle_to_com = this->listen_distance_ankle_to_com();
