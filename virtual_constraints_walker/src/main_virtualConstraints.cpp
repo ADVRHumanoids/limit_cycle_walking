@@ -10,10 +10,8 @@ int main(int argc, char **argv)
 //--------initialize robot so that q1 is exactly 0---------
     if (ros::ok())
     {
-    VC.straighten_up();
     ros::spinOnce();
-    
-//     ROS_INFO("entered stray");
+    VC.straighten_up_action();
     }
 //---------------------------------------------------------
     
@@ -32,6 +30,7 @@ int main(int argc, char **argv)
 //        distance_foots = VC.listen_distance_l_to_r_foot();
         VC.calc_q1();
         VC.right_move();
+//         VC.straighten_up_client();
 //             if (distance_foots.x() >= 0.2)
 //             {
 //                 VC.left_move();

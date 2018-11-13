@@ -48,7 +48,6 @@ find_package(XBotInterface REQUIRED)
 #)
 
 
-
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 
@@ -61,7 +60,9 @@ add_library(virtual_constraints_walker STATIC
               src/virtualConstraintsNode.cpp
               src/mainNode.cpp)
 
-              
+
+
+
 #add_executable(VC_publisher src/VC_publisher.cpp)
 #add_executable(VC_subscriber src/VC_subscriber.cpp)
 #add_executable(VC_listener src/VC_listener.cpp)

@@ -6,7 +6,8 @@
     return first_time.exchange(false); } ())
     
 
-virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char *node_name) : mainNode(argc, argv, node_name)
+virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char *node_name) : 
+    mainNode(argc, argv, node_name)
     {
         ros::NodeHandle n;
  
@@ -27,19 +28,70 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
 //      prepare listener node
        
         _ankle_to_com_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time::now(), ros::Duration(3.0)); /*why here??*/
-        _l_to_r_foot_listener.waitForTransform("ci/l_ankle", "ci/r_ankle", ros::Time::now(), ros::Duration(3.0));  
-    }
-    
-void virtualConstraintsNode::straighten_up()
-    {
-        geometry_msgs::PoseStamped cmd_initial;
-            
-        cmd_initial.pose.position = _com_state;
-        cmd_initial.pose.position.x = 0.00;
-        _com_pub.publish(cmd_initial);
+        _l_to_r_foot_listener.waitForTransform("ci/l_ankle", "ci/r_ankle", ros::Time::now(), ros::Duration(3.0));
         
-        _flag_straight = true;
-            
+//      prepare action
+
+
+    }
+// virtualConstraintsNode::State virtualConstraintsNode::State::getState()
+//     {
+// 
+//     }
+    
+int virtualConstraintsNode::straighten_up_action()
+    {
+        actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac("cartesian/com/reach", true); /*without /goal!!*/
+        ROS_INFO("Waiting for action server to start.");
+        // wait for the action server to start
+        ac.waitForServer(); //will wait for infinite time
+        ROS_INFO("Action server started, sending goal.");
+        // send a goal to the action
+        cartesian_interface::ReachPoseGoal goal;
+//      TODO there is a bug in cartesian/com/reach, adding waypoints won't work     
+        geometry_msgs::Pose cmd_initial = this->straighten_up_goal();
+        
+//         geometry_msgs::Pose cmd_middle = cmd_initial;
+//         cmd_middle.position.z = 0.2;
+        
+//         geometry_msgs::Pose cmd_end = cmd_middle;
+//         cmd_end.position.x = -0.1;
+    
+        float cmd_initial_time;
+//         float cmd_middle_time;
+        cmd_initial_time = 1;
+//         cmd_middle_time = 2;
+
+        goal.frames.push_back(cmd_initial);
+        goal.time.push_back(cmd_initial_time);
+        
+//         goal.frames.push_back(cmd_middle);
+//         goal.time.push_back(cmd_middle_time);
+        
+        ac.sendGoal(goal);
+
+        //wait for the action to return
+        bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+
+        if (finished_before_timeout)
+        {
+            actionlib::SimpleClientGoalState state = ac.getState();
+            ROS_INFO("Action finished: %s", state.toString().c_str());
+        }
+        else
+            ROS_INFO("Action did not finish before the time out.");
+
+        //exit
+        return 0;
+}
+    
+geometry_msgs::Pose virtualConstraintsNode::straighten_up_goal()
+    {
+        geometry_msgs::Pose cmd_initial;
+        cmd_initial.position = _com_state;
+        cmd_initial.position.x = 0.0;
+        cmd_initial.position.z = -0.2;
+        return cmd_initial;
     }
     
 void virtualConstraintsNode::q1_callback(const std_msgs::Float64 msg_rcv)
@@ -92,14 +144,11 @@ tf::Vector3 virtualConstraintsNode::listen_distance_l_to_r_foot()
     
 void virtualConstraintsNode::get_initial_pose()
     {   
-        if (_flag_straight)
-        {
             if (initialized)
             {
             _initial_pose.com = _com_state;
             
-//             _initial_pose.com = cmd_initial.pose.position;
-            _initial_pose.com.x = 0;
+            _initial_pose.com.x = 0; /*TODO change this horrible hack*/
         
             _initial_pose.l_sole = _l_sole_state;
             _initial_pose.r_sole = _r_sole_state;
@@ -108,7 +157,6 @@ void virtualConstraintsNode::get_initial_pose()
 //             virtualConstraintsNode::intial_state_robot::l_sole = _l_sole_state;
 //             virtualConstraintsNode::intial_state_robot::r_sole = _r_sole_state;
             };
-        };
     }
     
 double virtualConstraintsNode::get_q1()
@@ -122,7 +170,7 @@ double virtualConstraintsNode::calc_q1()
        tf::Vector3 ankle_to_com;
        ankle_to_com = this->listen_distance_ankle_to_com();
        double q1 = atan(_com_state.x/ankle_to_com.z()); /*calc angle q1*/
-//        ROS_INFO("q1 is: %f", q1);
+       ROS_INFO("q1 is: %f", q1);
        return q1;
     }  
 
@@ -149,8 +197,8 @@ void virtualConstraintsNode::left_move()
        this->step(q1, &x_com_distance, &step_distance);
 //        cmd_com = this->update_x_position(_initial_pose.com, this->incline());
 //        cmd_r_sole = this->update_x_position(_initial_pose.r_sole, this->step());
-       cmd_com = this->update_x_position(_initial_pose.com, x_com_distance);
-       cmd_l_sole = this->update_x_position(_initial_pose.l_sole, step_distance);
+       cmd_com = this->update_x_position(_initial_pose.com, x_com_distance);       /*incline*/
+       cmd_l_sole = this->update_x_position(_initial_pose.l_sole, step_distance);  /*step*/
        
        
 //        ROS_INFO("initial_com_pose: %f", _initial_pose.com.x);
@@ -161,7 +209,7 @@ void virtualConstraintsNode::left_move()
 //        ROS_INFO("q1: %f", q1);
        _com_pub.publish(cmd_com);
        _l_sole_pub.publish(cmd_l_sole);
-       
+//        
     } 
     
 void virtualConstraintsNode::right_move()
@@ -177,8 +225,8 @@ void virtualConstraintsNode::right_move()
        this->step(q1, &x_com_distance, &step_distance);
 //        cmd_com = this->update_x_position(_initial_pose.com, this->incline());
 //        cmd_r_sole = this->update_x_position(_initial_pose.r_sole, this->step());
-       cmd_com = this->update_x_position(_initial_pose.com, x_com_distance);
-       cmd_r_sole = this->update_x_position(_initial_pose.r_sole, step_distance);
+       cmd_com = this->update_x_position(_initial_pose.com, x_com_distance);        /*incline*/
+       cmd_r_sole = this->update_x_position(_initial_pose.r_sole, step_distance);   /*step*/
        
        distance_foots = this->listen_distance_l_to_r_foot();
 //        ROS_INFO("distance is %f", distance_foots.x());

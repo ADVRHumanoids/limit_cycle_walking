@@ -9,6 +9,11 @@
 #include <sensor_msgs/JointState.h>
 #include "std_msgs/Float64.h"
 
+
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
+#include <cartesian_interface/ReachPoseAction.h>
+
 #include <mainNode.h>
 
 #define PI 3.141592653589793238463
@@ -26,7 +31,7 @@ public:
 //        static geometry_msgs::Point r_sole;
 //     };
     
-    struct robot_state   /*TODO is this bad coding practice?*/
+    struct robot_position
     {
        geometry_msgs::Point com;
        geometry_msgs::Point l_sole;
@@ -35,19 +40,20 @@ public:
        
     };
     
+//     enum class State { Busy, Online };  /*TODO put robot state in class*/
+//     virtual State getState() const = 0;
+    
     virtualConstraintsNode(int argc, char **argv, const char *node_name);
     
-    void straighten_up();
+    int straighten_up_action();
+    
+    geometry_msgs::Pose straighten_up_goal();
     
     void q1_callback(const std_msgs::Float64 msg_rcv); //this is called by ros
     
     void joints_state_callback(const sensor_msgs::JointState msg_rcv); //this is called by ros
-
-
     void com_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
-    
     void l_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
-    
     void r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
 
     void get_initial_pose();
@@ -70,7 +76,7 @@ public:
     void left_move();
     void right_move();
     
-    void impact_detected();
+    void impact_detected(); 
     
 protected:
     
@@ -87,7 +93,7 @@ protected:
     
     std::vector<double> _joints_state;
     
-    robot_state _initial_pose;
+    robot_position _initial_pose;
     
     geometry_msgs::Point _com_state;
     geometry_msgs::Point _l_sole_state, _r_sole_state;
@@ -100,9 +106,7 @@ protected:
 
     tf::TransformListener _ankle_to_com_listener, _l_to_r_foot_listener;
     
-    bool _flag_straight = false;
     
-
     
 };
 
