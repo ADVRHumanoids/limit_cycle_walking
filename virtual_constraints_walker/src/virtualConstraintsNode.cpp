@@ -39,7 +39,7 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
 // 
 //     }
     
-int virtualConstraintsNode::straighten_up_action()
+int virtualConstraintsNode::straighten_up_action() /*if I just setted a publisher it would be harder to define when the action was completed*/
     {
         actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac("cartesian/com/reach", true); /*without /goal!!*/
         ROS_INFO("Waiting for action server to start.");
@@ -49,24 +49,14 @@ int virtualConstraintsNode::straighten_up_action()
         // send a goal to the action
         cartesian_interface::ReachPoseGoal goal;
 //      TODO there is a bug in cartesian/com/reach, adding waypoints won't work     
-        geometry_msgs::Pose cmd_initial = this->straighten_up_goal();
-        
-//         geometry_msgs::Pose cmd_middle = cmd_initial;
-//         cmd_middle.position.z = 0.2;
-        
-//         geometry_msgs::Pose cmd_end = cmd_middle;
-//         cmd_end.position.x = -0.1;
-    
+        geometry_msgs::Pose cmd_initial;
+        tf::pointEigenToMsg(this->straighten_up_goal(), cmd_initial.position);
+   
         float cmd_initial_time;
-//         float cmd_middle_time;
         cmd_initial_time = 1;
-//         cmd_middle_time = 2;
 
-        goal.frames.push_back(cmd_initial);
+        goal.frames.push_back(cmd_initial); /*wants geometry_msgs::Pose*/
         goal.time.push_back(cmd_initial_time);
-        
-//         goal.frames.push_back(cmd_middle);
-//         goal.time.push_back(cmd_middle_time);
         
         ac.sendGoal(goal);
 
@@ -85,13 +75,12 @@ int virtualConstraintsNode::straighten_up_action()
         return 0;
 }
     
-geometry_msgs::Pose virtualConstraintsNode::straighten_up_goal()
-    {
-        geometry_msgs::Pose cmd_initial;
-        cmd_initial.position = _com_state;
-        cmd_initial.position.x = 0.0;
-        cmd_initial.position.z = -0.2;
-        return cmd_initial;
+Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
+    {      
+        Eigen::Vector3d straight_com = _com_state;
+        straight_com(0) = 0.0;
+        straight_com(2) = -0.2;
+        return straight_com;
     }
     
 void virtualConstraintsNode::q1_callback(const std_msgs::Float64 msg_rcv)
@@ -106,39 +95,40 @@ void virtualConstraintsNode::joints_state_callback(const sensor_msgs::JointState
 
 void virtualConstraintsNode::com_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        _com_state = msg_rcv.pose.position;
+        Eigen::Affine3d affineMatrix;
+       
+        tf::poseMsgToEigen(msg_rcv.pose, affineMatrix);
+        tf::pointMsgToEigen(msg_rcv.pose.position, _com_state);
     }
 
 void virtualConstraintsNode::l_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        _l_sole_state = msg_rcv.pose.position;
+        tf::pointMsgToEigen(msg_rcv.pose.position,_l_sole_state);
     }
     
 void virtualConstraintsNode::r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        _r_sole_state = msg_rcv.pose.position;
+        tf::pointMsgToEigen(msg_rcv.pose.position, _r_sole_state);
     }
 
-tf::Vector3 virtualConstraintsNode::listen_distance_ankle_to_com()
+Eigen::Vector3d virtualConstraintsNode::listen_distance_ankle_to_com()
     {
-        tf::Vector3 ankle_to_com_distance;
-
+        tf::Vector3 distance;
+        Eigen::Vector3d ankle_to_com_distance;
+        
         _ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), _ankle_to_com_transform);
-  
-        ankle_to_com_distance = _ankle_to_com_transform.getOrigin();
-//         ROS_INFO("var: %f", ankle_to_com_distance.z());
+        distance = _ankle_to_com_transform.getOrigin();
+        tf::vectorTFToEigen(distance, ankle_to_com_distance);
         return ankle_to_com_distance;
     }
 
-tf::Vector3 virtualConstraintsNode::listen_distance_l_to_r_foot()
+Eigen::Vector3d virtualConstraintsNode::listen_distance_l_to_r_foot()
     {
-        tf::Vector3 l_to_r_foot_distance;
-
+        tf::Vector3 distance;
+        Eigen::Vector3d l_to_r_foot_distance;
         _l_to_r_foot_listener.lookupTransform("ci/l_ankle", "ci/r_ankle", ros::Time(0), _l_to_r_foot_transform);
-        
-        l_to_r_foot_distance = _l_to_r_foot_transform.getOrigin();
-//         ROS_INFO("var: %f", l_to_r_foot_distance.x());
-        
+        distance = _l_to_r_foot_transform.getOrigin();
+        tf::vectorTFToEigen(distance, l_to_r_foot_distance);
         return l_to_r_foot_distance;
     }
     
@@ -153,7 +143,18 @@ void virtualConstraintsNode::get_initial_pose()
 //             virtualConstraintsNode::intial_state_robot::com = _com_state;              /*is this bad coding practice? (or wrong, even)*/
 //             virtualConstraintsNode::intial_state_robot::l_sole = _l_sole_state;
 //             virtualConstraintsNode::intial_state_robot::r_sole = _r_sole_state;
+            
             };
+    }
+
+void virtualConstraintsNode::get_current_pose()
+    {   
+
+            _current_pose.com = _com_state;
+            _current_pose.l_sole = _l_sole_state;
+            _current_pose.r_sole = _r_sole_state;
+            _current_pose.ankle_to_com = this->listen_distance_ankle_to_com();
+
     }
     
 double virtualConstraintsNode::get_q1()
@@ -162,122 +163,150 @@ double virtualConstraintsNode::get_q1()
     }
     
 double virtualConstraintsNode::calc_q1()
-    {         
-
-       tf::Vector3 ankle_to_com;
+    {          
+       Eigen::Vector3d ankle_to_com;
        ankle_to_com = this->listen_distance_ankle_to_com();
-       double q1 = atan(_com_state.x/ankle_to_com.z()); /*calc angle q1*/
+       double q1 = atan(_com_state(0)/ankle_to_com(2)); /*calc angle q1*/
        ROS_INFO("q1 is: %f", q1);
        return q1;
     }  
 
-geometry_msgs::PoseStamped virtualConstraintsNode::update_x_position(geometry_msgs::Point current_pose, double update_x) 
+
+void virtualConstraintsNode::update_position(Eigen::Vector3d *current_pose, Eigen::Vector3d update) 
     {   
-        geometry_msgs::PoseStamped msg_cmd;
-        
-        msg_cmd.pose.position = current_pose;
-        msg_cmd.pose.position.x = current_pose.x + update_x;
-        return msg_cmd;
+//         update current_pose with update
+        *current_pose = *current_pose + update;
     }
-
-void virtualConstraintsNode::left_move()
-    {
-       geometry_msgs::PoseStamped cmd_com, cmd_l_sole;
-       double x_com_distance, step_distance;
-       double q1 = 0;
-       
-       this->get_initial_pose();
-
-       
-       q1 = this->get_q1();
-       
-       this->step(q1, &x_com_distance, &step_distance);
-//        cmd_com = this->update_x_position(_initial_pose.com, this->incline());
-//        cmd_r_sole = this->update_x_position(_initial_pose.r_sole, this->step());
-       cmd_com = this->update_x_position(_initial_pose.com, x_com_distance);       /*incline*/
-       cmd_l_sole = this->update_x_position(_initial_pose.l_sole, step_distance);  /*step*/
-       
-       
-//        ROS_INFO("initial_com_pose: %f", _initial_pose.com.x);
-//        ROS_INFO("current_com_pose: %f", cmd_com.pose.position.x);
-       
-//        ROS_INFO("initial_step_pose: %f", _initial_pose.com.pose.position.x);
-//        ROS_INFO("current_step_pose: %f", cmd_com.pose.position.x);
-//        ROS_INFO("q1: %f", q1);
-       _com_pub.publish(cmd_com);
-       _l_sole_pub.publish(cmd_l_sole);
-//        
-    } 
     
-void virtualConstraintsNode::right_move()
+void virtualConstraintsNode::calc_step(double q1,  Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step) /* TODO not really nice implementation I guess ???*/
     {
-       geometry_msgs::PoseStamped cmd_com, cmd_r_sole;
-       double x_com_distance, step_distance;
-       tf::Vector3 distance_foots;
-       
-       this->get_initial_pose();
-       
-       double q1 = this->get_q1();
- 
-       this->step(q1, &x_com_distance, &step_distance);
-//        cmd_com = this->update_x_position(_initial_pose.com, this->incline());
-//        cmd_r_sole = this->update_x_position(_initial_pose.r_sole, this->step());
-       cmd_com = this->update_x_position(_initial_pose.com, x_com_distance);        /*incline*/
-       cmd_r_sole = this->update_x_position(_initial_pose.r_sole, step_distance);   /*step*/
-       
-       distance_foots = this->listen_distance_l_to_r_foot();
-//        ROS_INFO("distance is %f", distance_foots.x());
-       _com_pub.publish(cmd_com);
-       _r_sole_pub.publish(cmd_r_sole);
-       
-    } 
-    
-void virtualConstraintsNode::step(double q1, double *x_com_distance, double *step_distance) /*not really nice implementation I guess*/
-    {
-        tf::Vector3 ankle_to_com_distance;
-        ankle_to_com_distance = this->listen_distance_ankle_to_com();
+        Eigen::Vector3d ankle_to_com_distance = this->listen_distance_ankle_to_com();
         
-        double lenght_leg = ankle_to_com_distance.length();
+        double lenght_leg = ankle_to_com_distance.norm();
         
-        *x_com_distance = ankle_to_com_distance.z() * tan(q1); /*calc x com distance from given angle q1*/
-        *step_distance = 2* lenght_leg * sin(q1); /*calc step distance given q1*/
-//         step_distance = 2*(_initial_pose.com.x + *x_com_distance); /*calc step distance constrained to x-position of com*/
-//         step_distance = 2*(_com_state.x + *x_com_distance); /*TODO is this right??*/
+        *delta_com << ankle_to_com_distance.z() * tan(q1), 0, 0; /*calc x com distance from given angle q1*/
+        *delta_step << 2* lenght_leg * sin(q1), 0, 0; /*calc step distance given q1*/ 
     }
 
 // void virtualConstraintsNode::impact_detected()
 //     {
 //         double step_distance;
 //         double q1 = this->get_q1();
-//         this->step(q1, &x_com_distance, &step_distance);
+//         this->calc_step(q1, &x_com_distance, &step_distance);
 //         if (_l_sole_state.x ==  0.
 //     }
-    
-    
-    
-// ===============================================
-// double virtualConstraintsNode::incline()
-//     {
-//         double q1, z_distance, x_distance;
-//         
-//         z_distance = this->listen_z_distance_ankle_com();
-// 
-//         q1 = this->get_q1();
 
-// //         q1 = PI/20;
-//         x_distance = z_distance * tan(q1);
-// 
-//         return x_distance;
-//     }
-//     
-// double virtualConstraintsNode::step()
-//     {
-//         
-//         double step_distance;
-//         double x_distance = this->incline();
-//         
-//         step_distance = 2*(_initial_pose.com.x + x_distance);
-//            
-//         return step_distance;
-//          
-//     }
+void virtualConstraintsNode::left_step_move()
+    {
+       geometry_msgs::PoseStamped cmd_com, cmd_l_sole;
+       Eigen::Vector3d delta_com, delta_step;
+       double q1 = 0;
+       Eigen::Vector3d com_position;
+       Eigen::Vector3d l_sole_position;
+       
+       this->get_initial_pose();
+       this->get_current_pose();
+       com_position = _initial_pose.com;
+       l_sole_position = _initial_pose.l_sole;
+       q1 = this->get_q1();
+       
+       this->calc_step(q1, &delta_com, &delta_step);
+//        cmd_com = this->update_x_position(_initial_pose.com, this->incline());
+//        cmd_r_sole = this->update_x_position(_initial_pose.r_sole, this->step());
+       this->update_position(&com_position, delta_com);       /*incline*/
+       this->update_position(&l_sole_position, delta_step);  /*step*/
+       
+       tf::pointEigenToMsg(com_position, cmd_com.pose.position);
+       tf::pointEigenToMsg(l_sole_position, cmd_l_sole.pose.position);
+//        Eigen::Vector3d foot_trajectory;
+//        Eigen::Vector3d start_foot_point(_current_pose.l_sole.x,_current_pose.l_sole.y,_current_pose.l_sole.z);
+//        Eigen::Vector3d end_foot_point(1,0,0);
+//        foot_trajectory = compute_swing_trajectory();
+       _com_pub.publish(cmd_com);
+       _l_sole_pub.publish(cmd_l_sole);
+//        
+    }   
+
+void virtualConstraintsNode::right_step_move()
+    {
+       geometry_msgs::PoseStamped cmd_com, cmd_r_sole;
+       Eigen::Vector3d delta_com, delta_step;
+       double q1 = 0;
+       Eigen::Vector3d com_position;
+       Eigen::Vector3d r_sole_position;
+       
+       this->get_initial_pose();
+       this->get_current_pose();
+       com_position = _initial_pose.com;
+       r_sole_position = _initial_pose.r_sole;
+       q1 = this->get_q1();
+       
+       this->calc_step(q1, &delta_com, &delta_step);
+//        cmd_com = this->update_x_position(_initial_pose.com, this->incline());
+//        cmd_r_sole = this->update_x_position(_initial_pose.r_sole, this->step());
+       this->update_position(&com_position, delta_com);       /*incline*/
+       this->update_position(&r_sole_position, delta_step);  /*step*/
+       
+       tf::pointEigenToMsg(com_position, cmd_com.pose.position);
+       tf::pointEigenToMsg(r_sole_position, cmd_r_sole.pose.position);
+//        Eigen::Vector3d foot_trajectory;
+//        Eigen::Vector3d start_foot_point(_current_pose.l_sole.x,_current_pose.l_sole.y,_current_pose.l_sole.z);
+//        Eigen::Vector3d end_foot_point(1,0,0);
+//        foot_trajectory = compute_swing_trajectory();
+       _com_pub.publish(cmd_com);
+       _r_sole_pub.publish(cmd_r_sole);
+//        
+    }  
+
+
+
+Eigen::Vector3d virtualConstraintsNode::compute_swing_trajectory(const Eigen::Vector3d& start, 
+                                                                 const Eigen::Vector3d& end, 
+                                                                 double clearance,
+                                                                 double t_start, 
+                                                                 double t_end, 
+                                                                 double time, 
+                                                                 Eigen::Vector3d* vel,
+                                                                 Eigen::Vector3d* acc)
+{
+    Eigen::Vector3d ret;
+    
+    double tau = std::min(std::max((time - t_start)/(t_end - t_start), 0.0), 1.0);
+    double alpha = compute_swing_trajectory_normalized_xy(time_warp(tau, 2.0));
+    
+    ret.head<2>() = (1-alpha)*start.head<2>() + alpha*end.head<2>();
+    ret.z() = compute_swing_trajectory_normalized_z(end.z()/clearance, time_warp(tau, 2.0))*clearance;
+    
+    
+    return ret;
+}
+
+
+double virtualConstraintsNode::compute_swing_trajectory_normalized_xy(double tau, double* __dx, double* __ddx)
+{
+    double x, dx, ddx;
+    XBot::Utils::FifthOrderPlanning(0, 0, 0, 1, 0, 1, tau, x, dx, ddx);
+//     if(__dx) *__dx = dx;
+//     if(__ddx) *__ddx = ddx;
+    return x;
+}
+
+double virtualConstraintsNode::compute_swing_trajectory_normalized_z(double final_height, double tau, double* dx, double* ddx)
+{
+    
+    
+    double x = std::pow(tau, 3)*std::pow(1-tau, 3);
+    double x_max = 1./64.;
+    x = x/x_max;
+    
+//     if(dx) *dx = powdx.dot(avec);
+//     if(ddx) *ddx = powddx.dot(avec);
+    
+    return x;
+    
+}
+
+double virtualConstraintsNode::time_warp(double tau, double beta)
+{
+    return 1.0 - std::pow(1.0 - tau, beta);
+}

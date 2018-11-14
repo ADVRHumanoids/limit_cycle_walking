@@ -18,9 +18,12 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
   std_srvs
   tf
+  tf_conversions
+  eigen_conversions
 )
 
 find_package(XBotInterface REQUIRED)
+
 # # Generate messages in the 'msg' folder
 # add_message_files(
 #   FILES
@@ -49,8 +52,6 @@ find_package(XBotInterface REQUIRED)
 
 
 include_directories(${EIGEN3_INCLUDE_DIR})
-
-
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(${XBotInterface_INCLUDE_DIRS})
 include_directories(include/)
@@ -62,20 +63,21 @@ add_library(virtual_constraints_walker STATIC
 
 
 
-
+target_link_libraries(virtual_constraints_walker ${catkin_LIBRARIES})
+ 
 #add_executable(VC_publisher src/VC_publisher.cpp)
 #add_executable(VC_subscriber src/VC_subscriber.cpp)
 #add_executable(VC_listener src/VC_listener.cpp)
 
 
-add_executable(main_virtualConstraints src/main_virtualConstraints.cpp)
+add_executable(VC_run src/VC_run.cpp)
 
 
 #target_link_libraries(VC_publisher ${catkin_LIBRARIES})
 #target_link_libraries(VC_subscriber ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
 #target_link_libraries(VC_listener ${catkin_LIBRARIES})
 
-target_link_libraries(main_virtualConstraints virtual_constraints_walker ${catkin_LIBRARIES})
+target_link_libraries(VC_run virtual_constraints_walker ${catkin_LIBRARIES})
  
 #add_dependencies(VC_publisher)
 #add_dependencies(VC_subscriber)
@@ -92,7 +94,7 @@ target_link_libraries(main_virtualConstraints virtual_constraints_walker ${catki
 #         RUNTIME DESTINATION lib/${PROJECT_NAME} #${CATKIN_PACKAGE_BIN_DESTINATION}
 #         LIBRARY DESTINATION lib/${PROJECT_NAME})
 
-install(TARGETS main_virtualConstraints RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
+install(TARGETS VC_run RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
 
 
 #install(TARGETS virtualConstraintsNode RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}

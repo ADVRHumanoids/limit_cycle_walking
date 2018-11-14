@@ -1,7 +1,11 @@
+
 #ifndef VirtualConstraintsNode_H
 #define VirtualConstraintsNode_H
 
+#include <tf_conversions/tf_eigen.h>
+#include <eigen_conversions/eigen_msg.h>
 
+#include <Eigen/Dense>
 #include <geometry_msgs/PoseStamped.h>
 #include <XBotCore/CommandAdvr.h>
 #include <tf/transform_listener.h>
@@ -33,10 +37,10 @@ public:
     
     struct robot_position
     {
-       geometry_msgs::Point com;
-       geometry_msgs::Point l_sole;
-       geometry_msgs::Point r_sole;
-       tf::Vector3 ankle_to_com;
+       Eigen::Vector3d com;
+       Eigen::Vector3d l_sole;
+       Eigen::Vector3d r_sole;
+       Eigen::Vector3d ankle_to_com;
        
     };
     
@@ -47,7 +51,7 @@ public:
     
     int straighten_up_action();
     
-    geometry_msgs::Pose straighten_up_goal();
+    Eigen::Vector3d straighten_up_goal();
     
     void q1_callback(const std_msgs::Float64 msg_rcv); //this is called by ros
     
@@ -57,26 +61,49 @@ public:
     void r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
 
     void get_initial_pose();
-    
+    void get_current_pose();
+
     double get_q1();
     double calc_q1();
     
 //     double calc_VC_legs ();
 
-    geometry_msgs::PoseStamped update_x_position(geometry_msgs::Point current_pose, double update_x);
-
+    void update_position(Eigen::Vector3d *current_pose, Eigen::Vector3d update);
     
-    tf::Vector3 listen_distance_ankle_to_com();
-    tf::Vector3 listen_distance_l_to_r_foot();
+    Eigen::Vector3d listen_distance_ankle_to_com();
+    Eigen::Vector3d listen_distance_l_to_r_foot();
     
 //     double incline();
 //     double step();
-    void step(double q1, double* x_com_distance, double* step_distance);   
+    void calc_step(double q1,  Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step);
     
     void left_move();
     void right_move();
     
+    void left_step_move();
+    void right_step_move();
+    
     void impact_detected(); 
+    
+//~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+static Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
+                                                const Eigen::Vector3d& end, 
+                                                double clearance,
+                                                double t_start, 
+                                                double t_end,
+                                                double time,
+                                                Eigen::Vector3d * vel = nullptr,
+                                                Eigen::Vector3d * acc = nullptr
+                                                );
+
+static double compute_swing_trajectory_normalized_xy(double tau, double* dx = 0, double* ddx = 0);
+static double compute_swing_trajectory_normalized_z(double final_height, 
+                                                    double tau, 
+                                                    double* dx = 0, 
+                                                    double* ddx = 0);
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+static double time_warp(double tau, double beta);
     
 protected:
     
@@ -93,10 +120,10 @@ protected:
     
     std::vector<double> _joints_state;
     
-    robot_position _initial_pose;
+    robot_position _initial_pose, _current_pose;
     
-    geometry_msgs::Point _com_state;
-    geometry_msgs::Point _l_sole_state, _r_sole_state;
+    Eigen::Vector3d _com_state;
+    Eigen::Vector3d _l_sole_state, _r_sole_state;
     geometry_msgs::PoseStamped _initial_com_pose;
     double _q1_state;
     
@@ -108,6 +135,23 @@ protected:
     
     
     
+    
 };
 
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
