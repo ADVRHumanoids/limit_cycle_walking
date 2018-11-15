@@ -6,7 +6,6 @@ int main(int argc, char **argv)
     virtualConstraintsNode VC(argc, argv, "virtual_constraints");
 //     tf::Vector3 distance_foots;
     
-    ros::Time::init();
 
 //--------initialize robot so that q1 is exactly 0---------
     if (ros::ok())
@@ -21,9 +20,10 @@ int main(int argc, char **argv)
 // //         ROS_INFO("entered");
         ros::spinOnce();
 //         VC.get_current_pose();
+//         VC.get_com();
 //         VC.calc_q1();
 //         VC.left_step_move();
-        VC.calc_trajectory();
+//         VC.calc_trajectory();
 //          VC.right_step_move();
         
 
