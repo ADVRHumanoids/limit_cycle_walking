@@ -47,8 +47,10 @@ public:
 //     enum class State { Busy, Online };  /*TODO put robot state in class*/
 //     virtual State getState() const = 0;
     
+    
     virtualConstraintsNode(int argc, char **argv, const char *node_name);
     
+    double getTime();
     int straighten_up_action();
     
     Eigen::Vector3d straighten_up_goal();
@@ -77,13 +79,10 @@ public:
 //     double step();
     void calc_step(double q1,  Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step);
     
-    void left_move();
-    void right_move();
-    
-    void left_step_move();
-    void right_step_move();
-    
     void impact_detected(); 
+    
+    void calc_trajectory();
+    void foot_position();
     
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 static Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
@@ -133,6 +132,15 @@ protected:
 
     tf::TransformListener _ankle_to_com_listener, _l_to_r_foot_listener;
     
+    bool _flag = true;
+    
+    double _q1_step = 0;
+    
+    Eigen::Vector3d _starting_position;
+    Eigen::Vector3d _ending_position;
+    Eigen::Vector3d _previous_ending_position;
+    double _startTime, _endTime;
+    double _clearing;
     
     
     
