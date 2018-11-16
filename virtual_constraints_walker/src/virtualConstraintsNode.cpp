@@ -8,21 +8,17 @@
 
 virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char *node_name) : 
     mainNode(argc, argv, node_name)
-//     _initial_pose(), /*TODO I want this to run ONCE!!*/
-       /*here I initialize my robot state*/ /*TODO what if I want to add node?*/
     {
-        
         ros::NodeHandle n;
-            _current_pose = std::make_shared<robot_position>(n);
-//             _initial_pose = 
-
-        _q1_sub = n.subscribe("/q1", 1000, &virtualConstraintsNode::q1_callback, this); /*subscribe to /q1 topic*/
+        
+        _initial_pose = _current_pose_ROS;
+        _q1_sub = n.subscribe("/q1", 10, &virtualConstraintsNode::q1_callback, this); /*subscribe to /q1 topic*/
         
 //      prepare advertiser node
-        _com_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com/reference", 1000); /*publish to /cartesian/com/reference*/
+        _com_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com/reference", 10); /*publish to /cartesian/com/reference*/
         
-        _l_sole_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/l_sole/reference", 1000); /*publish to /l_sole/reference*/
-        _r_sole_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 1000); /*publish to /r_sole/reference*/
+        _l_sole_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/l_sole/reference", 10); /*publish to /l_sole/reference*/
+        _r_sole_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 10); /*publish to /r_sole/reference*/
     }
     
 double virtualConstraintsNode::getTime()
@@ -69,9 +65,8 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
     
 Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
     {      
-        Eigen::Vector3d straight_com = _current_pose->get_com();
-        std::cout << straight_com << std::endl;
-        std::cout << "--------------------------- " << std::endl;
+        Eigen::Vector3d straight_com = _current_pose_ROS.get_com();
+//         std::cout << straight_com.transpose() << std::endl;
         straight_com(0) = 0.0;
         straight_com(2) = -0.2;
         return straight_com;
@@ -90,8 +85,8 @@ double virtualConstraintsNode::get_q1()
 double virtualConstraintsNode::calc_q1()
     {          
        Eigen::Vector3d ankle_to_com, com;
-       ankle_to_com = _current_pose->get_distance_ankle_to_com();
-       com = _current_pose->get_com();
+       ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com();
+       com = _current_pose_ROS.get_com();
        
        double q1 = atan(com(0)/ankle_to_com(2)); /*calc angle q1*/
        ROS_INFO("q1 is: %f", q1);
@@ -107,7 +102,7 @@ void virtualConstraintsNode::update_position(Eigen::Vector3d *current_pose, Eige
     
 void virtualConstraintsNode::calc_step(double q1,  Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step) /* TODO not really nice implementation I guess ???*/
     {
-        Eigen::Vector3d ankle_to_com_distance = _current_pose->get_distance_ankle_to_com();
+        Eigen::Vector3d ankle_to_com_distance = _current_pose_ROS.get_distance_ankle_to_com();
         
         double lenght_leg = ankle_to_com_distance.norm();
         
@@ -118,8 +113,8 @@ void virtualConstraintsNode::calc_step(double q1,  Eigen::Vector3d *delta_com,  
 // void virtualConstraintsNode::impact_detected()
 //     {
 //         double step_distance;
-//         double q1 = this->get_q1();
-//         this->calc_step(q1, &x_com_distance, &step_distance);
+//         double q1 = this.get_q1();
+//         this.calc_step(q1, &x_com_distance, &step_distance);
 //         if (_l_sole_state.x ==  0.
 //     }
 
@@ -128,9 +123,9 @@ void virtualConstraintsNode::calc_step(double q1,  Eigen::Vector3d *delta_com,  
 //         
 //     }
 
-// virtualConstraintsNode::step_state::step_state(robot_position _current_pose)
+// virtualConstraintsNode::step_state::step_state(robot_position _current_pose_ROS)
 //     {
-//         _starting_position = _current_pose->l_sole;
+//         _starting_position = _current_pose_ROS.l_sole;
 //         _ending_position = _starting_position;
 //         _previous_ending_position = _ending_position;
 //     }
@@ -149,50 +144,50 @@ void virtualConstraintsNode::calc_step(double q1,  Eigen::Vector3d *delta_com,  
 //         double last_q1_step = 0;
 //         Eigen::Vector3d com_position, l_sole_position;
 //         Eigen::Vector3d delta_com, delta_step;
-//         this->update_initial_pose();
+//         this.update_initial_pose();
 //         
 //         if (_flag == true)
 //         {
 //             _clearing = 0;
-//             _startTime = this->getTime();
+//             _startTime = this.getTime();
 //             _endTime = _startTime + 2;
-//             this->foot_position();
+//             this.foot_position();
 //             _flag = false;
 //         }
 //         
 // 
 // 
 //         last_q1_step = _q1_step;
-//         _q1_step = this->get_q1();
+//         _q1_step = this.get_q1();
 //         
 // 
 //         
 //         if (last_q1_step !=_q1_step)
 //         {
 //             ROS_INFO("entered");
-//             this->_current_pose;
+//             this._current_pose_ROS;
 //             _clearing = 0.1;
 //             
-//             this->update_current_pose();
+//             this.update_current_pose_ROS();
 //             com_position = _initial_pose.com; /*if I put current pose, my q1 is relative to the reached pose*/
 //             l_sole_position = _initial_pose.l_sole;
 //             
 //             
 // 
 //             
-//             this->calc_step(_q1_step, &delta_com, &delta_step);
+//             this.calc_step(_q1_step, &delta_com, &delta_step);
 //             
-//             this->update_position(&com_position, delta_com);       /*incline*/
-//             this->update_position(&l_sole_position, delta_step);  /*step*/
+//             this.update_position(&com_position, delta_com);       /*incline*/
+//             this.update_position(&l_sole_position, delta_step);  /*step*/
 //             
 //             
 //             _previous_ending_position = _ending_position;
 //             
 //             
-//             _starting_position = _current_pose->l_sole;
+//             _starting_position = _current_pose_ROS.l_sole;
 //             _ending_position = l_sole_position;
 //             
-//             _startTime = this->getTime();
+//             _startTime = this.getTime();
 //             _endTime = _startTime + 8;
 //         }
 // 
@@ -279,8 +274,8 @@ double virtualConstraintsNode::time_warp(double tau, double beta)
 
 // void virtualConstraintsNode::foot_position()
 //     {
-//         this->update_current_pose();
-//         _starting_position = _current_pose->l_sole;
+//         this.update_current_pose_ROS();
+//         _starting_position = _current_pose_ROS.l_sole;
 //         _ending_position = _starting_position;
 //         _previous_ending_position = _ending_position;
 //     } 
@@ -294,50 +289,50 @@ double virtualConstraintsNode::time_warp(double tau, double beta)
 //         double last_q1_step = 0;
 //         Eigen::Vector3d com_position, l_sole_position;
 //         Eigen::Vector3d delta_com, delta_step;
-//         this->update_initial_pose();
+//         this.update_initial_pose();
 //         
 //         if (_flag == true)
 //         {
 //             _clearing = 0;
-//             _startTime = this->getTime();
+//             _startTime = this.getTime();
 //             _endTime = _startTime + 2;
-//             this->foot_position();
+//             this.foot_position();
 //             _flag = false;
 //         }
 //         
 // 
 // 
 //         last_q1_step = _q1_step;
-//         _q1_step = this->get_q1();
+//         _q1_step = this.get_q1();
 //         
 // 
 //         
 //         if (last_q1_step !=_q1_step)
 //         {
 //             ROS_INFO("entered");
-//             this->_current_pose;
+//             this._current_pose_ROS;
 //             _clearing = 0.1;
 //             
-//             this->update_current_pose();
+//             this.update_current_pose_ROS();
 //             com_position = _initial_pose.com; /*if I put current pose, my q1 is relative to the reached pose*/
 //             l_sole_position = _initial_pose.l_sole;
 //             
 //             
 // 
 //             
-//             this->calc_step(_q1_step, &delta_com, &delta_step);
+//             this.calc_step(_q1_step, &delta_com, &delta_step);
 //             
-//             this->update_position(&com_position, delta_com);       /*incline*/
-//             this->update_position(&l_sole_position, delta_step);  /*step*/
+//             this.update_position(&com_position, delta_com);       /*incline*/
+//             this.update_position(&l_sole_position, delta_step);  /*step*/
 //             
 //             
 //             _previous_ending_position = _ending_position;
 //             
 //             
-//             _starting_position = _current_pose->l_sole;
+//             _starting_position = _current_pose_ROS.l_sole;
 //             _ending_position = l_sole_position;
 //             
-//             _startTime = this->getTime();
+//             _startTime = this.getTime();
 //             _endTime = _startTime + 8;
 //         }
 // 

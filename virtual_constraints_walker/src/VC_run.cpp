@@ -3,24 +3,31 @@
 
 int main(int argc, char **argv)
 {
-    virtualConstraintsNode VC(argc, argv, "virtual_constraints");
-//     tf::Vector3 distance_foots;
     
+    virtualConstraintsNode VC(argc, argv, "virtual_constraints");
+//     robot_interface_ROS robot;
+    robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
+//     tf::Vector3 distance_foots;
+// //    robot.
 
 //--------initialize robot so that q1 is exactly 0---------
     if (ros::ok())
     {
-    ros::spinOnce();
+    robot.sense(); /*inside there is ros::spinOnce*/
     VC.straighten_up_action();
+
     }
 //---------------------------------------------------------
  
     while (ros::ok()) 
     {
 // //         ROS_INFO("entered");
-        ros::spinOnce();
-//         VC.get_current_pose();
-//         VC.get_com();
+        VC.get_robot().sense();
+        std::cout << "==========" << std::endl; 
+        std::cout << "current: "; VC.get_robot().get_com();
+        std::cout << "==========" << std::endl; 
+        std::cout << "intial: "; VC.get_initial_robot().get_com();
+        std::cout << "==========" << std::endl; 
 //         VC.calc_q1();
 //         VC.left_step_move();
 //         VC.calc_trajectory();
