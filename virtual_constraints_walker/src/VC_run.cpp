@@ -23,15 +23,13 @@ int main(int argc, char **argv)
     {
 // //         ROS_INFO("entered");
         VC.get_robot().sense();
-        std::cout << "==========" << std::endl; 
-        std::cout << "current: "; VC.get_robot().get_com();
-        std::cout << "==========" << std::endl; 
-        std::cout << "intial: "; VC.get_initial_robot().get_com();
-        std::cout << "==========" << std::endl; 
+        
+//         VC.check_q1();
 //         VC.calc_q1();
-//         VC.left_step_move();
-//         VC.calc_trajectory();
-//          VC.right_step_move();
+//         VC.send_point();
+        VC.calc_trajectory();
+        
+
         
 
     }

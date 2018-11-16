@@ -39,7 +39,42 @@ public:
 //        static geometry_msgs::Point r_sole;
 //     };
     
-    
+    class data_step
+    {
+    public:
+//         data_step() {
+//             _step_initial_pose =  virtualConstraintsNode::_current_pose_ROS.get_l_sole();
+//             _step_final_pose = _step_initial_pose;
+//             _clearing = 0;
+//             _starTime = getTime();
+//             _endTime = _starTime + 2;
+//         }
+        
+        void set_data_step(Eigen::Vector3d step_initial_pose, 
+                           Eigen::Vector3d step_final_pose,
+                           double clearing,
+                           double starTime, 
+                           double endTime) 
+        {
+            _step_initial_pose =  step_initial_pose;
+            _step_final_pose = step_final_pose;
+            _clearing = clearing;
+            _starTime = starTime;
+            _endTime = endTime;
+        }
+        
+        Eigen::Vector3d get_initial_pose() {return _step_initial_pose;};
+        Eigen::Vector3d get_final_pose() {return _step_final_pose;};
+        double get_clearing() {return _clearing;};
+        double get_starTime() {return _starTime;};
+        double get_endTime() {return _endTime;};
+                              
+    private:
+        
+        Eigen::Vector3d _step_initial_pose, _step_final_pose;
+        double _clearing;
+        double _starTime, _endTime;
+    };  
     
 //     enum class State { Busy, Online };  /*TODO put robot state in class*/
 //     virtual State getState() const = 0;
@@ -63,7 +98,10 @@ public:
     void update_current_pose_ROS();
 
     double get_q1();
+    bool new_q1();
+    
     double calc_q1();
+    
     
 //     double calc_VC_legs ();
 
@@ -78,25 +116,30 @@ public:
     void calc_trajectory();
     void foot_position();
     
+    void update_command_step(Eigen::Vector3d initial_pose, Eigen::Vector3d final_pose, double clearing, double startTime, double endTime);
+    void send_step(Eigen::Vector3d command);
+    void update_step();
+    void send_point();
+    
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-static Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
-                                                const Eigen::Vector3d& end, 
-                                                double clearance,
-                                                double t_start, 
-                                                double t_end,
-                                                double time,
-                                                Eigen::Vector3d * vel = nullptr,
-                                                Eigen::Vector3d * acc = nullptr
-                                                );
+    static Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
+                                                    const Eigen::Vector3d& end, 
+                                                    double clearance,
+                                                    double t_start, 
+                                                    double t_end,
+                                                    double time,
+                                                    Eigen::Vector3d * vel = nullptr,
+                                                    Eigen::Vector3d * acc = nullptr
+                                                    );
 
-static double compute_swing_trajectory_normalized_xy(double tau, double* dx = 0, double* ddx = 0);
-static double compute_swing_trajectory_normalized_z(double final_height, 
-                                                    double tau, 
-                                                    double* dx = 0, 
-                                                    double* ddx = 0);
+    static double compute_swing_trajectory_normalized_xy(double tau, double* dx = 0, double* ddx = 0);
+    static double compute_swing_trajectory_normalized_z(double final_height, 
+                                                        double tau, 
+                                                        double* dx = 0, 
+                                                        double* ddx = 0);
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-static double time_warp(double tau, double beta);
+    static double time_warp(double tau, double beta);
     void get_current_pose_ROS();
     
 protected:
@@ -117,12 +160,14 @@ protected:
 
     int _joint_number = 10; /*ankle_pitch_angle*/
 
+    Eigen::Vector3d _foot_trajectory;
     
-    
-    bool _flag = true;
+    bool  _flag = true;
     
     double _q1_step = 0;
 
+    
+    data_step _step;
 //     class step_state 
 //     {
 //     public:

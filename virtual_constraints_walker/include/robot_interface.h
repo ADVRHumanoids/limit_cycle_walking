@@ -15,7 +15,7 @@ class robot_interface
         
         typedef std::shared_ptr<robot_interface> Ptr;
 
-        Eigen::Vector3d get_com() {std::cout << _com_state.transpose() << std::endl; return _com_state;};
+        Eigen::Vector3d get_com() {return _com_state;};
         Eigen::Vector3d get_l_sole() {return _l_sole_state;};
         Eigen::Vector3d get_r_sole() {return _r_sole_state;};
         Eigen::Vector3d get_distance_ankle_to_com() {return _distance_ankle_to_com;};

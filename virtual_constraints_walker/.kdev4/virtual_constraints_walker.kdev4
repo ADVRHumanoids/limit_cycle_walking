@@ -24,5 +24,26 @@ Name=GCC
 Path=gcc
 Type=GCC
 
+[Launch]
+Launch Configurations=Launch Configuration 0
+
+[Launch][Launch Configuration 0]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=VC_run
+Type=Native Application
+
+[Launch][Launch Configuration 0][Data]
+Arguments=
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x02\x00\x00\x004\x00v\x00i\x00r\x00t\x00u\x00a\x00l\x00_\x00c\x00o\x00n\x00s\x00t\x00r\x00a\x00i\x00n\x00t\x00s\x00_\x00w\x00a\x00l\x00k\x00e\x00r\x00\x00\x00\x0c\x00V\x00C\x00_\x00r\x00u\x00n)
+Dependency Action=Build
+EnvironmentGroup=
+Executable=file:///home/francesco/advr-superbuild/external/limit_cycle_walking/virtual_constraints_walker/
+External Terminal=konsole --noclose --workdir %workdir -e %exe
+Project Target=virtual_constraints_walker,VC_run
+Use External Terminal=false
+Working Directory=
+isExecutable=false
+
 [Project]
 VersionControlSupport=kdevgit
