@@ -21,8 +21,7 @@ robot_interface_ROS::robot_interface_ROS()
         _ankle_to_com_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
         _l_to_r_foot_listener.waitForTransform("ci/l_ankle", "ci/r_ankle", ros::Time(0), ros::Duration(3.0));
         
-        
-        _callback_counter = 0;
+
          bool all_check = false;
 
         

@@ -9,7 +9,6 @@ int main(int argc, char **argv)
     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
 //     tf::Vector3 distance_foots;
 // //    robot.
-
 //--------initialize robot so that q1 is exactly 0---------
     if (ros::ok())
     {
@@ -23,7 +22,7 @@ int main(int argc, char **argv)
     {
 // //         ROS_INFO("entered");
         VC.get_robot().sense();
-        
+//         VC.get_q1();
 //         VC.check_q1();
 //         VC.calc_q1();
 //         VC.send_point();

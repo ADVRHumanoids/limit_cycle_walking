@@ -18,7 +18,6 @@
 
 #include<robot_interface.h>
 
-
 class robot_interface_ROS: public robot_interface
     {
     public:
@@ -44,7 +43,8 @@ class robot_interface_ROS: public robot_interface
         void r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
         
         bool _check_1, _check_2, _check_3, _check_4;
-        int _callback_counter;
+        
+//         ros::NodeHandle n;
     };
     
 #endif

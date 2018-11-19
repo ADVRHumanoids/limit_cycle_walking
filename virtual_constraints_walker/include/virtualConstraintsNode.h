@@ -28,7 +28,6 @@
 
 
 
-
 class virtualConstraintsNode : mainNode {
 public:
     
@@ -38,20 +37,23 @@ public:
 //        static geometry_msgs::Point l_sole;
 //        static geometry_msgs::Point r_sole;
 //     };
+
+//         enum class State { Busy, Online };
+    enum class Side : char { Left = 'L', Right = 'R'};
     
+    friend std::ostream& operator<<(std::ostream& os, virtualConstraintsNode::Side s)
+{
+    return os << static_cast<char>(s);
+};
+
     class data_step
     {
     public:
-//         data_step() {
-//             _step_initial_pose =  virtualConstraintsNode::_current_pose_ROS.get_l_sole();
-//             _step_final_pose = _step_initial_pose;
-//             _clearing = 0;
-//             _starTime = getTime();
-//             _endTime = _starTime + 2;
-//         }
         
         void set_data_step(Eigen::Vector3d step_initial_pose, 
                            Eigen::Vector3d step_final_pose,
+                           Eigen::Vector3d com_initial_pose,
+                           Eigen::Vector3d com_final_pose,
                            double clearing,
                            double starTime, 
                            double endTime) 
@@ -61,10 +63,15 @@ public:
             _clearing = clearing;
             _starTime = starTime;
             _endTime = endTime;
+            _com_initial_pose = com_initial_pose;
+            _com_final_pose = com_final_pose;
+            
         }
         
-        Eigen::Vector3d get_initial_pose() {return _step_initial_pose;};
-        Eigen::Vector3d get_final_pose() {return _step_final_pose;};
+        Eigen::Vector3d get_foot_initial_pose() {return _step_initial_pose;};
+        Eigen::Vector3d get_foot_final_pose() {return _step_final_pose;};
+        Eigen::Vector3d get_com_initial_pose() {return _com_initial_pose;};
+        Eigen::Vector3d get_com_final_pose() {return _com_final_pose;};
         double get_clearing() {return _clearing;};
         double get_starTime() {return _starTime;};
         double get_endTime() {return _endTime;};
@@ -72,6 +79,7 @@ public:
     private:
         
         Eigen::Vector3d _step_initial_pose, _step_final_pose;
+        Eigen::Vector3d _com_initial_pose, _com_final_pose;
         double _clearing;
         double _starTime, _endTime;
     };  
@@ -111,16 +119,20 @@ public:
 //     double step();
     void calc_step(double q1,  Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step);
     
-    void impact_detected(); 
+    bool impact_detected(); 
     
     void calc_trajectory();
     void foot_position();
     
     void update_command_step(Eigen::Vector3d initial_pose, Eigen::Vector3d final_pose, double clearing, double startTime, double endTime);
-    void send_step(Eigen::Vector3d command);
-    void update_step();
-    void send_point();
     
+    void send_step_left(Eigen::Vector3d foot_command, Eigen::Vector3d com_command);
+    void send_step_right(Eigen::Vector3d foot_command, Eigen::Vector3d com_command);
+    
+    void update_step_left();
+    void update_step_right();
+    
+    void send_point();
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     static Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
                                                     const Eigen::Vector3d& end, 
@@ -141,6 +153,10 @@ public:
 
     static double time_warp(double tau, double beta);
     void get_current_pose_ROS();
+    
+    
+//     Side get_robot_side() {std::cout << _current_side << std::endl; return _current_side;};
+//     void set_robot_side(Side side) {_current_side = side;};
     
 protected:
     
@@ -166,23 +182,17 @@ protected:
     
     double _q1_step = 0;
 
+    bool _check_received;
     
     data_step _step;
-//     class step_state 
-//     {
-//     public:
-//         step_state(robot_position _current_pose_ROS);
-//         Eigen::Vector3d get_state();
-//         Eigen::Vector3d update_state();
-//         
-//     private:
-//         Eigen::Vector3d _starting_position;
-//         Eigen::Vector3d _ending_position;
-//         Eigen::Vector3d _previous_ending_position;
-//         double _startTime, _endTime;
-//         double _clearing;
-//     };
+    
+    Side _current_side = Side::Left;
+    
 };
+
+
+
+
 
 #endif
 
