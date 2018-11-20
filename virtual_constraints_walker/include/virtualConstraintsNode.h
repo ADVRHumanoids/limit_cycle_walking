@@ -56,16 +56,24 @@ public:
                            Eigen::Vector3d com_final_pose,
                            double clearing,
                            double starTime, 
-                           double endTime) 
+                           double endTime)
         {
             _step_initial_pose =  step_initial_pose;
             _step_final_pose = step_final_pose;
+            _com_initial_pose = com_initial_pose;
+            _com_final_pose = com_final_pose;
             _clearing = clearing;
             _starTime = starTime;
             _endTime = endTime;
-            _com_initial_pose = com_initial_pose;
-            _com_final_pose = com_final_pose;
+
             
+        }
+        
+        void set_data_step(double starTime,
+                           double endTime)
+        {
+            _starTime = starTime;
+            _endTime = endTime;
         }
         
         Eigen::Vector3d get_foot_initial_pose() {return _step_initial_pose;};

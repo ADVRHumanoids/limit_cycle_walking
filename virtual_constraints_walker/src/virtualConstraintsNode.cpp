@@ -149,7 +149,9 @@ bool virtualConstraintsNode::impact_detected()
 //                 ROS_INFO("distance: %f", _current_pose_ROS.get_r_sole().coeff(0) - _initial_pose.get_r_sole().coeff(0));
                 ROS_INFO("state changed: LEFT");
                 _initial_pose = _current_pose_ROS;
-                _current_side == Side::Left;
+                _current_side = Side::Left;
+                std::cout << _current_side << std::endl;
+                
                 return 1;
             }
         }  
@@ -159,46 +161,6 @@ bool virtualConstraintsNode::impact_detected()
         }
     }
 
-// virtualConstraintsNode::step_state::step_state(robot_position _current_pose_ROS)
-//     {
-//         _starting_position = _current_pose_ROS.l_sole;
-//         _ending_position = _starting_position;
-//         _previous_ending_position = _ending_position;
-//     }
-// 
-// Eigen::Vector3d virtualConstraintsNode::step_state::get_state()
-//     {
-//         
-//     }
-//                
-
-// void virtualConstraintsNode::idle()
-//     {
-//         Eigen::Vector3d step_initial_pose =_current_pose_ROS.get_l_sole(); 
-//         Eigen::Vector3d step_final_pose = step_initial_pose;
-//         double step_start_time, step_final_time;
-//         double clearing = 0;
-//         double starTime = getTime();
-//         double endTime = starTime + 2;
-        
-//     }
-    
-// void virtualConstraintsNode::update_command_step(Eigen::Vector3d initial_pose, Eigen::Vector3d final_pose, double clearing, double startTime, double endTime)
-//     {
-//         double step_clearing;
-//         Eigen::Vector3d step_initial_pose, step_final_pose;
-//         double step_start_time, step_final_time;
-//         step_clearing = clearing;
-//         
-//         step_initial_pose = initial_pose;
-//         step_final_pose = final_pose;
-//         
-//         step_start_time = startTime;
-//         step_final_time = endTime;
-//         
-//         
-//         
-//     }
 
 bool virtualConstraintsNode::new_q1()
     {
@@ -276,28 +238,26 @@ void virtualConstraintsNode::calc_trajectory()
         /*TODO right now if the node q1 starts before the virtualConstraintsNode, something wrong happen*/
         /*TODO COM isn't moving - there is no trajectory for com*/
         /*TODO enter automatically first time, not good*/
-        impact_detected();
+
         
 //         std::cout << _current_side << std::endl;
 //         std::cout << (fabs(_current_pose_ROS.get_l_sole().coeff(2)) - 0.969834) << std::endl;
 //         std::cout << _current_pose_ROS.get_l_sole().coeff(0) << std::endl;
-        
-//         new_q1() || 
-//         if (_check_received)
+
+        if (new_q1() || impact_detected())
         {
-            if (new_q1() || impact_detected())
-            {
+//                 std::cout << _current_side << std::endl;
                 if (_current_side == Side::Left)
                     update_step_left();
                 else if (_current_side == Side::Right)
                     update_step_right();
-            }
-        }
-            
+                else ROS_INFO("wrong side update, exiting");
+        }       
+                
             Eigen::Vector3d foot_trajectory, com_trajectory;
             foot_trajectory = compute_swing_trajectory(_step.get_foot_initial_pose(), _step.get_foot_final_pose(), _step.get_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec());
             com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec());
-            
+//             std::cout << foot_trajectory.transpose() << std::endl;
             
         if (_current_side == Side::Left)
         {
