@@ -69,13 +69,6 @@ public:
             
         }
         
-        void set_data_step(double starTime,
-                           double endTime)
-        {
-            _starTime = starTime;
-            _endTime = endTime;
-        }
-        
         Eigen::Vector3d get_foot_initial_pose() {return _step_initial_pose;};
         Eigen::Vector3d get_foot_final_pose() {return _step_final_pose;};
         Eigen::Vector3d get_com_initial_pose() {return _com_initial_pose;};
@@ -175,7 +168,7 @@ protected:
     ros::Subscriber _q1_sub;
     
     
-    robot_interface _initial_pose;
+    robot_interface _initial_pose, _previous_initial_pose;
     robot_interface_ROS _current_pose_ROS;
     
     geometry_msgs::PoseStamped _initial_com_pose;
@@ -194,7 +187,7 @@ protected:
     
     data_step _step;
     
-    Side _current_side = Side::Left;
+    Side _current_side = Side::Left; /*means that starting swinging leg is LEFT. Pinned leg is RIGHT.*/
     
 };
 

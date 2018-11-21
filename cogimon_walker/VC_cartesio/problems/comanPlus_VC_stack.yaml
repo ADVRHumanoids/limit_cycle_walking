@@ -30,6 +30,7 @@ WaistOrient:
     base_link: "world"
     lambda: 0.1
     indices: [3,4,5]
+    weight: 0.07
 
 CoM:
     type: "Com"

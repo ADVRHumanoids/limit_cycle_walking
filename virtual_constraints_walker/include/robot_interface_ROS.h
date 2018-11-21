@@ -31,11 +31,14 @@ class robot_interface_ROS: public robot_interface
         std::vector<ros::Subscriber> _subs;
         
         tf::TransformListener _ankle_to_com_listener, _l_to_r_foot_listener;
-        tf::StampedTransform _ankle_to_com_transform;
+        tf::StampedTransform l_ankle_to_com_transform;
+        tf::StampedTransform r_ankle_to_com_transform;
         tf::StampedTransform _l_to_r_foot_transform;
    
         
-        Eigen::Vector3d listen_distance_ankle_to_com();
+        Eigen::Vector3d listen_distance_l_ankle_to_com();
+        Eigen::Vector3d listen_distance_r_ankle_to_com();
+        
         Eigen::Vector3d listen_distance_l_to_r_foot();
         void joints_state_callback(const sensor_msgs::JointState msg_rcv); //this is called by ros
         void com_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros

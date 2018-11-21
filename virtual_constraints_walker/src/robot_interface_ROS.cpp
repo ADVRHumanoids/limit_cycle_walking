@@ -43,7 +43,8 @@ robot_interface_ROS::robot_interface_ROS()
 void robot_interface_ROS::sense()
     {
         ros::spinOnce();
-        _distance_ankle_to_com = listen_distance_ankle_to_com();
+        _distance_l_ankle_to_com = listen_distance_l_ankle_to_com();
+        _distance_r_ankle_to_com = listen_distance_r_ankle_to_com();
         _distance_l_to_r_foot = listen_distance_l_to_r_foot();
     }
     
@@ -80,15 +81,26 @@ void robot_interface_ROS::r_sole_state_callback(const geometry_msgs::PoseStamped
         _check_4 = true;
     }
 
-Eigen::Vector3d robot_interface_ROS::listen_distance_ankle_to_com()
+Eigen::Vector3d robot_interface_ROS::listen_distance_l_ankle_to_com()
     {
         tf::Vector3 distance;
-        Eigen::Vector3d ankle_to_com_distance;
+        Eigen::Vector3d l_ankle_to_com_distance;
         
-        _ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), _ankle_to_com_transform);
-        distance = _ankle_to_com_transform.getOrigin();
-        tf::vectorTFToEigen(distance, ankle_to_com_distance);
-        return ankle_to_com_distance;
+        _ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), l_ankle_to_com_transform);
+        distance = l_ankle_to_com_transform.getOrigin();
+        tf::vectorTFToEigen(distance, l_ankle_to_com_distance);
+        return l_ankle_to_com_distance;
+    }
+
+Eigen::Vector3d robot_interface_ROS::listen_distance_r_ankle_to_com()
+    {
+        tf::Vector3 distance;
+        Eigen::Vector3d r_ankle_to_com_distance;
+        
+        _ankle_to_com_listener.lookupTransform("ci/r_ankle", "ci/com", ros::Time(0), r_ankle_to_com_transform);
+        distance = r_ankle_to_com_transform.getOrigin();
+        tf::vectorTFToEigen(distance, r_ankle_to_com_distance);
+        return r_ankle_to_com_distance;
     }
 
 Eigen::Vector3d robot_interface_ROS::listen_distance_l_to_r_foot()

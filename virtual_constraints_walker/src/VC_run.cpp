@@ -27,7 +27,8 @@ int main(int argc, char **argv)
 //         VC.calc_q1();
 //         VC.send_point();
         VC.calc_trajectory();
-        
+//         VC.calc_q1();
+//         
 
         
 
