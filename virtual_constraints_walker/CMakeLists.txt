@@ -64,7 +64,7 @@ add_library(virtual_constraints_walker STATIC
 
 
 
-target_link_libraries(virtual_constraints_walker ${catkin_LIBRARIES})
+target_link_libraries(virtual_constraints_walker ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
  
 #add_executable(VC_publisher src/VC_publisher.cpp)
 #add_executable(VC_subscriber src/VC_subscriber.cpp)

@@ -18,8 +18,9 @@ robot_interface_ROS::robot_interface_ROS()
         _subs.push_back(n.subscribe("/cartesian/r_sole/state", 10, &robot_interface_ROS::r_sole_state_callback, this)); /*subscribe to cartesian/solution topic*/
 
 //      prepare listener node       
-        _ankle_to_com_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
-        _l_to_r_foot_listener.waitForTransform("ci/l_ankle", "ci/r_ankle", ros::Time(0), ros::Duration(3.0));
+        l_ankle_to_com_listener.waitForTransform("ci/l_sole", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
+        r_ankle_to_com_listener.waitForTransform("ci/r_sole", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
+        _l_to_r_foot_listener.waitForTransform("ci/l_sole", "ci/r_sole", ros::Time(0), ros::Duration(3.0));
         
 
          bool all_check = false;
@@ -86,7 +87,7 @@ Eigen::Vector3d robot_interface_ROS::listen_distance_l_ankle_to_com()
         tf::Vector3 distance;
         Eigen::Vector3d l_ankle_to_com_distance;
         
-        _ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), l_ankle_to_com_transform);
+        l_ankle_to_com_listener.lookupTransform("ci/l_sole", "ci/com", ros::Time(0), l_ankle_to_com_transform); /*ros::Time(0)*/
         distance = l_ankle_to_com_transform.getOrigin();
         tf::vectorTFToEigen(distance, l_ankle_to_com_distance);
         return l_ankle_to_com_distance;
@@ -97,7 +98,7 @@ Eigen::Vector3d robot_interface_ROS::listen_distance_r_ankle_to_com()
         tf::Vector3 distance;
         Eigen::Vector3d r_ankle_to_com_distance;
         
-        _ankle_to_com_listener.lookupTransform("ci/r_ankle", "ci/com", ros::Time(0), r_ankle_to_com_transform);
+        r_ankle_to_com_listener.lookupTransform("ci/r_sole", "ci/com", ros::Time(0), r_ankle_to_com_transform);
         distance = r_ankle_to_com_transform.getOrigin();
         tf::vectorTFToEigen(distance, r_ankle_to_com_distance);
         return r_ankle_to_com_distance;
@@ -107,7 +108,7 @@ Eigen::Vector3d robot_interface_ROS::listen_distance_l_to_r_foot()
     {
         tf::Vector3 distance;
         Eigen::Vector3d l_to_r_foot_distance;
-        _l_to_r_foot_listener.lookupTransform("ci/l_ankle", "ci/r_ankle", ros::Time(0), _l_to_r_foot_transform);
+        _l_to_r_foot_listener.lookupTransform("ci/l_sole", "ci/r_sole", ros::Time(0), _l_to_r_foot_transform);
         distance = _l_to_r_foot_transform.getOrigin();
         tf::vectorTFToEigen(distance, l_to_r_foot_distance);
         return l_to_r_foot_distance;

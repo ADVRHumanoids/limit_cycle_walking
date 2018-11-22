@@ -12,6 +12,8 @@
 #include <sensor_msgs/JointState.h>
 #include "std_msgs/Float64.h"
 
+#include <XBotInterface/MatLogger.hpp>
+
 #include <memory>
 
 
@@ -64,10 +66,16 @@ public:
             _com_final_pose = com_final_pose;
             _clearing = clearing;
             _starTime = starTime;
-            _endTime = endTime;
-
-            
+            _endTime = endTime;        
         }
+        
+        void log(XBot::MatLogger::Ptr logger) { logger->add("step_initial_pose", _step_initial_pose);
+                                                logger->add("step_final_pose", _step_final_pose);
+                                                logger->add("com_initial_pose", _com_initial_pose);
+                                                logger->add("com_final_pose", _com_final_pose);
+                                                logger->add("clearing", _clearing);
+                                                logger->add("starTime", _starTime);
+                                                logger->add("endTime", _endTime);}
         
         Eigen::Vector3d get_foot_initial_pose() {return _step_initial_pose;};
         Eigen::Vector3d get_foot_final_pose() {return _step_final_pose;};
@@ -90,12 +98,15 @@ public:
     
     
     virtualConstraintsNode(int argc, char **argv, const char *node_name);
+    ~virtualConstraintsNode() {_logger->flush();};
     
     robot_interface_ROS&  get_robot() {return _current_pose_ROS;}; /*this is a reference (I can also use a pointer) because the class _current_pose_ROS is not copiable*/
     robot_interface get_initial_robot() {return _initial_pose;};
     
     double getTime();
     int straighten_up_action();
+    int initial_stride_action();
+    int initial_tilt_action();
     
     Eigen::Vector3d straighten_up_goal();
     
@@ -109,7 +120,7 @@ public:
     double get_q1();
     bool new_q1();
     
-    double calc_q1();
+    double sense_q1();
     
     
 //     double calc_VC_legs ();
@@ -122,7 +133,7 @@ public:
     
     bool impact_detected(); 
     
-    void calc_trajectory();
+    void run();
     void foot_position();
     
     void update_command_step(Eigen::Vector3d initial_pose, Eigen::Vector3d final_pose, double clearing, double startTime, double endTime);
@@ -155,9 +166,8 @@ public:
     static double time_warp(double tau, double beta);
     void get_current_pose_ROS();
     
+    void first_q1();
     
-//     Side get_robot_side() {std::cout << _current_side << std::endl; return _current_side;};
-//     void set_robot_side(Side side) {_current_side = side;};
     
 protected:
     
@@ -171,7 +181,7 @@ protected:
     robot_interface _initial_pose, _previous_initial_pose;
     robot_interface_ROS _current_pose_ROS;
     
-    geometry_msgs::PoseStamped _initial_com_pose;
+    double _q1_cmd;
     double _q1_state;
     
 
@@ -183,12 +193,17 @@ protected:
     
     double _q1_step = 0;
 
-    bool _check_received;
+    bool _check_received = false;
     
     data_step _step;
     
     Side _current_side = Side::Left; /*means that starting swinging leg is LEFT. Pinned leg is RIGHT.*/
     
+    XBot::MatLogger::Ptr _logger;
+    
+    double _terrain_heigth;
+    
+    int _step_counter;
 };
 
 

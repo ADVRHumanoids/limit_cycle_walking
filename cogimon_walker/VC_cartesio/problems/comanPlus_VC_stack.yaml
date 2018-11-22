@@ -4,7 +4,8 @@ solver_options:
 
 stack:
     - ["LFoot", "RFoot", "PosturalPennacchio"]
-    - ["CoM", "WaistOrient"]
+    - ["CoM"]
+    - ["WaistOrient"]
     - ["Postural"]
     
 constraints: ["JointLimits", "VelocityLimits"]
@@ -34,7 +35,7 @@ WaistOrient:
 
 CoM:
     type: "Com"
-    lambda: 0.1
+    lambda: 1
     
     
 PosturalPennacchio:
