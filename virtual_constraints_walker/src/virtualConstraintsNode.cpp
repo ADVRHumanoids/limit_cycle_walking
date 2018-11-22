@@ -59,7 +59,7 @@ int virtualConstraintsNode::initial_tilt_action() /*if I just setted a publisher
         geometry_msgs::Pose cmd_initial;
 //         _current_pose_ROS.sense();
         Eigen::Vector3d pose = _current_pose_ROS.get_com();
-        pose(0) = (_current_pose_ROS.get_distance_l_ankle_to_com().coeff(2) * tan(0.2)) + _current_pose_ROS.get_com().coeff(0);
+        pose(0) = (_current_pose_ROS.get_distance_l_ankle_to_com().coeff(2) * tan(0.1)) + _current_pose_ROS.get_com().coeff(0);
         
         tf::pointEigenToMsg(pose, cmd_initial.position);
         
@@ -103,7 +103,7 @@ int virtualConstraintsNode::initial_stride_action() /*if I just setted a publish
         geometry_msgs::Pose cmd_initial;
 //         _current_pose_ROS.sense();
         Eigen::Vector3d pose = _current_pose_ROS.get_l_sole();
-        pose(0) = (2 * _current_pose_ROS.get_distance_l_ankle_to_com().coeff(2) * tan(0.2)) + _current_pose_ROS.get_l_sole().coeff(0);
+        pose(0) = (2 * _current_pose_ROS.get_distance_l_ankle_to_com().coeff(2) * tan(0.1)) + _current_pose_ROS.get_l_sole().coeff(0);
         tf::pointEigenToMsg(pose, cmd_initial.position);
         float cmd_initial_time;
         cmd_initial_time = 1;
@@ -286,7 +286,7 @@ bool virtualConstraintsNode::impact_detected()
         if (_current_side == Side::Left)
         {   
 //             if (fabs(q1_walk) >= 0.2 &&
-            if (fabs(fabs(_current_pose_ROS.get_l_sole().coeff(2)) - fabs(_terrain_heigth)) <= 1e-6 &&  
+            if (fabs(fabs(_current_pose_ROS.get_l_sole().coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
                 fabs(_current_pose_ROS.get_l_sole().coeff(0) - _initial_pose.get_l_sole().coeff(0))>  0.1)
             {
                 ROS_INFO("state changed: RIGHT");
@@ -307,7 +307,7 @@ bool virtualConstraintsNode::impact_detected()
         else if (_current_side == Side::Right)
         {
 //             if (fabs(q1_walk) >= 0.2 &&
-            if (fabs(fabs(_current_pose_ROS.get_r_sole().coeff(2)) - fabs(_terrain_heigth)) <= 1e-6 &&  
+            if (fabs(fabs(_current_pose_ROS.get_r_sole().coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
                 fabs(_current_pose_ROS.get_r_sole().coeff(0) - _initial_pose.get_r_sole().coeff(0)) >  0.1)
             {  
                 ROS_INFO("state changed: LEFT");
@@ -377,7 +377,7 @@ void virtualConstraintsNode::update_step_left()
         
         double clearing = 0.1;
         double starTime = getTime();
-        double endTime = starTime + 2;
+        double endTime = starTime + 1;
         
         std::cout << "starting position: " << _initial_pose.get_r_sole().transpose() << std::endl;
         std::cout << "ending position: " << l_sole_position.transpose() << std::endl;
@@ -412,7 +412,7 @@ void virtualConstraintsNode::update_step_right()
         
         double clearing = 0.1;
         double starTime = getTime();
-        double endTime = starTime + 2;
+        double endTime = starTime + 1;
         
         _step.set_data_step(_current_pose_ROS.get_r_sole(), r_sole_position, _current_pose_ROS.get_com(), com_position,  clearing, starTime, endTime);
     }
