@@ -14,12 +14,8 @@ int main(int argc, char **argv)
     {
     robot.sense(); /*inside there is ros::spinOnce*/
     VC.straighten_up_action();  
-
-    VC.initial_stride_action();
-    VC.initial_tilt_action();
-   
-
-
+//     VC.initial_shift_action();
+    VC.sense_q1();
     }
 //---------------------------------------------------------
  
@@ -33,10 +29,6 @@ int main(int argc, char **argv)
 //         VC.send_point();
         VC.run();
 //         VC.sense_q1();
-//         
-
-        
-
     }
 
 

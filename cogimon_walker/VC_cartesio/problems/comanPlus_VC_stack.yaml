@@ -1,9 +1,9 @@
 solver_options:
-    regularization: 1e-6
+    regularization: 1e-4
     back_end: "qpoases"
 
 stack:
-    - ["LFoot", "RFoot", "PosturalPennacchio"]
+    - ["LFoot", "RFoot", "PosturalPennacchio"] #,
     - ["CoM"]
     - ["WaistOrient"]
     - ["Postural"]
@@ -19,11 +19,13 @@ LFoot:
     type: "Cartesian"
     distal_link: "l_sole"
     base_link: "world"
+    lamda: 1
 
 RFoot:
     type: "Cartesian"
     distal_link: "r_sole"
     base_link: "world"
+    lambda: 1
 
 WaistOrient:
     type: "Cartesian"

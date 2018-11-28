@@ -105,8 +105,7 @@ public:
     
     double getTime();
     int straighten_up_action();
-    int initial_stride_action();
-    int initial_tilt_action();
+    int initial_shift_action();
     
     Eigen::Vector3d straighten_up_goal();
     
