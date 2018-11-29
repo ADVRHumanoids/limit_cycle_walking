@@ -183,20 +183,11 @@ double virtualConstraintsNode::sense_q1()
             stance_ankle_to_com = _current_pose_ROS.get_distance_l_ankle_to_com();
         }
         else ROS_INFO("wrong side");
-//         com = _current_pose_ROS.get_com() - _initial_pose.get_com();
-       
-        std::cout << "x l distance: " << _current_pose_ROS.get_distance_l_ankle_to_com().coeff(0) << std::endl;
-        std::cout << "x r distance: " << _current_pose_ROS.get_distance_r_ankle_to_com().coeff(0) << std::endl;
 
-//         com = _initial_pose.get_com();
+        
         double q1 = atan(swing_ankle_to_com(0)/swing_ankle_to_com(2)); /*calc angle q1*/
         double q2 = atan(stance_ankle_to_com(0)/stance_ankle_to_com(2));
 
-//         double q1 = atan2(swing_ankle_to_com(2),swing_ankle_to_com(0)); /*calc angle q1*/
-//         double q2 = atan2(stance_ankle_to_com(2),stance_ankle_to_com(0));
-        
-        std::cout << "q1 (from swing) is: " << q1 << std::endl;
-        std::cout << "q2 (from stance) is: " << q2 << std::endl;
         
         _logger->add("distance_r_ankle_to_com", _current_pose_ROS.get_distance_r_ankle_to_com());
         _logger->add("distance_l_ankle_to_com", _current_pose_ROS.get_distance_l_ankle_to_com());
@@ -248,6 +239,7 @@ bool virtualConstraintsNode::impact_detected()
                 fabs(_current_pose_ROS.get_l_sole().coeff(0) - _initial_pose.get_l_sole().coeff(0))>  0.1)
             {
                 ROS_INFO("state changed: RIGHT");
+                sense_q1();
                 _step_counter++;
                     
                 _current_pose_ROS.sense();
@@ -263,6 +255,7 @@ bool virtualConstraintsNode::impact_detected()
                 fabs(_current_pose_ROS.get_r_sole().coeff(0) - _initial_pose.get_r_sole().coeff(0)) >  0.1)
             {  
                 ROS_INFO("state changed: LEFT");
+                sense_q1();
                 _step_counter++;
                 
                 _current_pose_ROS.sense();
@@ -306,49 +299,35 @@ void virtualConstraintsNode::first_q1()
         }
         ROS_INFO("command received! q1 = %f", _q1_state);
     }
-    
-void virtualConstraintsNode::update_step_left()
+void virtualConstraintsNode::update_step()
     {
         // when a new q1 is detected, this function updates the step
-        ROS_INFO("entered_left");
-        
-        Eigen::Vector3d com_position, l_sole_position;
+        Eigen::Vector3d com_position, sole_position;
         Eigen::Vector3d delta_com, delta_step;
-        com_position = _initial_pose.get_com(); /*if I put current pose, my q1 is relative to the reached pose*/
-        l_sole_position = _initial_pose.get_l_sole();
+        com_position = _initial_pose.get_com();
         
+        if (_current_side == Side::Left)
+        {
+            ROS_INFO("entered_left");
+            sole_position = _initial_pose.get_l_sole();
+        }
+        else if (_current_side == Side::Right)
+        {
+            ROS_INFO("entered_right");
+            sole_position = _initial_pose.get_r_sole();
+        } else ROS_INFO("wrong update");
+        
+
         calc_step(_q1_state, &delta_com, &delta_step);
         
         update_position(&com_position, delta_com);      /*incline*/
-        update_position(&l_sole_position, delta_step);  /*step*/
+        update_position(&sole_position, delta_step);  /*step*/
         
         double clearing = 0.1;
         double starTime = getTime();
         double endTime = starTime + 1;
         
-        _step.set_data_step(_current_pose_ROS.get_l_sole(), l_sole_position, _current_pose_ROS.get_com(), com_position, clearing, starTime, endTime);
-    }
-    
-void virtualConstraintsNode::update_step_right()
-    {
-// when a new q1 is detected, this function updates the step
-        ROS_INFO("entered_right");
-        
-        Eigen::Vector3d com_position, r_sole_position;
-        Eigen::Vector3d delta_com, delta_step;
-        com_position = _initial_pose.get_com(); /*if I put current pose, my q1 is relative to the reached pose*/ /*_initial_pose*/
-        r_sole_position = _initial_pose.get_r_sole();
-        
-        calc_step(_q1_state, &delta_com, &delta_step);
-        
-        update_position(&com_position, delta_com);      /*incline*/
-        update_position(&r_sole_position, delta_step);  /*step*/
-        
-        double clearing = 0.1;
-        double starTime = getTime();
-        double endTime = starTime + 1;
-        
-        _step.set_data_step(_current_pose_ROS.get_r_sole(), r_sole_position, _current_pose_ROS.get_com(), com_position,  clearing, starTime, endTime);
+        _step.set_data_step(_current_pose_ROS.get_l_sole(), sole_position, _current_pose_ROS.get_com(), com_position, clearing, starTime, endTime);
     }
         
 void virtualConstraintsNode::run() 
@@ -357,23 +336,14 @@ void virtualConstraintsNode::run()
         {
             ROS_INFO("step number: %f", _step_counter);
             first_q1();
-            if (_current_side == Side::Left)
-                update_step_left();
-            else if (_current_side == Side::Right)
-                update_step_right();
-            else ROS_INFO("wrong update, exiting");
+            update_step();
         }
             
         sense_q1();
         
         if (impact_detected())
         {
-            
-            if (_current_side == Side::Left)
-                update_step_left();
-            else if (_current_side == Side::Right)
-                update_step_right();
-            else ROS_INFO("wrong update, exiting");
+            update_step();
         }
         
 //         while (_step_counter >= 1);
@@ -383,18 +353,26 @@ void virtualConstraintsNode::run()
         com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec());
         
         _step.log(_logger);
+        send_step(foot_trajectory, com_trajectory);
+        
+    }
+void virtualConstraintsNode::send_step(Eigen::Vector3d foot_command, Eigen::Vector3d com_command)
+    {
+        geometry_msgs::PoseStamped cmd_com, cmd_sole;
+        tf::pointEigenToMsg(com_command, cmd_com.pose.position);
+        tf::pointEigenToMsg(foot_command, cmd_sole.pose.position);
+        
+        _com_pub.publish(cmd_com);
         
         if (_current_side == Side::Left)
         {
-            send_step_left(foot_trajectory, com_trajectory);
+            _l_sole_pub.publish(cmd_sole);
         }
         else if (_current_side == Side::Right)
         {
-            send_step_right(foot_trajectory, com_trajectory);
+            _r_sole_pub.publish(cmd_sole);
         }
-        
     }
-    
 void virtualConstraintsNode::send_step_left(Eigen::Vector3d foot_command, Eigen::Vector3d com_command)
     {       
         geometry_msgs::PoseStamped cmd_com, cmd_l_sole;
