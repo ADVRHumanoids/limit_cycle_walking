@@ -138,12 +138,8 @@ public:
     void update_command_step(Eigen::Vector3d initial_pose, Eigen::Vector3d final_pose, double clearing, double startTime, double endTime);
     
     void send_step(Eigen::Vector3d foot_command, Eigen::Vector3d com_command);
-    void send_step_left(Eigen::Vector3d foot_command, Eigen::Vector3d com_command);
-    void send_step_right(Eigen::Vector3d foot_command, Eigen::Vector3d com_command);
     
     void update_step();
-    void update_step_left();
-    void update_step_right();
     
     void send_point();
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -168,7 +164,7 @@ public:
     void get_current_pose_ROS();
     
     void first_q1();
-    
+    int get_n_step() {return _step_counter;};
     
 protected:
     
