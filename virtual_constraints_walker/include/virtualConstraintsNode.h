@@ -41,11 +41,12 @@ public:
 //     };
 
 //         enum class State { Busy, Online };
-    enum class Side : char { Left = 'L', Right = 'R'};
+//     enum class Side : char { Left = 'L', Right = 'R'};
+    enum class Side : int { Left = 0, Right = 1}; /*Side SWINGING*/    /*TODO: good implementation??*/
     
     friend std::ostream& operator<<(std::ostream& os, virtualConstraintsNode::Side s)
 {
-    return os << static_cast<char>(s);
+    return os << static_cast<int>(s);
 };
 
     class data_step
@@ -170,7 +171,9 @@ protected:
     
 //     ros::NodeHandle n;
     ros::Publisher _com_pub;     
-    ros::Publisher _r_sole_pub, _l_sole_pub;
+//     ros::Publisher _r_sole_pub, _l_sole_pub;
+    
+    std::vector<ros::Publisher> _sole_pubs;
     
     ros::Subscriber _q1_sub;
     

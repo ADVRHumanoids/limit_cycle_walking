@@ -11,6 +11,12 @@ robot_interface_ROS::robot_interface_ROS()
     { 
         ros::NodeHandle n;
         
+        Eigen::Vector3d dummy(0,0,0);   /*TODO good implementation?? mi sembra una cagata*/
+        _sole_state.push_back(dummy);   /*push back 2 times because there are two sole*/
+        _sole_state.push_back(dummy);
+        _distance_ankle_to_com.push_back(dummy);
+        _distance_ankle_to_com.push_back(dummy);
+        
 //      prepare subscribers node
         _subs.push_back(n.subscribe("/cartesian/solution", 10, &robot_interface_ROS::joints_state_callback, this)); /*subscribe to cartesian/solution topic*/
         _subs.push_back(n.subscribe("/cartesian/com/state", 10, &robot_interface_ROS::com_state_callback, this)); /*subscribe to cartesian/solution topic*/
@@ -18,8 +24,8 @@ robot_interface_ROS::robot_interface_ROS()
         _subs.push_back(n.subscribe("/cartesian/r_sole/state", 10, &robot_interface_ROS::r_sole_state_callback, this)); /*subscribe to cartesian/solution topic*/
 
 //      prepare listener node       
-        l_ankle_to_com_listener.waitForTransform("ci/l_sole", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
-        r_ankle_to_com_listener.waitForTransform("ci/r_sole", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
+        l_ankle_to_com_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
+        r_ankle_to_com_listener.waitForTransform("ci/r_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
         _l_to_r_foot_listener.waitForTransform("ci/l_sole", "ci/r_sole", ros::Time(0), ros::Duration(3.0));
         
 
@@ -44,8 +50,10 @@ robot_interface_ROS::robot_interface_ROS()
 void robot_interface_ROS::sense()
     {
         ros::spinOnce();
-        _distance_l_ankle_to_com = listen_distance_l_ankle_to_com();
-        _distance_r_ankle_to_com = listen_distance_r_ankle_to_com();
+        _distance_ankle_to_com.at(0) = listen_distance_l_ankle_to_com();
+        _distance_ankle_to_com.at(1) = listen_distance_r_ankle_to_com();
+//         _distance_l_ankle_to_com = listen_distance_l_ankle_to_com();
+//         _distance_r_ankle_to_com = listen_distance_r_ankle_to_com();
         _distance_l_to_r_foot = listen_distance_l_to_r_foot();
     }
     
@@ -70,14 +78,14 @@ void robot_interface_ROS::com_state_callback(const geometry_msgs::PoseStamped ms
 
 void robot_interface_ROS::l_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        tf::pointMsgToEigen(msg_rcv.pose.position,_l_sole_state);
+        tf::pointMsgToEigen(msg_rcv.pose.position,_sole_state.at(0)); /*TODO: is this a good implementation??*/
 //         if COUNT_ONCE {_callback_counter++;};
         _check_3 = true;
     }
     
 void robot_interface_ROS::r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        tf::pointMsgToEigen(msg_rcv.pose.position, _r_sole_state);
+        tf::pointMsgToEigen(msg_rcv.pose.position, _sole_state.at(1)); /*TODO: is this a good implementation??*/
 //         if COUNT_ONCE {_callback_counter++;};
         _check_4 = true;
     }
@@ -87,7 +95,7 @@ Eigen::Vector3d robot_interface_ROS::listen_distance_l_ankle_to_com()
         tf::Vector3 distance;
         Eigen::Vector3d l_ankle_to_com_distance;
         
-        l_ankle_to_com_listener.lookupTransform("ci/l_sole", "ci/com", ros::Time(0), l_ankle_to_com_transform); /*ros::Time(0)*/
+        l_ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), l_ankle_to_com_transform); /*ros::Time(0)*/
         distance = l_ankle_to_com_transform.getOrigin();
         tf::vectorTFToEigen(distance, l_ankle_to_com_distance);
         return l_ankle_to_com_distance;
@@ -98,7 +106,7 @@ Eigen::Vector3d robot_interface_ROS::listen_distance_r_ankle_to_com()
         tf::Vector3 distance;
         Eigen::Vector3d r_ankle_to_com_distance;
         
-        r_ankle_to_com_listener.lookupTransform("ci/r_sole", "ci/com", ros::Time(0), r_ankle_to_com_transform);
+        r_ankle_to_com_listener.lookupTransform("ci/r_ankle", "ci/com", ros::Time(0), r_ankle_to_com_transform);
         distance = r_ankle_to_com_transform.getOrigin();
         tf::vectorTFToEigen(distance, r_ankle_to_com_distance);
         return r_ankle_to_com_distance;

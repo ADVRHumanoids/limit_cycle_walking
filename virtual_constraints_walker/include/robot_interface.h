@@ -16,11 +16,13 @@ class robot_interface
         typedef std::shared_ptr<robot_interface> Ptr;
 
         Eigen::Vector3d get_com() {return _com_state;};
-        Eigen::Vector3d get_l_sole() {return _l_sole_state;};
-        Eigen::Vector3d get_r_sole() {return _r_sole_state;};
-        Eigen::Vector3d get_distance_l_ankle_to_com() {return _distance_l_ankle_to_com;};
-        Eigen::Vector3d get_distance_r_ankle_to_com() {return _distance_r_ankle_to_com;};
+//         Eigen::Vector3d get_l_sole() {return _l_sole_state;};
+//         Eigen::Vector3d get_r_sole() {return _r_sole_state;};
+//         Eigen::Vector3d get_distance_l_ankle_to_com() {return _distance_l_ankle_to_com;};
+//         Eigen::Vector3d get_distance_r_ankle_to_com() {return _distance_r_ankle_to_com;};
+        Eigen::Vector3d get_distance_ankle_to_com(int n) {return _distance_ankle_to_com[n];};
         Eigen::Vector3d get_distance_l_to_r_foot() {return _distance_l_to_r_foot;};
+        Eigen::Vector3d get_sole(int n) {return _sole_state[n];}   /*TODO is this a good implementation?*/
         
         
     protected:
@@ -28,7 +30,8 @@ class robot_interface
         Eigen::Vector3d _distance_l_ankle_to_com, _distance_r_ankle_to_com;
         Eigen::Vector3d _distance_l_to_r_foot;
         Eigen::Vector3d _com_state;
-        Eigen::Vector3d _l_sole_state, _r_sole_state;
+//         Eigen::Vector3d _l_sole_state, _r_sole_state;
+        std::vector<Eigen::Vector3d> _sole_state, _distance_ankle_to_com; /*TODO is this a good implementation?*/
         
         bool _check_messages;
     };

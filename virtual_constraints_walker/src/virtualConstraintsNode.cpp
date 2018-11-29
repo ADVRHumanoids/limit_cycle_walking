@@ -16,12 +16,12 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
         
         _initial_pose = _current_pose_ROS;  
 //         _previous_initial_pose = _current_pose_ROS;
-        
-        _step.set_data_step(_current_pose_ROS.get_l_sole(),_current_pose_ROS.get_l_sole(), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0,getTime(),getTime()+2);
+//         _step.set_data_step(_current_pose_ROS.get_l_sole(),_current_pose_ROS.get_l_sole(), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0,getTime(),getTime()+2);
+        _step.set_data_step( _current_pose_ROS.get_sole(static_cast<int>(_current_side)), _current_pose_ROS.get_sole(static_cast<int>(_current_side)), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0,getTime(),getTime()+2);
         
         _q1_state = sense_q1();
         
-        _terrain_heigth = _initial_pose.get_l_sole().coeff(2);
+        _terrain_heigth =  _current_pose_ROS.get_sole(static_cast<int>(_current_side)).coeff(2);
         
 //      prepare subscriber node
         _q1_sub = n.subscribe("/q1", 10, &virtualConstraintsNode::q1_callback, this); /*subscribe to /q1 topic*/
@@ -29,8 +29,8 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
 //      prepare advertiser node
         _com_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com/reference", 10); /*publish to /cartesian/com/reference*/
         
-        _l_sole_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/l_sole/reference", 10); /*publish to /l_sole/reference*/
-        _r_sole_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 10); /*publish to /r_sole/reference*/
+        _sole_pubs.push_back(n.advertise<geometry_msgs::PoseStamped>("/cartesian/l_sole/reference", 10)); /*publish to /l_sole/reference*/
+        _sole_pubs.push_back(n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 10)); /*publish to /r_sole/reference*/
         
         
 //         _check_received = false;       %nope because it could be disconnected from q1
@@ -63,11 +63,11 @@ int virtualConstraintsNode::initial_shift_action() /*if I just setted a publishe
         geometry_msgs::Pose cmd_shift_pos, cmd_shift_foot;
         
         Eigen::Vector3d pose_com = _current_pose_ROS.get_com();
-        pose_com(0) = (_current_pose_ROS.get_distance_l_ankle_to_com().coeff(2) * tan(q1)) + _current_pose_ROS.get_com().coeff(0);
+        pose_com(0) = (_current_pose_ROS.get_distance_ankle_to_com(static_cast<int>(_current_side)).coeff(2) * tan(q1)) + _current_pose_ROS.get_com().coeff(0);
         tf::pointEigenToMsg(pose_com, cmd_shift_pos.position);
         
-        Eigen::Vector3d pose_step = _current_pose_ROS.get_l_sole();
-        pose_step(0) = (2 * _current_pose_ROS.get_distance_l_ankle_to_com().coeff(2) * tan(q1)) + _current_pose_ROS.get_l_sole().coeff(0);
+        Eigen::Vector3d pose_step =  _current_pose_ROS.get_sole(static_cast<int>(_current_side));
+        pose_step(0) = (2 * _current_pose_ROS.get_distance_ankle_to_com(static_cast<int>(_current_side)).coeff(2) * tan(q1)) + _current_pose_ROS.get_sole(static_cast<int>(_current_side)).coeff(0);
         tf::pointEigenToMsg(pose_step, cmd_shift_foot.position);
         
         float cmd_initial_time;
@@ -145,12 +145,10 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
 Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
     {      
         Eigen::Vector3d straight_com = _current_pose_ROS.get_com();
-        std::cout << _current_pose_ROS.get_l_sole().coeff(0)<<std::endl;
         
-        straight_com(0) = _current_pose_ROS.get_l_sole().coeff(0);
+        straight_com(0) =  _current_pose_ROS.get_sole(static_cast<int>(_current_side)).coeff(0);
         straight_com(2) = -0.12;
-        std::cout << straight_com(0) <<std::endl;
-        _step.set_data_step(_current_pose_ROS.get_l_sole(),_current_pose_ROS.get_l_sole(), straight_com, straight_com, 0, getTime(), getTime()+2);
+        _step.set_data_step( _current_pose_ROS.get_sole(static_cast<int>(_current_side)), _current_pose_ROS.get_sole(static_cast<int>(_current_side)), straight_com, straight_com, 0, getTime(), getTime()+2);
         return straight_com;
     }
     
@@ -172,25 +170,28 @@ double virtualConstraintsNode::sense_q1()
         _current_pose_ROS.sense(); 
         Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com;
 
-        if (_current_side == Side::Left)
-        {
-            swing_ankle_to_com = _current_pose_ROS.get_distance_l_ankle_to_com();
-            stance_ankle_to_com = _current_pose_ROS.get_distance_r_ankle_to_com();
-        }
-        else if (_current_side == Side::Right)
-        {
-            swing_ankle_to_com = _current_pose_ROS.get_distance_r_ankle_to_com(); 
-            stance_ankle_to_com = _current_pose_ROS.get_distance_l_ankle_to_com();
-        }
-        else ROS_INFO("wrong side");
+//         if (_current_side == Side::Left)
+//         {
+            swing_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(static_cast<int>(_current_side));
+            stance_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(1 - static_cast<int>(_current_side));
+            
+//             swing_ankle_to_com = _current_pose_ROS.get_distance_l_ankle_to_com();
+//             stance_ankle_to_com = _current_pose_ROS.get_distance_r_ankle_to_com();
+//         }
+//         else if (_current_side == Side::Right)
+//         {
+//             swing_ankle_to_com = _current_pose_ROS.get_distance_r_ankle_to_com(); 
+//             stance_ankle_to_com = _current_pose_ROS.get_distance_l_ankle_to_com();
+//         }
+//         else ROS_INFO("wrong side");
 
         
         double q1 = atan(swing_ankle_to_com(0)/swing_ankle_to_com(2)); /*calc angle q1*/
         double q2 = atan(stance_ankle_to_com(0)/stance_ankle_to_com(2));
 
         
-        _logger->add("distance_r_ankle_to_com", _current_pose_ROS.get_distance_r_ankle_to_com());
-        _logger->add("distance_l_ankle_to_com", _current_pose_ROS.get_distance_l_ankle_to_com());
+        _logger->add("swing_ankle_to_com", _current_pose_ROS.get_distance_ankle_to_com(static_cast<int>(_current_side)));
+        _logger->add("stance_ankle_to_com", _current_pose_ROS.get_distance_ankle_to_com(1 - static_cast<int>(_current_side)));
         _logger->add("q1", q1);
         _logger->add("q2", q2);
         
@@ -209,10 +210,10 @@ void virtualConstraintsNode::calc_step(double q1, Eigen::Vector3d *delta_com,  E
 //         _current_pose_ROS.sense();
         Eigen::Vector3d ankle_to_com_distance;
         
-        if (_current_side == Side::Left)
-            ankle_to_com_distance = _current_pose_ROS.get_distance_l_ankle_to_com();
-        else if (_current_side == Side::Right)
-            ankle_to_com_distance = _current_pose_ROS.get_distance_r_ankle_to_com();
+//         if (_current_side == Side::Left)
+            ankle_to_com_distance = _current_pose_ROS.get_distance_ankle_to_com(static_cast<int>(_current_side));
+//         else if (_current_side == Side::Right)
+//             ankle_to_com_distance = _current_pose_ROS.get_distance_r_ankle_to_com();
         
 
             /* virtual constraints - very simple */
@@ -233,42 +234,43 @@ void virtualConstraintsNode::calc_step(double q1, Eigen::Vector3d *delta_com,  E
 
 bool virtualConstraintsNode::impact_detected()                
     {
-        if (_current_side == Side::Left) /*change to Side::Right*/
-        {   
-            if (fabs(fabs(_current_pose_ROS.get_l_sole().coeff(2)) - fabs(_terrain_heigth)) <= 1e-5 &&  
-                fabs(_current_pose_ROS.get_l_sole().coeff(0) - _initial_pose.get_l_sole().coeff(0))>  0.1)
+//
+            if (fabs(fabs(_current_pose_ROS.get_sole(static_cast<int>(_current_side)).coeff(2)) - fabs(_terrain_heigth)) <= 1e-5 &&  
+                fabs( _current_pose_ROS.get_sole(static_cast<int>(_current_side)).coeff(0) -  _initial_pose.get_sole(static_cast<int>(_current_side)).coeff(0))>  0.1)
             {
-                ROS_INFO("state changed: RIGHT");
+                ROS_INFO("state changed: %d", _current_side);
                 _step_counter++;
                     
                 _current_pose_ROS.sense();
                 _initial_pose = _current_pose_ROS;
-                _step.set_data_step(_current_pose_ROS.get_r_sole(),_current_pose_ROS.get_r_sole(), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0, getTime(), getTime()+2);
-                _current_side = Side::Right;
+//       
+                _current_side = (Side)(1 - static_cast<int>(_current_side));  /*here I change the Side after the impact */
+
                 
                 return 1;
             }
-        }
-        else if (_current_side == Side::Right) /*change to Side::Left*/
-        {
-            if (fabs(fabs(_current_pose_ROS.get_r_sole().coeff(2)) - fabs(_terrain_heigth)) <= 1e-5 &&  
-                fabs(_current_pose_ROS.get_r_sole().coeff(0) - _initial_pose.get_r_sole().coeff(0)) >  0.1)
-            {  
-                ROS_INFO("state changed: LEFT");
-                _step_counter++;
-                
-                _current_pose_ROS.sense();
-                _initial_pose = _current_pose_ROS;
-                _step.set_data_step(_current_pose_ROS.get_l_sole(),_current_pose_ROS.get_l_sole(), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0, getTime(), getTime()+2);
-                _current_side = Side::Left;
-                
-                return 1;
-            }
-        }  
-        else
-        {
+//         }
+//         else if (_current_side == Side::Right) /*change to Side::Left*/
+//         {
+// 
+//             if (fabs(fabs( _current_pose_ROS.get_sole(static_cast<int>(_current_side)).coeff(2)) - fabs(_terrain_heigth)) <= 1e-5 &&  
+//                 fabs( _current_pose_ROS.get_sole(static_cast<int>(_current_side)).coeff(0) -  _current_pose_ROS.get_sole(static_cast<int>(_current_side)).coeff(0)) >  0.1)
+//             {  
+//                 ROS_INFO("state changed: LEFT");
+//                 _step_counter++;
+//                 
+//                 _current_pose_ROS.sense();
+//                 _initial_pose = _current_pose_ROS;
+// //                 _step.set_data_step(_current_pose_ROS.get_l_sole(),_current_pose_ROS.get_l_sole(), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0, getTime(), getTime()+2);
+//                 _current_side = Side::Left;
+//                 
+//                 return 1;
+//             }
+//         }  
+            else
+            {
             return 0;
-        }
+            }
     }
 
 bool virtualConstraintsNode::new_q1()
@@ -311,20 +313,24 @@ void virtualConstraintsNode::update_step()
         initial_com_position = _current_pose_ROS.get_com();
         final_com_position = _current_pose_ROS.get_com();
         
-        if (_current_side == Side::Left)
-        {
-            ROS_INFO("entered_left");
+//         if (_current_side == Side::Left)
+//         {
+//             ROS_INFO("entered_left");
             
-            initial_sole_position = _current_pose_ROS.get_l_sole();
-            final_sole_position = _current_pose_ROS.get_l_sole();
-        }
-        else if (_current_side == Side::Right)
-        {
-            ROS_INFO("entered_right");
+            initial_sole_position = _current_pose_ROS.get_sole(static_cast<int>(_current_side));
+            final_sole_position = _current_pose_ROS.get_sole(static_cast<int>(_current_side));
             
-            initial_sole_position = _current_pose_ROS.get_r_sole();
-            final_sole_position = _current_pose_ROS.get_r_sole();
-        } else ROS_INFO("wrong update");
+
+//             initial_sole_position = _current_pose_ROS.get_l_sole();
+//             final_sole_position = _current_pose_ROS.get_l_sole();
+//         }
+//         else if (_current_side == Side::Right)
+//         {
+//             ROS_INFO("entered_right");
+            
+//             initial_sole_position = _current_pose_ROS.get_r_sole();
+//             final_sole_position = _current_pose_ROS.get_r_sole();
+//         } else ROS_INFO("wrong update");
         
 
         calc_step(_q1_state, &delta_com, &delta_step);
@@ -332,9 +338,13 @@ void virtualConstraintsNode::update_step()
         update_position(&final_com_position, delta_com);    /*incline*/
         update_position(&final_sole_position, delta_step);  /*step*/
         
+        
+//             std::cout << "initial: " << initial_sole_position.transpose() << std::endl;
+//             std::cout << "final: " << final_sole_position.transpose() << std::endl;
+            
         double clearing = 0.1;
         double starTime = getTime();
-        double endTime = starTime + 5;
+        double endTime = starTime + 2;
         
         _step.set_data_step(initial_sole_position, final_sole_position, initial_com_position, final_com_position, clearing, starTime, endTime);
     }
@@ -343,7 +353,6 @@ void virtualConstraintsNode::run()
     {
         if (initialized) /*initial tilt*/
         {
-            ROS_INFO("step number: %f", _step_counter);
             first_q1();
             update_step();
         }
@@ -355,10 +364,13 @@ void virtualConstraintsNode::run()
             update_step();
         }
         
-        std::cout << "moving foot: " << _current_side << std::endl;
         Eigen::Vector3d foot_trajectory, com_trajectory;
         foot_trajectory = compute_swing_trajectory(_step.get_foot_initial_pose(), _step.get_foot_final_pose(), _step.get_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec());
         com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec());
+        
+//         std::cout << "starting: "<< _step.get_foot_initial_pose().transpose() << std::endl;
+//         std::cout << "ending: " <<_step.get_foot_final_pose().transpose() << std::endl;
+//         std::cout << "foot traj: " << foot_trajectory.transpose() << std::endl;
         
         _step.log(_logger);
         send_step(foot_trajectory, com_trajectory);
@@ -371,24 +383,7 @@ void virtualConstraintsNode::send_step(Eigen::Vector3d foot_command, Eigen::Vect
         tf::pointEigenToMsg(foot_command, cmd_sole.pose.position);
         
         _com_pub.publish(cmd_com);
-        
-        if (_current_side == Side::Left)
-        {
-            _l_sole_pub.publish(cmd_sole);
-        }
-        else if (_current_side == Side::Right)
-        {
-            _r_sole_pub.publish(cmd_sole);
-        }
-    }
-
-void virtualConstraintsNode::send_point()
-    {
-        geometry_msgs::PoseStamped cmd_l_sole;
-        Eigen::Vector3d command(0.2, 0.1, -0.9);
-        tf::pointEigenToMsg(command, cmd_l_sole.pose.position);
-        _l_sole_pub.publish(cmd_l_sole);
-        
+        _sole_pubs[static_cast<int>(_current_side)].publish(cmd_sole);         /*TODO: horrible implementation??*/
     }
 
 Eigen::Vector3d virtualConstraintsNode::compute_swing_trajectory(const Eigen::Vector3d& start, 
