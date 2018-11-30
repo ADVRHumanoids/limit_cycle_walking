@@ -32,15 +32,7 @@
 
 class virtualConstraintsNode : mainNode {
 public:
-    
-//     struct intial_state_robot /*TODO why not?*/
-//     {
-//        static geometry_msgs::Point com;
-//        static geometry_msgs::Point l_sole;
-//        static geometry_msgs::Point r_sole;
-//     };
 
-//         enum class State { Busy, Online };
 //     enum class Side : char { Left = 'L', Right = 'R'};
     enum class Side : int { Left = 0, Right = 1}; /*Side SWINGING*/    /*TODO: good implementation??*/
     
@@ -94,10 +86,6 @@ public:
         double _starTime, _endTime;
     };  
     
-//     enum class State { Busy, Online };  /*TODO put robot state in class*/
-//     virtual State getState() const = 0;
-    
-    
     virtualConstraintsNode(int argc, char **argv, const char *node_name);
     ~virtualConstraintsNode() {_logger->flush();};
     
@@ -112,37 +100,23 @@ public:
     
     void q1_callback(const std_msgs::Float64 msg_rcv); //this is called by ros
     
-
-
-    void update_initial_pose();
-    void update_current_pose_ROS();
-
     double get_q1();
     bool new_q1();
     
     double sense_q1();
+//     double sense_ql();
     
-    
-//     double calc_VC_legs ();
-
     void update_position(Eigen::Vector3d *current_pose, Eigen::Vector3d update);
     
-//     double incline();
-//     double step();
     void calc_step(double q1,  Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step);
     
     bool impact_detected(); 
     
     void run();
-    void foot_position();
-    
-    void update_command_step(Eigen::Vector3d initial_pose, Eigen::Vector3d final_pose, double clearing, double startTime, double endTime);
     
     void send_step(Eigen::Vector3d foot_command, Eigen::Vector3d com_command);
     
     void update_step();
-    
-    void send_point();
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     static Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
                                                     const Eigen::Vector3d& end, 
@@ -159,11 +133,9 @@ public:
                                                         double tau, 
                                                         double* dx = 0, 
                                                         double* ddx = 0);
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     static double time_warp(double tau, double beta);
-    void get_current_pose_ROS();
-    
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     void first_q1();
     int get_n_step() {return _step_counter;};
     

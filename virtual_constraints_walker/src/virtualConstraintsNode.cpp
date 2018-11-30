@@ -164,7 +164,27 @@ double virtualConstraintsNode::get_q1()
         ROS_INFO("%f", _q1_state);
         
     }
-    
+// double virtualConstraintsNode::sense_ql()
+//     {
+//         _current_pose_ROS.sense(); 
+//         Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com;
+// 
+// 
+//         swing_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(static_cast<int>(_current_side));
+//         stance_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(1 - static_cast<int>(_current_side));
+//            
+//         
+//         double q1 = atan(swing_ankle_to_com(0)/swing_ankle_to_com(2)); /*calc angle q1*/
+//         double q2 = atan(stance_ankle_to_com(0)/stance_ankle_to_com(2));
+// 
+//         
+//         _logger->add("swing_ankle_to_com", _current_pose_ROS.get_distance_ankle_to_com(static_cast<int>(_current_side)));
+//         _logger->add("stance_ankle_to_com", _current_pose_ROS.get_distance_ankle_to_com(1 - static_cast<int>(_current_side)));
+//         _logger->add("q1", q1);
+//         _logger->add("q2", q2);
+//         
+//         return q1;
+//     }
 double virtualConstraintsNode::sense_q1()
     {   
         _current_pose_ROS.sense(); 
@@ -197,7 +217,6 @@ double virtualConstraintsNode::sense_q1()
         
         return q1;
     }  
-
 
 void virtualConstraintsNode::update_position(Eigen::Vector3d *current_pose, Eigen::Vector3d update) 
     {   

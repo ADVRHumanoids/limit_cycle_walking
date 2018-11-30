@@ -8,7 +8,7 @@ ProjectRootRelative=../
 
 [CMake][CMake Build Directory 0]
 Build Directory Path=file:///home/francesco/advr-superbuild/build/external/limit_cycle_walking
-Build Type=Debug
+Build Type=RelWithDebInfo
 CMake Binary=file:///usr/bin/cmake
 Environment Profile=
 Extra Arguments=

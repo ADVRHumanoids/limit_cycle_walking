@@ -11,11 +11,12 @@ robot_interface_ROS::robot_interface_ROS()
     { 
         ros::NodeHandle n;
         
-        Eigen::Vector3d dummy(0,0,0);   /*TODO good implementation?? mi sembra una cagata*/
-        _sole_state.push_back(dummy);   /*push back 2 times because there are two sole*/
-        _sole_state.push_back(dummy);
-        _distance_ankle_to_com.push_back(dummy);
-        _distance_ankle_to_com.push_back(dummy);
+        Eigen::Affine3d affinedummy;
+        affinedummy.setIdentity();/*TODO good implementation?? mi sembra una cagata*/
+        _sole_state.push_back(affinedummy);   /*push back 2 times because there are two sole*/
+        _sole_state.push_back(affinedummy);
+        _ankle_to_com.push_back(affinedummy);
+        _ankle_to_com.push_back(affinedummy);
         
 //      prepare subscribers node
         _subs.push_back(n.subscribe("/cartesian/solution", 10, &robot_interface_ROS::joints_state_callback, this)); /*subscribe to cartesian/solution topic*/
@@ -50,11 +51,9 @@ robot_interface_ROS::robot_interface_ROS()
 void robot_interface_ROS::sense()
     {
         ros::spinOnce();
-        _distance_ankle_to_com.at(0) = listen_distance_l_ankle_to_com();
-        _distance_ankle_to_com.at(1) = listen_distance_r_ankle_to_com();
-//         _distance_l_ankle_to_com = listen_distance_l_ankle_to_com();
-//         _distance_r_ankle_to_com = listen_distance_r_ankle_to_com();
-        _distance_l_to_r_foot = listen_distance_l_to_r_foot();
+        _ankle_to_com.at(0) = listen_l_ankle_to_com();
+        _ankle_to_com.at(1) = listen_r_ankle_to_com();
+        _l_to_r_foot = listen_l_to_r_foot();
     }
     
 void robot_interface_ROS::joints_state_callback(const sensor_msgs::JointState msg_rcv) //this is called by ros
@@ -68,58 +67,59 @@ void robot_interface_ROS::joints_state_callback(const sensor_msgs::JointState ms
 
 void robot_interface_ROS::com_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        Eigen::Affine3d affineMatrix; /*TODO remember to transform everything in affine matrix*/
-       
-        tf::poseMsgToEigen(msg_rcv.pose, affineMatrix);
-        tf::pointMsgToEigen(msg_rcv.pose.position, _com_state);
+        tf::poseMsgToEigen(msg_rcv.pose, _com_state);
 //         if COUNT_ONCE {_callback_counter++;};
         _check_2 = true;
     }
 
 void robot_interface_ROS::l_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        tf::pointMsgToEigen(msg_rcv.pose.position,_sole_state.at(0)); /*TODO: is this a good implementation??*/
+        tf::poseMsgToEigen(msg_rcv.pose, (_sole_state.at(0))); /*TODO: is this a good implementation??*/
 //         if COUNT_ONCE {_callback_counter++;};
         _check_3 = true;
     }
     
 void robot_interface_ROS::r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        tf::pointMsgToEigen(msg_rcv.pose.position, _sole_state.at(1)); /*TODO: is this a good implementation??*/
+        tf::poseMsgToEigen(msg_rcv.pose, _sole_state.at(1)); /*TODO: is this a good implementation??*/
 //         if COUNT_ONCE {_callback_counter++;};
         _check_4 = true;
     }
 
-Eigen::Vector3d robot_interface_ROS::listen_distance_l_ankle_to_com()
+Eigen::Affine3d robot_interface_ROS::listen_l_ankle_to_com()
     {
-        tf::Vector3 distance;
-        Eigen::Vector3d l_ankle_to_com_distance;
-        
+        tf::Pose distance;
+        Eigen::Affine3d l_ankle_to_com;
+                
         l_ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), l_ankle_to_com_transform); /*ros::Time(0)*/
-        distance = l_ankle_to_com_transform.getOrigin();
-        tf::vectorTFToEigen(distance, l_ankle_to_com_distance);
-        return l_ankle_to_com_distance;
+        distance = l_ankle_to_com_transform;
+        
+        tf::poseTFToEigen(distance,l_ankle_to_com);
+        return l_ankle_to_com;
     }
 
-Eigen::Vector3d robot_interface_ROS::listen_distance_r_ankle_to_com()
+Eigen::Affine3d robot_interface_ROS::listen_r_ankle_to_com()
     {
-        tf::Vector3 distance;
-        Eigen::Vector3d r_ankle_to_com_distance;
+        tf::Pose distance;
+        Eigen::Affine3d r_ankle_to_com;
         
         r_ankle_to_com_listener.lookupTransform("ci/r_ankle", "ci/com", ros::Time(0), r_ankle_to_com_transform);
-        distance = r_ankle_to_com_transform.getOrigin();
-        tf::vectorTFToEigen(distance, r_ankle_to_com_distance);
-        return r_ankle_to_com_distance;
+        distance = r_ankle_to_com_transform;
+        
+        tf::poseTFToEigen(distance, r_ankle_to_com);
+        return r_ankle_to_com;
     }
 
-Eigen::Vector3d robot_interface_ROS::listen_distance_l_to_r_foot()
+Eigen::Affine3d robot_interface_ROS::listen_l_to_r_foot()
     {
-        tf::Vector3 distance;
-        Eigen::Vector3d l_to_r_foot_distance;
+        tf::Pose distance;
+        Eigen::Affine3d l_to_r_foot;
+        
         _l_to_r_foot_listener.lookupTransform("ci/l_sole", "ci/r_sole", ros::Time(0), _l_to_r_foot_transform);
-        distance = _l_to_r_foot_transform.getOrigin();
-        tf::vectorTFToEigen(distance, l_to_r_foot_distance);
-        return l_to_r_foot_distance;
+        distance = _l_to_r_foot_transform;
+        
+        tf::poseTFToEigen(distance, l_to_r_foot);
+        return l_to_r_foot;
     }
 
     
