@@ -33,14 +33,6 @@
 class virtualConstraintsNode : mainNode {
 public:
 
-//     enum class Side : char { Left = 'L', Right = 'R'};
-    enum class Side : int { Left = 0, Right = 1}; /*Side SWINGING*/    /*TODO: good implementation??*/
-    
-    friend std::ostream& operator<<(std::ostream& os, virtualConstraintsNode::Side s)
-{
-    return os << static_cast<int>(s);
-};
-
     class data_step
     {
     public:
@@ -104,9 +96,11 @@ public:
     bool new_q1();
     
     double sense_q1();
-//     double sense_ql();
+    double sense_qlat();
     
     void update_position(Eigen::Vector3d *current_pose, Eigen::Vector3d update);
+    
+    void lateral_com();
     
     void calc_step(double q1,  Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step);
     
@@ -130,7 +124,7 @@ public:
 
     static double compute_swing_trajectory_normalized_xy(double tau, double* dx = 0, double* ddx = 0);
     static double compute_swing_trajectory_normalized_z(double final_height, 
-                                                        double tau, 
+                                                        double tau,
                                                         double* dx = 0, 
                                                         double* ddx = 0);
 
@@ -145,8 +139,8 @@ protected:
     ros::Publisher _com_pub;     
 //     ros::Publisher _r_sole_pub, _l_sole_pub;
     
-    std::vector<ros::Publisher> _sole_pubs;
-    
+//     std::vector<ros::Publisher> _sole_pubs;
+    std::map<robot_interface_ROS::Side, ros::Publisher> _sole_pubs;
     ros::Subscriber _q1_sub;
     
     
@@ -169,7 +163,7 @@ protected:
     
     data_step _step;
     
-    Side _current_side = Side::Left; /*means that starting swinging leg is LEFT. Pinned leg is RIGHT.*/
+    robot_interface_ROS::Side _current_side = robot_interface_ROS::Side::Left; 
     
     XBot::MatLogger::Ptr _logger;
     

@@ -6,15 +6,10 @@
 
 
 #include <geometry_msgs/PoseStamped.h>
-// #include <XBotCore/CommandAdvr.h>
-#include <tf/transform_listener.h>
-// #include "cartesian_interface/CartesianInterface.h"
-#include <sensor_msgs/JointState.h>
-// #include "std_msgs/Float64.h"
 
-// #include <actionlib/client/simple_action_client.h>
-// #include <actionlib/client/terminal_state.h>
-// #include <cartesian_interface/ReachPoseAction.h>
+#include <tf/transform_listener.h>
+
+#include <sensor_msgs/JointState.h>
 
 #include<robot_interface.h>
 
