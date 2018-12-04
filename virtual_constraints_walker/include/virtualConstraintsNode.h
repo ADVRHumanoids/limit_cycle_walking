@@ -78,12 +78,14 @@ public:
         double _starTime, _endTime;
     };  
     
+    
     virtualConstraintsNode(int argc, char **argv, const char *node_name);
     ~virtualConstraintsNode() {_logger->flush();};
     
     robot_interface_ROS&  get_robot() {return _current_pose_ROS;}; /*this is a reference (I can also use a pointer) because the class _current_pose_ROS is not copiable*/
     robot_interface get_initial_robot() {return _initial_pose;};
-    
+    int get_max_steps() {return _initial_param.get_max_steps();};
+    bool get_param_ros();
     double getTime();
     int straighten_up_action();
     int initial_shift_action();
@@ -137,10 +139,8 @@ protected:
     
 //     ros::NodeHandle n;
     ros::Publisher _com_pub;     
-//     ros::Publisher _r_sole_pub, _l_sole_pub;
-    
-//     std::vector<ros::Publisher> _sole_pubs;
-    std::map<robot_interface_ROS::Side, ros::Publisher> _sole_pubs;
+
+    std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
     ros::Subscriber _q1_sub;
     
     
@@ -163,13 +163,48 @@ protected:
     
     data_step _step;
     
-    robot_interface_ROS::Side _current_side = robot_interface_ROS::Side::Left; 
+    robot_interface_ROS::Side _current_side = robot_interface::Side::Double; 
     
     XBot::MatLogger::Ptr _logger;
     
     double _terrain_heigth;
     
     int _step_counter;
+    
+    
+    
+    class param
+    {
+    public:
+        
+        param() 
+        {
+            _crouch = -0.12;
+            _clearance_step = 0.1;
+            _duration_step = 2;
+            _first_step_side = robot_interface::Side::Left;
+            _max_steps = 10;
+        };
+        
+        double get_crouch() {return _crouch;};
+        double get_clearance_step() {return _clearance_step;};
+        double get_duration_step() {return _duration_step;};
+        robot_interface::Side get_first_step_side() {return _first_step_side;};
+        int get_max_steps() {return _max_steps;};
+        
+        void set_crouch(double crouch) {_crouch = crouch;};
+        void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
+        void set_duration_step(double duration_step) {_duration_step = duration_step;};
+        void set_first_step_side(robot_interface::Side first_step_side) {_first_step_side = first_step_side;};
+        void set_max_steps(int max_steps) {_max_steps = max_steps;};
+        
+    private:
+        
+        double _crouch, _clearance_step, _duration_step;
+        robot_interface::Side _first_step_side;
+        int _max_steps;
+
+    } _initial_param;
 };
 
 

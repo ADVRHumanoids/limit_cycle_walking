@@ -1,0 +1,14 @@
+<launch>
+
+<!-- <arg name="prefix" default=""/> -->
+
+<node pkg="virtual_constraints_walker" type="VC_run" 
+                                    name="VC_run" 
+                                    required="true" 
+                                    output="screen">
+                                 <!--   launch-prefix="$(arg prefix)"> -->
+</node>
+
+<rosparam command="load" file="/home/francesco/advr-superbuild/external/limit_cycle_walking/virtual_constraints_walker/launch/walking_param/param_example.yaml" ns="virtual_constraints"/>
+
+</launch>

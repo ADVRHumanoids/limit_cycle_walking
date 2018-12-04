@@ -10,13 +10,6 @@ robot_interface_ROS::robot_interface_ROS()
     { 
         ros::NodeHandle n;
         
-        Eigen::Affine3d affinedummy;
-        affinedummy.setIdentity();/*TODO good implementation?? mi sembra una cagata*/
-        _sole_state.push_back(affinedummy);   /*push back 2 times because there are two sole*/
-        _sole_state.push_back(affinedummy);
-        _ankle_to_com.push_back(affinedummy);
-        _ankle_to_com.push_back(affinedummy);
-        
 //      prepare subscribers node
         _subs.push_back(n.subscribe("/cartesian/solution", 10, &robot_interface_ROS::joints_state_callback, this)); /*subscribe to cartesian/solution topic*/
         _subs.push_back(n.subscribe("/cartesian/com/state", 10, &robot_interface_ROS::com_state_callback, this)); /*subscribe to cartesian/solution topic*/
@@ -50,8 +43,8 @@ robot_interface_ROS::robot_interface_ROS()
 void robot_interface_ROS::sense()
     {
         ros::spinOnce();
-        _ankle_to_com.at(0) = listen_l_ankle_to_com();
-        _ankle_to_com.at(1) = listen_r_ankle_to_com();
+        _ankle_to_com[Side::Left] = listen_l_ankle_to_com();
+        _ankle_to_com[Side::Right] = listen_r_ankle_to_com();
         _l_to_r_foot = listen_l_to_r_foot();
     }
     
@@ -73,14 +66,14 @@ void robot_interface_ROS::com_state_callback(const geometry_msgs::PoseStamped ms
 
 void robot_interface_ROS::l_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        tf::poseMsgToEigen(msg_rcv.pose, (_sole_state.at(0))); /*TODO: is this a good implementation??*/
+        tf::poseMsgToEigen(msg_rcv.pose, (_sole_state[Side::Left])); /*TODO: is this a good implementation??*/
 //         if COUNT_ONCE {_callback_counter++;};
         _check_3 = true;
     }
     
 void robot_interface_ROS::r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv) //this is called by ros
     {
-        tf::poseMsgToEigen(msg_rcv.pose, _sole_state.at(1)); /*TODO: is this a good implementation??*/
+        tf::poseMsgToEigen(msg_rcv.pose, _sole_state[Side::Right]); /*TODO: is this a good implementation??*/
 //         if COUNT_ONCE {_callback_counter++;};
         _check_4 = true;
     }

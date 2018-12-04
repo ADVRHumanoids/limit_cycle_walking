@@ -9,14 +9,15 @@
 virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char *node_name) : 
     mainNode(argc, argv, node_name)
     {
+
+        
         _logger = XBot::MatLogger::getLogger("/tmp/virtual_constraints");
         ros::NodeHandle n;
         
         _step_counter = 0;
+        param();
         
         _initial_pose = _current_pose_ROS;  
-//         _previous_initial_pose = _current_pose_ROS;
-//         _step.set_data_step(_current_pose_ROS.get_l_sole(),_current_pose_ROS.get_l_sole(), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0,getTime(),getTime()+2);
         _step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0,getTime(),getTime()+2);
         
         _q1_state = sense_q1();
@@ -29,73 +30,39 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
 //      prepare advertiser node
         _com_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com/reference", 10); /*publish to /cartesian/com/reference*/
         
-        _sole_pubs[robot_interface_ROS::Side::Left] = n.advertise<geometry_msgs::PoseStamped>("/cartesian/l_sole/reference", 10); /*publish to /l_sole/reference*/
-        _sole_pubs[robot_interface_ROS::Side::Right] = n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 10); /*publish to /r_sole/reference*/
+        _sole_pubs[robot_interface::Side::Left] = n.advertise<geometry_msgs::PoseStamped>("/cartesian/l_sole/reference", 10); /*publish to /l_sole/reference*/
+        _sole_pubs[robot_interface::Side::Right] = n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 10); /*publish to /r_sole/reference*/
         
   
     }
-    
+
+bool virtualConstraintsNode::get_param_ros()
+    {
+           ros::NodeHandle nh;
+           int max_steps;
+           double clearance_heigth, duration, drop;
+           robot_interface::Side first_side;
+           
+           nh.getParam("/virtual_constraints/initial_crouch", drop);
+           nh.getParam("/virtual_constraints/max_steps", max_steps);
+           nh.getParam("/virtual_constraints/clearance_step", clearance_heigth);
+           nh.getParam("/virtual_constraints/duration_step", duration);
+//            nh.getParam("/virtual_constraints/first_step_side", first_side);
+           
+           _initial_param.set_crouch(drop);
+           _initial_param.set_max_steps(max_steps);
+           _initial_param.set_clearance_step(clearance_heigth);
+           _initial_param.set_duration_step(duration);
+//            _initial_param.set_first_step_side(first_side);
+    }
+            
 double virtualConstraintsNode::getTime()
     {ros::NodeHandle n;
         double time = ros::Time::now().toSec();
         return time;
     }
 
-int virtualConstraintsNode::initial_shift_action() /*if I just setted a publisher it would be harder to define when the action was completed*/
-    {
-        actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac_com("cartesian/com/reach", true); /*without /goal!!*/
-        actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac_step("cartesian/l_sole/reach", true); /*without /goal!!*/
-        double q1 = 0.1; /*STARTING ANGLE!!!!!*/
-        ROS_INFO("Waiting for action server to start.");
-        // wait for the action server to start
-        ac_com.waitForServer();
-        ac_step.waitForServer(); //will wait for infinite time
-        ROS_INFO("Action server started, sending goal.");
-        // send a goal to the action
-        cartesian_interface::ReachPoseGoal goal_com, goal_step;
-//      TODO there is a bug in cartesian/com/reach, adding waypoints won't work     
-        geometry_msgs::Pose cmd_shift_pos, cmd_shift_foot;
-        
-        Eigen::Vector3d pose_com = _current_pose_ROS.get_com();
-        pose_com(0) = (_current_pose_ROS.get_distance_ankle_to_com(_current_side).coeff(2) * tan(q1)) + _current_pose_ROS.get_com().coeff(0);
-        tf::pointEigenToMsg(pose_com, cmd_shift_pos.position);
-        
-        Eigen::Vector3d pose_step =  _current_pose_ROS.get_sole(_current_side);
-        pose_step(0) = (2 * _current_pose_ROS.get_distance_ankle_to_com(_current_side).coeff(2) * tan(q1)) + _current_pose_ROS.get_sole(_current_side).coeff(0);
-        tf::pointEigenToMsg(pose_step, cmd_shift_foot.position);
-        
-        float cmd_initial_time;
-        cmd_initial_time = 1;
 
-        
-        
-        goal_com.frames.push_back(cmd_shift_pos); /*wants geometry_msgs::Pose*/
-        goal_com.time.push_back(cmd_initial_time);
-        
-        goal_step.frames.push_back(cmd_shift_foot); /*wants geometry_msgs::Pose*/
-        goal_step.time.push_back(cmd_initial_time);
-        
-        ac_com.sendGoal(goal_com);
-        ac_step.sendGoal(goal_step);
-    
-        //wait for the action to return
-        bool finished_before_timeout = ac_step.waitForResult(ros::Duration(5.0));
-
-        if (finished_before_timeout)
-        {
-            actionlib::SimpleClientGoalState state = ac_step.getState();
-            ROS_INFO("Action finished: %s", state.toString().c_str());
-        }
-        else
-            ROS_INFO("Action did not finish before the time out.");
-
-        /* fill initial pose with pose after straighten_up_action */
-//         _current_pose_ROS.sense();
-        _initial_pose = _current_pose_ROS; 
-//         sense_q1();
-        //exit
-        return 0;
-}
 int virtualConstraintsNode::straighten_up_action() /*if I just setted a publisher it would be harder to define when the action was completed*/
     {
         actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac_com("cartesian/com/reach", true); /*without /goal!!*/
@@ -104,8 +71,7 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
         ac_com.waitForServer(); //will wait for infinite time
         ROS_INFO("Action server started, sending goal.");
         // send a goal to the action
-        cartesian_interface::ReachPoseGoal goal;
-//      TODO there is a bug in cartesian/com/reach, adding waypoints won't work     
+        cartesian_interface::ReachPoseGoal goal; 
         geometry_msgs::Pose cmd_initial;
         
         tf::pointEigenToMsg(this->straighten_up_goal(), cmd_initial.position);
@@ -141,7 +107,7 @@ Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
         Eigen::Vector3d straight_com = _current_pose_ROS.get_com();
         
         straight_com(0) =  _current_pose_ROS.get_sole(_current_side).coeff(0);
-        straight_com(2) = -0.12;
+        straight_com(2) = _initial_param.get_crouch();
         _step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), straight_com, straight_com, 0, getTime(), getTime()+2);
         return straight_com;
     }
@@ -159,12 +125,6 @@ double virtualConstraintsNode::get_q1()
         
     }
 
-// double virtualConstraintsNode::track_ZMP() 
-//     {
-//         _current_pose_ROS.sense();
-//         
-//         _zmp = _current_pose_ROS.get_com().coeff(0) + ;
-//     }
 double virtualConstraintsNode::sense_qlat()
     {
         _current_pose_ROS.sense(); 
@@ -208,7 +168,7 @@ double virtualConstraintsNode::sense_q1()
         _logger->add("q_sagittal_left", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(0)/_current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(2));
         _logger->add("q_sagittal_right", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right).coeff(0)/_current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right).coeff(2));
    
-        
+//         std::cout << "angle: " << q1 << std::endl;
         return q1;
     }  
 
@@ -245,26 +205,33 @@ bool virtualConstraintsNode::impact_detected()
             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-5 &&  
                 fabs( _current_pose_ROS.get_sole(_current_side).coeff(0) -  _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
             {
+
                 _current_pose_ROS.sense();
+
                 robot_interface::Side last_side = _current_side;
                _initial_pose = _current_pose_ROS;
                _step_counter++;
-               
-//                 _current_side = robot_interface::Side::Double;
-                
-                std::cout << "State changed. Current side: " << _current_side << std::endl;
+                _current_side = robot_interface::Side::Double;
+                std::cout << "Impact: " << _current_side << std::endl;
                 
 
-
-                
-
-                if (_current_side == robot_interface_ROS::Side::Left)
-                    _current_side = robot_interface_ROS::Side::Right;
-                else if (_current_side == robot_interface_ROS::Side::Right)
-                    _current_side = robot_interface_ROS::Side::Left;
-                else ROS_INFO("wrong side");
+                if (_step_counter < _initial_param.get_max_steps())
+                {
+                    if (last_side == robot_interface::Side::Left)
+                        _current_side = robot_interface::Side::Right;
+                    else if (last_side == robot_interface::Side::Right)
+                        _current_side = robot_interface::Side::Left;
+                    else ROS_INFO("wrong side");
                 //                 _current_side = (Side)(1 - _current_side);  /*here I change the Side after the impact */
+                    
+                std::cout << "State changed. Current side: " << _current_side << std::endl;
                 return 1;
+                }
+                else 
+                {
+                    return 0;
+                }
+                
             }
             else
             {
@@ -296,6 +263,7 @@ void virtualConstraintsNode::first_q1()
             
             if (_check_received)
                 _q1_state = _q1_cmd;
+                _current_side = robot_interface::Side::Left;  /*TODO*/
         }
         ROS_INFO("command received! q1 = %f", _q1_state);
     }
@@ -318,9 +286,9 @@ void virtualConstraintsNode::update_step()
         update_position(&final_com_position, delta_com);    /*incline*/
         update_position(&final_sole_position, delta_step);  /*step*/
             
-        double clearing = 0.1;
+        double clearing = _initial_param.get_clearance_step();
         double starTime = getTime();
-        double endTime = starTime + 2;
+        double endTime = starTime + _initial_param.get_duration_step();
         
         _step.set_data_step(initial_sole_position, final_sole_position, initial_com_position, final_com_position, clearing, starTime, endTime);
     }
@@ -380,8 +348,8 @@ void virtualConstraintsNode::run()
         _logger->add("foot_trajectory", foot_trajectory);
         
         send_step(foot_trajectory, com_trajectory);
-        
     }
+    
 void virtualConstraintsNode::send_step(Eigen::Vector3d foot_command, Eigen::Vector3d com_command)
     {
         geometry_msgs::PoseStamped cmd_com, cmd_sole;
@@ -442,3 +410,67 @@ double virtualConstraintsNode::time_warp(double tau, double beta)
 {
     return 1.0 - std::pow(1.0 - tau, beta);
 }
+
+
+
+
+
+
+
+
+
+// int virtualConstraintsNode::initial_shift_action() /*if I just setted a publisher it would be harder to define when the action was completed*/
+//     {
+//         actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac_com("cartesian/com/reach", true); /*without /goal!!*/
+//         actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac_step("cartesian/l_sole/reach", true); /*without /goal!!*/
+//         double q1 = 0.1; /*STARTING ANGLE!!!!!*/
+//         ROS_INFO("Waiting for action server to start.");
+//         // wait for the action server to start
+//         ac_com.waitForServer();
+//         ac_step.waitForServer(); //will wait for infinite time
+//         ROS_INFO("Action server started, sending goal.");
+//         // send a goal to the action
+//         cartesian_interface::ReachPoseGoal goal_com, goal_step;
+// //      TODO there is a bug in cartesian/com/reach, adding waypoints won't work     
+//         geometry_msgs::Pose cmd_shift_pos, cmd_shift_foot;
+//         
+//         Eigen::Vector3d pose_com = _current_pose_ROS.get_com();
+//         pose_com(0) = (_current_pose_ROS.get_distance_ankle_to_com(_current_side).coeff(2) * tan(q1)) + _current_pose_ROS.get_com().coeff(0);
+//         tf::pointEigenToMsg(pose_com, cmd_shift_pos.position);
+//         
+//         Eigen::Vector3d pose_step =  _current_pose_ROS.get_sole(_current_side);
+//         pose_step(0) = (2 * _current_pose_ROS.get_distance_ankle_to_com(_current_side).coeff(2) * tan(q1)) + _current_pose_ROS.get_sole(_current_side).coeff(0);
+//         tf::pointEigenToMsg(pose_step, cmd_shift_foot.position);
+//         
+//         float cmd_initial_time;
+//         cmd_initial_time = 1;
+// 
+//         
+//         
+//         goal_com.frames.push_back(cmd_shift_pos); /*wants geometry_msgs::Pose*/
+//         goal_com.time.push_back(cmd_initial_time);
+//         
+//         goal_step.frames.push_back(cmd_shift_foot); /*wants geometry_msgs::Pose*/
+//         goal_step.time.push_back(cmd_initial_time);
+//         
+//         ac_com.sendGoal(goal_com);
+//         ac_step.sendGoal(goal_step);
+//     
+//         //wait for the action to return
+//         bool finished_before_timeout = ac_step.waitForResult(ros::Duration(5.0));
+// 
+//         if (finished_before_timeout)
+//         {
+//             actionlib::SimpleClientGoalState state = ac_step.getState();
+//             ROS_INFO("Action finished: %s", state.toString().c_str());
+//         }
+//         else
+//             ROS_INFO("Action did not finish before the time out.");
+// 
+//         /* fill initial pose with pose after straighten_up_action */
+// //         _current_pose_ROS.sense();
+//         _initial_pose = _current_pose_ROS; 
+// //         sense_q1();
+//         //exit
+//         return 0;
+// }

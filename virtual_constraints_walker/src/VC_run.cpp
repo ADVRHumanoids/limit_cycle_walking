@@ -7,7 +7,7 @@ int main(int argc, char **argv)
     virtualConstraintsNode VC(argc, argv, "virtual_constraints");
 //     robot_interface_ROS robot;
     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
-    int max_step = 5;
+    VC.get_param_ros();
 //--------initialize robot so that q1 is exactly 0---------
     if (ros::ok())
     {
@@ -18,7 +18,7 @@ int main(int argc, char **argv)
     }
 //---------------------------------------------------------
 //     while (ros::ok())
-    while (ros::ok() && VC.get_n_step() < max_step)
+    while (ros::ok() && VC.get_n_step() < VC.get_max_steps())
     {
         VC.get_robot().sense();
         VC.run();
