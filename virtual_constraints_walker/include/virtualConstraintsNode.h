@@ -41,7 +41,8 @@ public:
                            Eigen::Vector3d step_final_pose,
                            Eigen::Vector3d com_initial_pose,
                            Eigen::Vector3d com_final_pose,
-                           double clearing,
+                           double step_clearing,
+                           double com_clearing,
                            double starTime, 
                            double endTime)
         {
@@ -49,7 +50,8 @@ public:
             _step_final_pose = step_final_pose;
             _com_initial_pose = com_initial_pose;
             _com_final_pose = com_final_pose;
-            _clearing = clearing;
+            _step_clearing = step_clearing;
+            _com_clearing = com_clearing;
             _starTime = starTime;
             _endTime = endTime;        
         }
@@ -58,7 +60,8 @@ public:
                                                 logger->add("step_final_pose", _step_final_pose);
                                                 logger->add("com_initial_pose", _com_initial_pose);
                                                 logger->add("com_final_pose", _com_final_pose);
-                                                logger->add("clearing", _clearing);
+                                                logger->add("step_clearing", _step_clearing);
+                                                logger->add("com_clearing", _com_clearing);
                                                 logger->add("starTime", _starTime);
                                                 logger->add("endTime", _endTime);}
         
@@ -66,15 +69,24 @@ public:
         Eigen::Vector3d get_foot_final_pose() {return _step_final_pose;};
         Eigen::Vector3d get_com_initial_pose() {return _com_initial_pose;};
         Eigen::Vector3d get_com_final_pose() {return _com_final_pose;};
-        double get_clearing() {return _clearing;};
+        double get_step_clearing() {return _step_clearing;};
+        double get_com_clearing() {return _com_clearing;};
         double get_starTime() {return _starTime;};
         double get_endTime() {return _endTime;};
-                              
+        
+        void set_foot_initial_pose(Eigen::Vector3d step_initial_pose) {_step_initial_pose =  step_initial_pose;};
+        void set_foot_final_pose(Eigen::Vector3d step_final_pose) {_step_final_pose = step_final_pose;};
+        void set_com_initial_pose(Eigen::Vector3d com_initial_pose) {_com_initial_pose = com_initial_pose;};
+        void set_com_final_pose(Eigen::Vector3d com_final_pose) {_com_final_pose = com_final_pose;};
+        void set_step_clearing(double step_clearing) {_com_clearing = step_clearing;};
+        void set_com_clearing(double com_clearing) {_com_clearing = com_clearing;};
+        void set_starTime(double starTime) {_starTime = starTime;};
+        void set_endTime(double endTime) {_endTime = endTime;};
     private:
         
         Eigen::Vector3d _step_initial_pose, _step_final_pose;
         Eigen::Vector3d _com_initial_pose, _com_final_pose;
-        double _clearing;
+        double _step_clearing, _com_clearing;
         double _starTime, _endTime;
     };  
     
@@ -120,12 +132,13 @@ public:
                                                     double t_start, 
                                                     double t_end,
                                                     double time,
+                                                    std::string side,
                                                     Eigen::Vector3d * vel = nullptr,
                                                     Eigen::Vector3d * acc = nullptr
                                                     );
 
-    static double compute_swing_trajectory_normalized_xy(double tau, double* dx = 0, double* ddx = 0);
-    static double compute_swing_trajectory_normalized_z(double final_height, 
+    static double compute_swing_trajectory_normalized_plane(double tau, double* dx = 0, double* ddx = 0);
+    static double compute_swing_trajectory_normalized_clearing(double final_height, 
                                                         double tau,
                                                         double* dx = 0, 
                                                         double* ddx = 0);
@@ -171,20 +184,11 @@ protected:
     
     int _step_counter;
     
-    
+//     ros::NodeHandle n;
     
     class param
     {
     public:
-        
-        param() 
-        {
-            _crouch = -0.12;
-            _clearance_step = 0.1;
-            _duration_step = 2;
-            _first_step_side = robot_interface::Side::Left;
-            _max_steps = 10;
-        };
         
         double get_crouch() {return _crouch;};
         double get_clearance_step() {return _clearance_step;};

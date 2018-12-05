@@ -3,14 +3,14 @@
 <arg name="prefix" default=""/>  <?ignore or: gdb -ex run --args ?>
 
 <node pkg="virtual_constraints_walker" type="VC_run" 
-                                    name="VC_run" 
+                                    name="virtual_constraints"
                                     required="true" 
                                     output="screen"
                                     launch-prefix="$(arg prefix)">
+
+<rosparam command="load" file="/home/francesco/advr-superbuild/external/limit_cycle_walking/virtual_constraints_walker/launch/walking_param/param_example.yaml"/>
+
 </node>
-
-
-<rosparam command="load" file="/home/francesco/advr-superbuild/external/limit_cycle_walking/virtual_constraints_walker/launch/walking_param/param_example.yaml" ns="virtual_constraints"/>
 
 
 </launch>

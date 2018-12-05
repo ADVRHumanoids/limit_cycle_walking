@@ -11,18 +11,15 @@
 virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char *node_name) : 
     mainNode(argc, argv, node_name)
     {
-
-        
-        _logger = XBot::MatLogger::getLogger("/tmp/virtual_constraints");
+        std::string this_node_name = ros::this_node::getName();
+        _logger = XBot::MatLogger::getLogger("/tmp/" + this_node_name);
         ros::NodeHandle n;
         
         _step_counter = 0;
-        
-        param();
         get_param_ros();
         
         _initial_pose = _current_pose_ROS;  
-        _step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0,getTime(),getTime()+2);
+        _step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0,0, getTime(),getTime()+2);
         
         _q1_state = sense_q1();
         
@@ -43,46 +40,38 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
 bool virtualConstraintsNode::get_param_ros()
     {
         /*TODO IF NO PARAM are set by user, default values in constructors or params always present and I set them internally?*/
-        ros::NodeHandle nh;
+        ros::NodeHandle nh_priv("~");
         int max_steps;
         double clearance_heigth, duration, drop;
         std::string first_side;
 
-        if (nh.getParam("/virtual_constraints/initial_crouch", drop))
-        {
-            _initial_param.set_crouch(drop);
-        } 
-//         else nh.setParam("/virtual_constraints/initial_crouch", drop);
+        /*default parameters*/
+        double default_drop = -0.12;
+        double default_clearance_heigth = 0.1;
+        double default_duration = 2;
+        std::string default_first_side = "Left";
+        int default_max_steps = 10;
         
-        if (nh.getParam("/virtual_constraints/max_steps", max_steps))
-        {
-            _initial_param.set_max_steps(max_steps);
-        }  
-//         else nh.setParam("/virtual_constraints/max_steps", max_steps);
+        drop = nh_priv.param("initial_crouch", default_drop);
+        max_steps = nh_priv.param("max_steps", default_max_steps);
+        duration = nh_priv.param("duration_step", default_duration);
+        clearance_heigth = nh_priv.param("clearance_step", default_clearance_heigth);
+        first_side = nh_priv.param("first_step_side", default_first_side);
         
-        if (nh.getParam("/virtual_constraints/clearance_step", clearance_heigth))
-        {
-            _initial_param.set_clearance_step(clearance_heigth);
-        } 
-//         else nh.setParam("/virtual_constraints/clearance_step", clearance_heigth);
+        _initial_param.set_crouch(drop);
+        _initial_param.set_max_steps(max_steps);
+        _initial_param.set_duration_step(duration);
+        _initial_param.set_clearance_step(clearance_heigth);
         
-        if (nh.getParam("/virtual_constraints/duration_step", duration))
-        {
-            _initial_param.set_duration_step(duration);
-        }
-//         else nh.setParam("/virtual_constraints/duration_step", duration);
-        if (nh.getParam("/virtual_constraints/first_step_side", first_side))
-        {
-            if (first_side == "Left")
+        if (first_side == "Left")
                 _initial_param.set_first_step_side(robot_interface::Side::Left);
-            else if (first_side == "Right")
-                _initial_param.set_first_step_side(robot_interface::Side::Right);   
-            else std::cout << "unknown side starting command" << std::endl;
-        }
+        else if (first_side == "Right")
+                _initial_param.set_first_step_side(robot_interface::Side::Right);
+        else std::cout << "unknown side starting command" << std::endl;
     }
             
 double virtualConstraintsNode::getTime()
-    {ros::NodeHandle n;
+    {
         double time = ros::Time::now().toSec();
         return time;
     }
@@ -132,8 +121,10 @@ Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
         Eigen::Vector3d straight_com = _current_pose_ROS.get_com();
         
         straight_com(0) =  _current_pose_ROS.get_sole(_current_side).coeff(0);
+        straight_com(1) = _current_pose_ROS.get_sole(_current_side).coeff(1);       /*TODO TOCHANGE*/
         straight_com(2) = _initial_param.get_crouch();
-        _step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), straight_com, straight_com, 0, getTime(), getTime()+2);
+        /*TODO PUT DEFAULT POSITION*/
+        _step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), straight_com, straight_com, 0, 0, getTime(), getTime()+2);
         return straight_com;
     }
     
@@ -184,7 +175,7 @@ double virtualConstraintsNode::sense_q1()
         double q2 = atan(swing_ankle_to_com(0)/swing_ankle_to_com(2));
 
         
-        _logger->add("left_foot_to_com: ", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(2));
+        _logger->add("left_foot_to_com", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(2));
         _logger->add("right_foot_to_com", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right).coeff(2));
         
         _logger->add("q_sagittal_stance", q1);
@@ -302,37 +293,43 @@ void virtualConstraintsNode::update_step()
         Eigen::Vector3d final_com_position, final_sole_position;
         Eigen::Vector3d delta_com, delta_step;
         
-        double delta_com_y;
+        double com_clearing;
         
         _current_pose_ROS.sense();
         
         initial_com_position = _current_pose_ROS.get_com();
+        
+        
         final_com_position = _current_pose_ROS.get_com();
 
+        if (_step_counter == 0)
+        {
+            final_com_position(1) = 0;
+        }
+        
         initial_sole_position = _current_pose_ROS.get_sole(_current_side);
         final_sole_position = _current_pose_ROS.get_sole(_current_side);
 
         calc_step(_q1_state, &delta_com, &delta_step);
-        delta_com_y = lateral_com();
+        com_clearing = lateral_com();
         
-        delta_com[1] = delta_com_y;
+//         delta_com[1] = delta_com_y;
         
         update_position(&final_com_position, delta_com);    /*incline*/
         update_position(&final_sole_position, delta_step);  /*step*/
         
         
-        
-        double clearing = _initial_param.get_clearance_step();
+        double step_clearing = _initial_param.get_clearance_step();
         double starTime = getTime();
         double endTime = starTime + _initial_param.get_duration_step();
         
-        _step.set_data_step(initial_sole_position, final_sole_position, initial_com_position, final_com_position, clearing, starTime, endTime);
+        _step.set_data_step(initial_sole_position, final_sole_position, initial_com_position, final_com_position, step_clearing, com_clearing, starTime, endTime);
     }
 
 double virtualConstraintsNode::lateral_com()
     {
         _current_pose_ROS.sense();
-        double qlat = sense_qlat();
+        double qlat = sense_qlat();ros::NodeHandle n;
         double delta_com_y;
         
         Eigen::Vector3d ankle_to_com_distance;
@@ -346,7 +343,11 @@ double virtualConstraintsNode::lateral_com()
         }
         delta_com_y = ankle_to_com_distance.z() * tan(qlat); /*calc x com distance from given angle q1*/
   
-                    
+        if (_step_counter == 0)
+        {
+            delta_com_y  = 0; 
+        }    
+        
         _logger->add("delta_com_lateral", delta_com_y);
         return delta_com_y;
     }
@@ -354,10 +355,9 @@ double virtualConstraintsNode::lateral_com()
 void virtualConstraintsNode::run() 
     {
         if (initialized) /*initial tilt*/
-        {
+        {       
             first_q1();
             update_step();
-            
         }
         
         sense_qlat();
@@ -367,10 +367,16 @@ void virtualConstraintsNode::run()
         {
             update_step();
         }
-        
+
         Eigen::Vector3d foot_trajectory, com_trajectory;
-        foot_trajectory = compute_swing_trajectory(_step.get_foot_initial_pose(), _step.get_foot_final_pose(), _step.get_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec());
-        com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec());
+        foot_trajectory = compute_swing_trajectory(_step.get_foot_initial_pose(), _step.get_foot_final_pose(), _step.get_step_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xy");
+        com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), _step.get_com_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xz");
+        
+        if (_step_counter == 0)
+        {
+        Eigen::Vector3d side_com = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), _step.get_com_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xy");
+        com_trajectory[1] = side_com[1];
+        }
         
         _step.log(_logger);
         
@@ -396,22 +402,36 @@ Eigen::Vector3d virtualConstraintsNode::compute_swing_trajectory(const Eigen::Ve
                                                                  double t_start, 
                                                                  double t_end, 
                                                                  double time, 
+                                                                 std::string plane,
                                                                  Eigen::Vector3d* vel,
-                                                                 Eigen::Vector3d* acc)
+                                                                 Eigen::Vector3d* acc
+                                                                )
 {
     Eigen::Vector3d ret;
     
     double tau = std::min(std::max((time - t_start)/(t_end - t_start), 0.0), 1.0);
-    double alpha = compute_swing_trajectory_normalized_xy(time_warp(tau, 2.0));
+    double alpha = compute_swing_trajectory_normalized_plane(time_warp(tau, 2.0));
     
-    ret.head<2>() = (1-alpha)*start.head<2>() + alpha*end.head<2>();
-    ret.z() = start(2) + compute_swing_trajectory_normalized_z(end.z()/clearance, time_warp(tau, 2.0))*clearance; /*porcodio*/
-    
-    
+    if (plane == "xy" || plane == "yx")
+    {
+        ret.head<2>() = (1-alpha)*start.head<2>() + alpha*end.head<2>();
+        ret.z() = start.z() + compute_swing_trajectory_normalized_clearing(end.z()/clearance, time_warp(tau, 2.0))*clearance; /*porcodio*/
+     }
+     else if (plane == "yz" || plane == "zy")
+     {
+         ret.tail<2>() = (1-alpha)*start.tail<2>() + alpha*end.tail<2>();
+         ret.x() = start.x() + compute_swing_trajectory_normalized_clearing(end.x()/clearance, time_warp(tau, 2.0))*clearance; /*porcodio*/
+     }
+     else if (plane == "xz" || plane == "zx")
+     {
+        ret[0] = (1-alpha)*start[0] + alpha*end[0];
+        ret[2] = (1-alpha)*start[2] + alpha*end[2];
+        ret.y() = start.y() + compute_swing_trajectory_normalized_clearing(end.y()/clearance, time_warp(tau, 2.0))*clearance; /*porcodio*/
+     }
     return ret;
 }
 
-double virtualConstraintsNode::compute_swing_trajectory_normalized_xy(double tau, double* __dx, double* __ddx)
+double virtualConstraintsNode::compute_swing_trajectory_normalized_plane(double tau, double* __dx, double* __ddx)
 {
     double x, dx, ddx;
     XBot::Utils::FifthOrderPlanning(0, 0, 0, 1, 0, 1, tau, x, dx, ddx);
@@ -421,7 +441,7 @@ double virtualConstraintsNode::compute_swing_trajectory_normalized_xy(double tau
     return x;
 }
 
-double virtualConstraintsNode::compute_swing_trajectory_normalized_z(double final_height, double tau, double* dx, double* ddx)
+double virtualConstraintsNode::compute_swing_trajectory_normalized_clearing(double final_height, double tau, double* dx, double* ddx)
 {
     
     
