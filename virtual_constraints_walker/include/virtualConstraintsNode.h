@@ -102,7 +102,7 @@ public:
     
     void update_position(Eigen::Vector3d *current_pose, Eigen::Vector3d update);
     
-    void lateral_com();
+    double lateral_com();
     
     void calc_step(double q1,  Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step);
     

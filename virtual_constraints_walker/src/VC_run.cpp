@@ -7,7 +7,7 @@ int main(int argc, char **argv)
     virtualConstraintsNode VC(argc, argv, "virtual_constraints");
 //     robot_interface_ROS robot;
     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
-    VC.get_param_ros();
+//     VC.get_param_ros();
 //--------initialize robot so that q1 is exactly 0---------
     if (ros::ok())
     {

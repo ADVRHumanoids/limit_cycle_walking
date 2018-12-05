@@ -17,8 +17,8 @@ robot_interface_ROS::robot_interface_ROS()
         _subs.push_back(n.subscribe("/cartesian/r_sole/state", 10, &robot_interface_ROS::r_sole_state_callback, this)); /*subscribe to cartesian/solution topic*/
 
 //      prepare listener node       
-        l_ankle_to_com_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
-        r_ankle_to_com_listener.waitForTransform("ci/r_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
+        l_com_to_ankle_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
+        r_com_to_ankle_listener.waitForTransform("ci/r_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
         _l_to_r_foot_listener.waitForTransform("ci/l_sole", "ci/r_sole", ros::Time(0), ros::Duration(3.0));
         
 
@@ -83,8 +83,8 @@ Eigen::Affine3d robot_interface_ROS::listen_l_ankle_to_com()
         tf::Pose distance;
         Eigen::Affine3d l_ankle_to_com;
                 
-        l_ankle_to_com_listener.lookupTransform("ci/l_ankle", "ci/com", ros::Time(0), l_ankle_to_com_transform); /*ros::Time(0)*/
-        distance = l_ankle_to_com_transform;
+        l_com_to_ankle_listener.lookupTransform("ci/com", "ci/l_ankle", ros::Time(0), l_com_to_ankle_transform); /*ros::Time(0)*/
+        distance = l_com_to_ankle_transform;
         
         tf::poseTFToEigen(distance,l_ankle_to_com);
         return l_ankle_to_com;
@@ -95,8 +95,8 @@ Eigen::Affine3d robot_interface_ROS::listen_r_ankle_to_com()
         tf::Pose distance;
         Eigen::Affine3d r_ankle_to_com;
         
-        r_ankle_to_com_listener.lookupTransform("ci/r_ankle", "ci/com", ros::Time(0), r_ankle_to_com_transform);
-        distance = r_ankle_to_com_transform;
+        r_com_to_ankle_listener.lookupTransform("ci/com", "ci/r_ankle", ros::Time(0), r_com_to_ankle_transform);
+        distance = r_com_to_ankle_transform;
         
         tf::poseTFToEigen(distance, r_ankle_to_com);
         return r_ankle_to_com;

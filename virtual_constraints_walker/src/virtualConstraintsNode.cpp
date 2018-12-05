@@ -1,6 +1,8 @@
 #include <virtualConstraintsNode.h>
 #include <atomic>
 
+#include <XmlRpcValue.h>
+
 #define initialized ([] { \
     static std::atomic<bool> first_time(true); \
     return first_time.exchange(false); } ())
@@ -15,7 +17,9 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
         ros::NodeHandle n;
         
         _step_counter = 0;
+        
         param();
+        get_param_ros();
         
         _initial_pose = _current_pose_ROS;  
         _step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0,getTime(),getTime()+2);
@@ -38,22 +42,43 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
 
 bool virtualConstraintsNode::get_param_ros()
     {
-           ros::NodeHandle nh;
-           int max_steps;
-           double clearance_heigth, duration, drop;
-           robot_interface::Side first_side;
-           
-           nh.getParam("/virtual_constraints/initial_crouch", drop);
-           nh.getParam("/virtual_constraints/max_steps", max_steps);
-           nh.getParam("/virtual_constraints/clearance_step", clearance_heigth);
-           nh.getParam("/virtual_constraints/duration_step", duration);
-//            nh.getParam("/virtual_constraints/first_step_side", first_side);
-           
-           _initial_param.set_crouch(drop);
-           _initial_param.set_max_steps(max_steps);
-           _initial_param.set_clearance_step(clearance_heigth);
-           _initial_param.set_duration_step(duration);
-//            _initial_param.set_first_step_side(first_side);
+        /*TODO IF NO PARAM are set by user, default values in constructors or params always present and I set them internally?*/
+        ros::NodeHandle nh;
+        int max_steps;
+        double clearance_heigth, duration, drop;
+        std::string first_side;
+
+        if (nh.getParam("/virtual_constraints/initial_crouch", drop))
+        {
+            _initial_param.set_crouch(drop);
+        } 
+//         else nh.setParam("/virtual_constraints/initial_crouch", drop);
+        
+        if (nh.getParam("/virtual_constraints/max_steps", max_steps))
+        {
+            _initial_param.set_max_steps(max_steps);
+        }  
+//         else nh.setParam("/virtual_constraints/max_steps", max_steps);
+        
+        if (nh.getParam("/virtual_constraints/clearance_step", clearance_heigth))
+        {
+            _initial_param.set_clearance_step(clearance_heigth);
+        } 
+//         else nh.setParam("/virtual_constraints/clearance_step", clearance_heigth);
+        
+        if (nh.getParam("/virtual_constraints/duration_step", duration))
+        {
+            _initial_param.set_duration_step(duration);
+        }
+//         else nh.setParam("/virtual_constraints/duration_step", duration);
+        if (nh.getParam("/virtual_constraints/first_step_side", first_side))
+        {
+            if (first_side == "Left")
+                _initial_param.set_first_step_side(robot_interface::Side::Left);
+            else if (first_side == "Right")
+                _initial_param.set_first_step_side(robot_interface::Side::Right);   
+            else std::cout << "unknown side starting command" << std::endl;
+        }
     }
             
 double virtualConstraintsNode::getTime()
@@ -168,7 +193,6 @@ double virtualConstraintsNode::sense_q1()
         _logger->add("q_sagittal_left", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(0)/_current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(2));
         _logger->add("q_sagittal_right", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right).coeff(0)/_current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right).coeff(2));
    
-//         std::cout << "angle: " << q1 << std::endl;
         return q1;
     }  
 
@@ -180,19 +204,19 @@ void virtualConstraintsNode::update_position(Eigen::Vector3d *current_pose, Eige
     
 void virtualConstraintsNode::calc_step(double q1, Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step)
     {
-        Eigen::Vector3d ankle_to_com_distance;
+        Eigen::Vector3d com_to_ankle_distance;
         
-        ankle_to_com_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
+        com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side); /*if take out minus the robot steps back*/
 
         /* virtual constraints - very simple */
-        *delta_com << 2* ankle_to_com_distance.z() * tan(fabs(q1)), 0, 0; /*calc x com distance from given angle q1*/
-        *delta_step << 4* ankle_to_com_distance.z() * tan(fabs(q1)), 0, 0; /*calc step distance given q1*/  //lenght_leg * sin(q1)
+        *delta_com << - 2* com_to_ankle_distance.z() * tan(q1), 0, 0; /*calc x com distance from given angle q1*/
+        *delta_step << - 4* com_to_ankle_distance.z() * tan(q1), 0, 0; /*calc step distance given q1*/  //lenght_leg * sin(q1)
             
             
         if (_step_counter == 0)
         {
-            *delta_com  << (ankle_to_com_distance.z() * tan(q1)); //+ _current_pose_ROS.get_com().coeff(0), 0, 0; /*calc x com distance from given angle q1*/
-            *delta_step << (2* ankle_to_com_distance.z() * tan(q1)); //+ _current_pose_ROS.get_l_sole().coeff(0), 0, 0; /*calc step distance given q1*/  //lenght_leg * sin(q1)
+            *delta_com  << (- com_to_ankle_distance.z() * tan(q1)); //+ _current_pose_ROS.get_com().coeff(0), 0, 0; /*calc x com distance from given angle q1*/
+            *delta_step << (- 2* com_to_ankle_distance.z() * tan(q1)); //+ _current_pose_ROS.get_l_sole().coeff(0), 0, 0; /*calc step distance given q1*/  //lenght_leg * sin(q1)
         }
                     
         _logger->add("delta_com", *delta_com);
@@ -212,7 +236,7 @@ bool virtualConstraintsNode::impact_detected()
                _initial_pose = _current_pose_ROS;
                _step_counter++;
                 _current_side = robot_interface::Side::Double;
-                std::cout << "Impact: " << _current_side << std::endl;
+                std::cout << "Impact! Current state: " << _current_side << std::endl;
                 
 
                 if (_step_counter < _initial_param.get_max_steps())
@@ -257,13 +281,18 @@ bool virtualConstraintsNode::new_q1()
 void virtualConstraintsNode::first_q1()
     {
         ROS_INFO("waiting for command...");
+        std::cout << "Initial state: " << _current_side << std::endl;
         while (!_check_received)
         {
             _current_pose_ROS.sense();
             
             if (_check_received)
+            {
                 _q1_state = _q1_cmd;
-                _current_side = robot_interface::Side::Left;  /*TODO*/
+                _current_side = _initial_param.get_first_step_side();
+                std::cout << "State changed. First side: " << _current_side << std::endl;
+            }
+                
         }
         ROS_INFO("command received! q1 = %f", _q1_state);
     }
@@ -272,6 +301,8 @@ void virtualConstraintsNode::update_step()
         Eigen::Vector3d initial_com_position, initial_sole_position;
         Eigen::Vector3d final_com_position, final_sole_position;
         Eigen::Vector3d delta_com, delta_step;
+        
+        double delta_com_y;
         
         _current_pose_ROS.sense();
         
@@ -282,10 +313,15 @@ void virtualConstraintsNode::update_step()
         final_sole_position = _current_pose_ROS.get_sole(_current_side);
 
         calc_step(_q1_state, &delta_com, &delta_step);
+        delta_com_y = lateral_com();
+        
+        delta_com[1] = delta_com_y;
         
         update_position(&final_com_position, delta_com);    /*incline*/
         update_position(&final_sole_position, delta_step);  /*step*/
-            
+        
+        
+        
         double clearing = _initial_param.get_clearance_step();
         double starTime = getTime();
         double endTime = starTime + _initial_param.get_duration_step();
@@ -293,34 +329,27 @@ void virtualConstraintsNode::update_step()
         _step.set_data_step(initial_sole_position, final_sole_position, initial_com_position, final_com_position, clearing, starTime, endTime);
     }
 
-// void virtualConstraintsNode::lateral_com()
-//     {
-//         _current_pose_ROS.sense();
-//         
-//         Eigen::Vector3d initial_com_position;
-//         Eigen::Vector3d final_com_position;
-//         Eigen::Vector3d delta_com;
-//         
-//         initial_com_position = _current_pose_ROS.get_com();
-//         final_com_position = _current_pose_ROS.get_com();
-//         
-//         
-//         Eigen::Vector3d ankle_to_com_distance;
-//         
-//         ankle_to_com_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
-// 
-//         /* virtual constraints - very simple */
-//         *delta_com << 2* ankle_to_com_distance.z() * tan(fabs(q1)), 0, 0; /*calc x com distance from given angle q1*/
-//             
-//             
-//         if (_step_counter == 0)
-//         {
-//             *delta_com  << (ankle_to_com_distance.z() * tan(q1)); //+ _current_pose_ROS.get_com().coeff(0), 0, 0; /*calc x com distance from given angle q1*/
-//         }
-//                     
-//         _logger->add("delta_com", *delta_com);
-//         
-//     }
+double virtualConstraintsNode::lateral_com()
+    {
+        _current_pose_ROS.sense();
+        double qlat = sense_qlat();
+        double delta_com_y;
+        
+        Eigen::Vector3d ankle_to_com_distance;
+
+        ankle_to_com_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
+
+        /* virtual constraints - very simple */
+        if (_current_side == robot_interface::Side::Double)
+        {
+            delta_com_y = 0;
+        }
+        delta_com_y = ankle_to_com_distance.z() * tan(qlat); /*calc x com distance from given angle q1*/
+  
+                    
+        _logger->add("delta_com_lateral", delta_com_y);
+        return delta_com_y;
+    }
     
 void virtualConstraintsNode::run() 
     {
@@ -328,6 +357,7 @@ void virtualConstraintsNode::run()
         {
             first_q1();
             update_step();
+            
         }
         
         sense_qlat();

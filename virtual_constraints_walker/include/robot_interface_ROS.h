@@ -22,12 +22,13 @@ class robot_interface_ROS: public robot_interface
         
     private:
         
+        /*TODO lump together StampedTransform and functions listen and transform*/
         std::vector<double> _joints_state;
         std::vector<ros::Subscriber> _subs;
         
-        tf::TransformListener l_ankle_to_com_listener, r_ankle_to_com_listener, _l_to_r_foot_listener;
-        tf::StampedTransform l_ankle_to_com_transform;
-        tf::StampedTransform r_ankle_to_com_transform;
+        tf::TransformListener l_com_to_ankle_listener, r_com_to_ankle_listener, _l_to_r_foot_listener;
+        tf::StampedTransform l_com_to_ankle_transform;
+        tf::StampedTransform r_com_to_ankle_transform;
         tf::StampedTransform _l_to_r_foot_transform;
    
         
