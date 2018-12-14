@@ -1,6 +1,6 @@
 initial_crouch: -0.12
 max_steps: 5
-clearance_step: 0.1
-duration_step: 2
+clearance_step: 0.05
+duration_step: 1
 first_step_side: Right
 

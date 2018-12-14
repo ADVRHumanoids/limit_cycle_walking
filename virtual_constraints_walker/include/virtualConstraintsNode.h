@@ -21,8 +21,6 @@
 #include <actionlib/client/terminal_state.h>
 #include <cartesian_interface/ReachPoseAction.h>
 
-#include <mainNode.h>
-
 #include <robot_interface.h>
 #include <robot_interface_ROS.h>
 
@@ -30,7 +28,7 @@
 
 
 
-class virtualConstraintsNode : mainNode {
+class virtualConstraintsNode {
 public:
 
     class data_step
@@ -91,7 +89,7 @@ public:
     };  
     
     
-    virtualConstraintsNode(int argc, char **argv, const char *node_name);
+    virtualConstraintsNode();
     ~virtualConstraintsNode() {_logger->flush();};
     
     robot_interface_ROS&  get_robot() {return _current_pose_ROS;}; /*this is a reference (I can also use a pointer) because the class _current_pose_ROS is not copiable*/
@@ -111,6 +109,8 @@ public:
     
     double sense_q1();
     double sense_qlat();
+    
+    Eigen::MatrixXd get_supportPolygon();
     
     void update_position(Eigen::Vector3d *current_pose, Eigen::Vector3d update);
     

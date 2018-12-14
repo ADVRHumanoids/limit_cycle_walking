@@ -180,7 +180,7 @@ if impact_detected
     
 end
 %============controller===============
-    [tau,h] = controllerWalker(q,q_dot, D,C,G, offset_leg, offset_waist, q1_des); %linearizing normal model robot system
+[tau,h] = controllerWalker(q,q_dot, D,C,G, offset_leg, offset_waist, q1_des); %linearizing normal model robot system
 %     tau = [0;0;0];
 %=====================================
 

@@ -59,7 +59,6 @@ include_directories(include/)
 
 add_library(virtual_constraints_walker STATIC
               src/virtualConstraintsNode.cpp
-              src/mainNode.cpp
               src/robot_interface_ROS.cpp)
 
 

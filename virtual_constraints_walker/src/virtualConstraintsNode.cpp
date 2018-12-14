@@ -1,6 +1,15 @@
 #include <virtualConstraintsNode.h>
 #include <atomic>
 
+
+#include <boost/geometry.hpp>
+#include <boost/polygon/polygon.hpp>
+// #include <boost/geometry/geometries/polygon.hpp>
+// #include <boost/geometry/geometries/adapted/boost_tuple.hpp>
+#include <boost/geometry/geometries/adapted/boost_tuple.hpp>
+
+
+
 #include <XmlRpcValue.h>
 
 #define initialized ([] { \
@@ -8,8 +17,7 @@
     return first_time.exchange(false); } ())
     
 
-virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char *node_name) : 
-    mainNode(argc, argv, node_name)
+virtualConstraintsNode::virtualConstraintsNode()
     {
         std::string this_node_name = ros::this_node::getName();
         _logger = XBot::MatLogger::getLogger("/tmp/" + this_node_name);
@@ -39,7 +47,6 @@ virtualConstraintsNode::virtualConstraintsNode(int argc, char **argv, const char
 
 bool virtualConstraintsNode::get_param_ros()
     {
-        /*TODO IF NO PARAM are set by user, default values in constructors or params always present and I set them internally?*/
         ros::NodeHandle nh_priv("~");
         int max_steps;
         double clearance_heigth, duration, drop;
@@ -76,7 +83,18 @@ double virtualConstraintsNode::getTime()
         return time;
     }
 
-
+Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
+    {      
+        Eigen::Vector3d straight_com = _current_pose_ROS.get_com();
+        
+//         straight_com(0) =  _current_pose_ROS.get_sole(_current_side).coeff(0);
+        straight_com(1) = _current_pose_ROS.get_sole(_current_side).coeff(1) ;       /*TODO TOCHANGE*/ /* - _current_pose_ROS.get_sole(_current_side).coeff(1)/3.2 */
+        straight_com(2) = _initial_param.get_crouch();
+        /*TODO PUT DEFAULT POSITION*/
+        _step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), straight_com, straight_com, 0, 0, getTime(), getTime()+2);
+        return straight_com;
+    }
+    
 int virtualConstraintsNode::straighten_up_action() /*if I just setted a publisher it would be harder to define when the action was completed*/
     {
         actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac_com("cartesian/com/reach", true); /*without /goal!!*/
@@ -89,11 +107,11 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
         geometry_msgs::Pose cmd_initial;
         
         tf::pointEigenToMsg(this->straighten_up_goal(), cmd_initial.position);
-        float cmd_initial_time;
-        cmd_initial_time = 1;
+        float cmd_duration_time;
+        cmd_duration_time = 15;
    
         goal.frames.push_back(cmd_initial); /*wants geometry_msgs::Pose*/
-        goal.time.push_back(cmd_initial_time);
+        goal.time.push_back(cmd_duration_time);
 
         ac_com.sendGoal(goal);
     
@@ -115,18 +133,6 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
         //exit
         return 0;
 }
-
-Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
-    {      
-        Eigen::Vector3d straight_com = _current_pose_ROS.get_com();
-        
-        straight_com(0) =  _current_pose_ROS.get_sole(_current_side).coeff(0);
-        straight_com(1) = _current_pose_ROS.get_sole(_current_side).coeff(1);       /*TODO TOCHANGE*/
-        straight_com(2) = _initial_param.get_crouch();
-        /*TODO PUT DEFAULT POSITION*/
-        _step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), straight_com, straight_com, 0, 0, getTime(), getTime()+2);
-        return straight_com;
-    }
     
 void virtualConstraintsNode::q1_callback(const std_msgs::Float64 msg_rcv) //this is called by ros
     {
@@ -135,12 +141,124 @@ void virtualConstraintsNode::q1_callback(const std_msgs::Float64 msg_rcv) //this
     }
 
 double virtualConstraintsNode::get_q1()
-    {
+    {                                                                                                
         return _q1_cmd;
         ROS_INFO("%f", _q1_state);
         
     }
+    
+Eigen::MatrixXd virtualConstraintsNode::get_supportPolygon() 
 
+    //TODO refactor this a little, add always foot surface + support polygon
+    //TODO shitty code
+    //TODO porco dio
+    {
+        _current_pose_ROS.sense();
+        double size_foot_x = 0.21;
+        double size_foot_y = 0.11;
+        std::map<robot_interface::Side, Eigen::Vector3d> sole;
+        std::map<robot_interface::Side, Eigen::Vector2d> center_sole;
+        typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian> point_t;
+        typedef boost::geometry::model::polygon<point_t> polygon;
+        std::map<robot_interface::Side, polygon> poly, hull;
+        polygon full_poly;
+        polygon full_hull;
+
+
+        sole[robot_interface::Side::Left] = _current_pose_ROS.get_sole(robot_interface::Side::Left);
+        sole[robot_interface::Side::Right] = _current_pose_ROS.get_sole(robot_interface::Side::Right);
+        
+        std::map<robot_interface::Side, Eigen::Matrix<double, 4,2>> vertex_poly;
+        
+        vertex_poly[robot_interface::Side::Left].row(0) << sole[robot_interface::Side::Left](0) + size_foot_x/2, sole[robot_interface::Side::Left](1) + size_foot_y/2;
+        vertex_poly[robot_interface::Side::Left].row(1) << sole[robot_interface::Side::Left](0) + size_foot_x/2, sole[robot_interface::Side::Left](1) - size_foot_y/2;
+        vertex_poly[robot_interface::Side::Left].row(2) << sole[robot_interface::Side::Left](0) - size_foot_x/2, sole[robot_interface::Side::Left](1) + size_foot_y/2;
+        vertex_poly[robot_interface::Side::Left].row(3) << sole[robot_interface::Side::Left](0) - size_foot_x/2, sole[robot_interface::Side::Left](1) - size_foot_y/2;
+        
+        vertex_poly[robot_interface::Side::Right].row(0) << sole[robot_interface::Side::Right](0) + size_foot_x/2, sole[robot_interface::Side::Right](1) + size_foot_y/2;
+        vertex_poly[robot_interface::Side::Right].row(1) << sole[robot_interface::Side::Right](0) + size_foot_x/2, sole[robot_interface::Side::Right](1) - size_foot_y/2;
+        vertex_poly[robot_interface::Side::Right].row(2) << sole[robot_interface::Side::Right](0) - size_foot_x/2, sole[robot_interface::Side::Right](1) + size_foot_y/2;
+        vertex_poly[robot_interface::Side::Right].row(3) << sole[robot_interface::Side::Right](0) - size_foot_x/2, sole[robot_interface::Side::Right](1) - size_foot_y/2;
+       
+        
+        center_sole[robot_interface::Side::Left] = _current_pose_ROS.get_sole(robot_interface::Side::Left).head(2);
+        center_sole[robot_interface::Side::Right] = _current_pose_ROS.get_sole(robot_interface::Side::Right).head(2);
+        
+        for (int i = 0; i < 4; i++)
+        {
+            boost::geometry::append(poly[robot_interface::Side::Left], point_t(vertex_poly[robot_interface::Side::Left].coeff(i,0), vertex_poly[robot_interface::Side::Left].coeff(i,1)));
+        }
+        boost::geometry::convex_hull(poly[robot_interface::Side::Left], hull[robot_interface::Side::Left]);
+        
+        
+        for (int i = 0; i < 4; i++)
+        {
+            boost::geometry::append(poly[robot_interface::Side::Right], point_t(vertex_poly[robot_interface::Side::Right].coeff(i,0), vertex_poly[robot_interface::Side::Right].coeff(i,1)));
+        }
+        boost::geometry::convex_hull(poly[robot_interface::Side::Right], hull[robot_interface::Side::Right]);    
+        
+   
+ 
+        if (_current_side == robot_interface::Side::Double)
+        {
+            Eigen::Matrix<double,8,2> temp_poly;
+            temp_poly << vertex_poly[robot_interface::Side::Left], vertex_poly[robot_interface::Side::Right];
+            
+            for (int i = 0; i < 8; i++)
+            {
+                boost::geometry::append(full_poly, point_t(temp_poly(i,0), temp_poly(i,1)));
+            }
+            boost::geometry::convex_hull(full_poly, full_hull);
+        }
+        else
+        {
+            full_hull = hull[_current_side];
+        }
+        
+        /*---------------------------------------------------------------------------*/
+
+        
+        
+        Eigen::MatrixXd full_hull_point(boost::geometry::num_points(full_hull),2);
+        
+        Eigen::MatrixXd left_hull_point(boost::geometry::num_points(hull[robot_interface::Side::Left]),2);
+        Eigen::MatrixXd right_hull_point(boost::geometry::num_points(hull[robot_interface::Side::Left]),2);
+        
+      
+        int full_vertex_hull_count = 0;
+        for(auto it = boost::begin(boost::geometry::exterior_ring(full_hull)); it != boost::end(boost::geometry::exterior_ring(full_hull)); ++it)
+    {
+        double x = boost::geometry::get<0>(*it);
+        double y = boost::geometry::get<1>(*it);
+        full_hull_point.row(full_vertex_hull_count) << x,y;
+        full_vertex_hull_count++;
+    }
+        int left_vertex_hull_count = 0;
+        for(auto it = boost::begin(boost::geometry::exterior_ring(hull[robot_interface::Side::Left])); it != boost::end(boost::geometry::exterior_ring(hull[robot_interface::Side::Left])); ++it)
+    {
+        double x = boost::geometry::get<0>(*it);
+        double y = boost::geometry::get<1>(*it);
+        left_hull_point.row(left_vertex_hull_count) << x,y;
+        left_vertex_hull_count++;
+    }
+        int right_vertex_hull_count = 0;
+        for(auto it = boost::begin(boost::geometry::exterior_ring(hull[robot_interface::Side::Right])); it != boost::end(boost::geometry::exterior_ring(hull[robot_interface::Side::Right])); ++it)
+    {
+        double x = boost::geometry::get<0>(*it);
+        double y = boost::geometry::get<1>(*it);
+        right_hull_point.row(right_vertex_hull_count) << x,y;
+        right_vertex_hull_count++;
+    }
+        _logger->add("full_polygon_hull", full_hull_point); /*TODO this is wrong, changing size*/
+        _logger->add("left_polygon_hull", left_hull_point);
+        _logger->add("right_polygon_hull", right_hull_point);
+        
+        _logger->add("L_sole_center", center_sole[robot_interface::Side::Left]);
+        _logger->add("R_sole_center", center_sole[robot_interface::Side::Right]);
+        
+        return full_hull_point;
+    }
+    
 double virtualConstraintsNode::sense_qlat()
     {
         _current_pose_ROS.sense(); 
@@ -222,13 +340,19 @@ bool virtualConstraintsNode::impact_detected()
             {
 
                 _current_pose_ROS.sense();
+                
+//                 get_supportPolygon();
+                
 
                 robot_interface::Side last_side = _current_side;
                _initial_pose = _current_pose_ROS;
                _step_counter++;
                 _current_side = robot_interface::Side::Double;
-                std::cout << "Impact! Current state: " << _current_side << std::endl;
                 
+                get_supportPolygon();
+                
+                std::cout << "Impact! Current state: " << _current_side << std::endl;
+                _current_pose_ROS.get_sole(_current_side);
 
                 if (_step_counter < _initial_param.get_max_steps())
                 {
@@ -362,6 +486,8 @@ void virtualConstraintsNode::run()
         
         sense_qlat();
         sense_q1();
+        
+        
         
         if (impact_detected())
         {

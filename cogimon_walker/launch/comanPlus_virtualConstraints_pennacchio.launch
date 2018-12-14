@@ -1,0 +1,9 @@
+<launch>
+
+    <param name="robot_description" textfile="/home/francesco/advr-superbuild/robots/iit-cogimon-ros-pkg/cogimon_urdf/urdf/cogimon_pennacchio.urdf"/>
+    <param name="robot_description_semantic" textfile="/home/francesco/advr-superbuild/robots/iit-cogimon-ros-pkg/cogimon_srdf/srdf/cogimon_pennacchio.srdf"/>
+    <param name="problem_description" textfile="/home/francesco/advr-superbuild/external/limit_cycle_walking/cogimon_walker/VC_cartesio/problems/comanPlus_VC_stack.yaml"/>
+    
+    <include file="$(find cartesian_interface)/launch/cartesio_include.launch"/>
+
+</launch>

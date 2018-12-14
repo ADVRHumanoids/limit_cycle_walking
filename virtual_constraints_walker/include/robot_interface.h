@@ -23,7 +23,7 @@ class robot_interface
             {
                 if (comparePoseSimmetry(_ankle_to_com[Side::Left], _ankle_to_com[Side::Right]))
                 {
-                return _ankle_to_com[Side::Left].translation();
+                    return _ankle_to_com[Side::Left].translation();
                 }
                 else std::cout << "double support error (distance)" << std::endl;
             }
@@ -36,9 +36,9 @@ class robot_interface
         {
             if (desired_side == Side::Double) 
             {
-                if (comparePoseSimmetry(_sole_state[Side::Left], _sole_state[Side::Right]))
+                if (comparePoseSimmetry(_sole_state[Side::Left], _sole_state[Side::Right])) /*TODO chemmerda*/
                 {
-                return _sole_state[Side::Left].translation();
+                    return _sole_state[Side::Left].translation();
                 }
                 else std::cout << "double support error (sole)" << std::endl;
             }
@@ -47,10 +47,12 @@ class robot_interface
         
         bool comparePoseSimmetry(Eigen::Affine3d p1, Eigen::Affine3d p2)
         {
+            /*return true if the two pose are symmetric on the xz plane (the sagittal plane)*/
             Eigen::Vector3d p1_T = p1.translation();
             Eigen::Vector3d p2_T = p2.translation();
             
-            if ((p1_T.coeff(0) - p2_T.coeff(0)) <= 1e-5 && (p1_T.coeff(2) - p2_T.coeff(2)) <= 1e-5 && (fabs(p1_T.coeff(1)) - fabs(p2_T.coeff(1))) <= 1e-5) 
+//             if ((p1_T.coeff(0) - p2_T.coeff(0)) <= 1e-2 && (p1_T.coeff(2) - p2_T.coeff(2)) <= 1e-2 && (fabs(p1_T.coeff(1)) - fabs(p2_T.coeff(1))) <= 1e-2) 
+            if ((p1_T.coeff(2) - p2_T.coeff(2)) <= 1e-2 && (fabs(p1_T.coeff(1)) - fabs(p2_T.coeff(1))) <= 1e-2) 
             {
                 return 1;
             }
