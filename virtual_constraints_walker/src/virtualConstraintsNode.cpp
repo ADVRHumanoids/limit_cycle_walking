@@ -88,7 +88,7 @@ Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
         Eigen::Vector3d straight_com = _current_pose_ROS.get_com();
         
 //         straight_com(0) =  _current_pose_ROS.get_sole(_current_side).coeff(0);
-        straight_com(1) = _current_pose_ROS.get_sole(_current_side).coeff(1) ;       /*TODO TOCHANGE*/ /* - _current_pose_ROS.get_sole(_current_side).coeff(1)/3.2 */
+//         straight_com(1) = _current_pose_ROS.get_sole(_current_side).coeff(1) ;       /*TODO TOCHANGE*/ /* - _current_pose_ROS.get_sole(_current_side).coeff(1)/3.2 */
         straight_com(2) = _initial_param.get_crouch();
         /*TODO PUT DEFAULT POSITION*/
         _step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), straight_com, straight_com, 0, 0, getTime(), getTime()+2);
@@ -108,7 +108,7 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
         
         tf::pointEigenToMsg(this->straighten_up_goal(), cmd_initial.position);
         float cmd_duration_time;
-        cmd_duration_time = 15;
+        cmd_duration_time = 1; //15;
    
         goal.frames.push_back(cmd_initial); /*wants geometry_msgs::Pose*/
         goal.time.push_back(cmd_duration_time);
@@ -261,42 +261,74 @@ Eigen::MatrixXd virtualConstraintsNode::get_supportPolygon()
     
 double virtualConstraintsNode::sense_qlat()
     {
+        double q1_lat, q2_lat;
         _current_pose_ROS.sense(); 
-        Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com;
-        robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
+        if (_current_side == robot_interface::Side::Double)
+        {
+            Eigen::Vector3d left_ankle_to_com, right_ankle_to_com;
+            
+            left_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left);
+            right_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right);
+            
+            q1_lat = atan(left_ankle_to_com(1)/left_ankle_to_com(2));
+            q2_lat = atan(right_ankle_to_com(1)/right_ankle_to_com(2));
+        }
+        else
+        {
+            Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com;
+            robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
+            
+            swing_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
+            stance_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(other_side);
+            
+            q1_lat = atan(stance_ankle_to_com(1)/stance_ankle_to_com(2));
+            q2_lat = atan(swing_ankle_to_com(1)/swing_ankle_to_com(2));
+        }
         
-        swing_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
-        stance_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(other_side);
-           
-        double qlat_stance = atan(stance_ankle_to_com(1)/stance_ankle_to_com(2));
-        double qlat_swing = atan(swing_ankle_to_com(1)/swing_ankle_to_com(2));
+        _logger->add("q_lateral_stance", q1_lat);
+        _logger->add("q_lateral_swing", q2_lat);
         
-        _logger->add("q_lateral_swing", qlat_swing);
-        _logger->add("q_lateral_stance", qlat_stance);
         
         _logger->add("q_lateral_left", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(1)/_current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(2));
         _logger->add("q_lateral_right", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right).coeff(1)/_current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right).coeff(2));
         
-        return qlat_stance;
+        return q1_lat;
     }
     
 double virtualConstraintsNode::sense_q1()
     {   
-        _current_pose_ROS.sense(); 
+        _current_pose_ROS.sense();
+        double q1, q2;
         Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com;
-        robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
         
+        if (_current_side == robot_interface::Side::Double)
+        {
+            Eigen::Vector3d left_ankle_to_com, right_ankle_to_com;
+            
+            left_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left);
+            right_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right);
+              
+        q1 = atan(left_ankle_to_com(0)/left_ankle_to_com(2));
+        q2 = atan(right_ankle_to_com(0)/right_ankle_to_com(2));
+        
+        }
+        else
+        {
+        Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com;
+        
+        robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
         swing_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
         stance_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(other_side);
             
-        double q1 = atan(stance_ankle_to_com(0)/stance_ankle_to_com(2));
-        double q2 = atan(swing_ankle_to_com(0)/swing_ankle_to_com(2));
-
+        q1 = atan(stance_ankle_to_com(0)/stance_ankle_to_com(2));
+        q2 = atan(swing_ankle_to_com(0)/swing_ankle_to_com(2));
+        
+        }
         
         _logger->add("left_foot_to_com", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(2));
         _logger->add("right_foot_to_com", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right).coeff(2));
         
-        _logger->add("q_sagittal_stance", q1);
+        _logger->add("q_sagittal_stance", q1); //TODO it's not sagittal in the double stance
         _logger->add("q_sagittal_swing", q2);
         
         _logger->add("q_sagittal_left", _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(0)/_current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left).coeff(2));
@@ -361,7 +393,6 @@ bool virtualConstraintsNode::impact_detected()
                     else if (last_side == robot_interface::Side::Right)
                         _current_side = robot_interface::Side::Left;
                     else ROS_INFO("wrong side");
-                //                 _current_side = (Side)(1 - _current_side);  /*here I change the Side after the impact */
                     
                 std::cout << "State changed. Current side: " << _current_side << std::endl;
                 return 1;
@@ -404,13 +435,27 @@ void virtualConstraintsNode::first_q1()
             if (_check_received)
             {
                 _q1_state = _q1_cmd;
-                _current_side = _initial_param.get_first_step_side();
-                std::cout << "State changed. First side: " << _current_side << std::endl;
             }
                 
         }
         ROS_INFO("command received! q1 = %f", _q1_state);
     }
+    
+double virtualConstraintsNode::lat_oscillator_com(double starting_time, double phase = 0)
+    {
+        _current_pose_ROS.sense();
+        double delay = - 2* 3.14/(2*_initial_param.get_duration_step());
+        
+        double t = getTime() - starting_time + delay;
+        
+        bool flag;
+        double amp = _current_pose_ROS.get_distance_l_to_r_foot().coeff(1)/2;
+        double period = 2*3.14*t/(2*_initial_param.get_duration_step());
+       
+        double oscillator = amp * sin(period + phase);
+        return oscillator;
+    }
+    
 void virtualConstraintsNode::update_step()
     {
         Eigen::Vector3d initial_com_position, initial_sole_position;
@@ -423,13 +468,12 @@ void virtualConstraintsNode::update_step()
         
         initial_com_position = _current_pose_ROS.get_com();
         
-        
         final_com_position = _current_pose_ROS.get_com();
 
-        if (_step_counter == 0)
-        {
-            final_com_position(1) = 0;
-        }
+//         if (_step_counter == 0)
+//         {
+//             final_com_position(1) = 0;
+//         }
         
         initial_sole_position = _current_pose_ROS.get_sole(_current_side);
         final_sole_position = _current_pose_ROS.get_sole(_current_side);
@@ -478,10 +522,20 @@ double virtualConstraintsNode::lateral_com()
     
 void virtualConstraintsNode::run() 
     {
-        if (initialized) /*initial tilt*/
-        {       
-            first_q1();
-            update_step();
+        if (initialized) //initialized
+        {    
+                first_q1();
+                _starting_time = getTime();
+        }
+        
+        if (fabs(lat_oscillator_com(_starting_time) - fabs(_current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1))) <= 1e-5)
+        {
+            if (initialized)
+            {
+                _current_side = _initial_param.get_first_step_side();
+                std::cout << "State changed. First side: " << _current_side << std::endl;
+                update_step();
+            }
         }
         
         sense_qlat();
@@ -493,25 +547,44 @@ void virtualConstraintsNode::run()
         {
             update_step();
         }
-
+        
         Eigen::Vector3d foot_trajectory, com_trajectory;
+// // // // //         _step.get_com_clearing() // old lateral swing
         foot_trajectory = compute_swing_trajectory(_step.get_foot_initial_pose(), _step.get_foot_final_pose(), _step.get_step_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xy");
-        com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), _step.get_com_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xz");
-        
-        if (_step_counter == 0)
-        {
-        Eigen::Vector3d side_com = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), _step.get_com_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xy");
-        com_trajectory[1] = side_com[1];
-        }
-        
+        com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xz");
+
+        com_trajectory[1] = lat_oscillator_com(_starting_time);
+
+
         _step.log(_logger);
         
+//         _logger->add("output_oscillator", lat_oscillator_com());
         _logger->add("com_trajectory", com_trajectory);
         _logger->add("foot_trajectory", foot_trajectory);
         
         send_step(foot_trajectory, com_trajectory);
     }
+
     
+void virtualConstraintsNode::send(std::string type, Eigen::Vector3d command)
+    {
+        geometry_msgs::PoseStamped cmd;
+        tf::pointEigenToMsg(command, cmd.pose.position);
+        
+        if (type == "right")
+        {
+            _sole_pubs[robot_interface::Side::Right].publish(cmd);
+        }
+        else if (type == "left") 
+        {
+            _sole_pubs[robot_interface::Side::Left].publish(cmd);
+        }
+        else if (type == "com")
+        {
+        _com_pub.publish(cmd);  /*TODO make a map here, so there is only one publisher and you decide to whom*/
+        }
+        else std::cout << "you're trying to send the command to a non existent task" << std::endl;
+    }
 void virtualConstraintsNode::send_step(Eigen::Vector3d foot_command, Eigen::Vector3d com_command)
     {
         geometry_msgs::PoseStamped cmd_com, cmd_sole;

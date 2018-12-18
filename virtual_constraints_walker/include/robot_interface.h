@@ -25,7 +25,8 @@ class robot_interface
                 {
                     return _ankle_to_com[Side::Left].translation();
                 }
-                else std::cout << "double support error (distance)" << std::endl;
+                else std::cout << "double support error (distance): Left:" << _ankle_to_com[Side::Left].translation() << std::endl
+                                                                << "Right:"  << _ankle_to_com[Side::Right].translation() << std::endl;
             }
             return _ankle_to_com[desired_side].translation();
             

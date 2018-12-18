@@ -1,3 +1,41 @@
+// #include <virtualConstraintsNode.h>
+// 
+// int main(int argc, char **argv)
+// {
+//     ros::init(argc, argv, "virtual_constraints");
+//     
+//     
+//     virtualConstraintsNode VC;
+//     
+//     /*synchronize this node to the cartesian interface*/
+//     ros::service::waitForService("cartesian/get_task_list"); 
+//     
+//     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
+// //     std::vector<Eigen::MatrixXd> supportPolygon(VC.get_max_steps());
+//     
+// // --------initialize robot so that q1 is exactly 0---------
+//     if (ros::ok())
+//     {
+//     robot.sense(); /*inside there is ros::spinOnce*/
+//     VC.straighten_up_action();  
+// //     VC.initial_shift_action();
+//     VC.sense_q1();
+//     }
+// // // // ---------------------------------------------------------
+// // //     while (ros::ok())
+//     while (ros::ok() && VC.get_n_step() < VC.get_max_steps())
+//     {
+//         VC.get_robot().sense();
+//         VC.run();
+//     }
+// }    
+// 
+// 
+// 
+
+
+
+
 #include <virtualConstraintsNode.h>
 
 int main(int argc, char **argv)
@@ -27,13 +65,9 @@ int main(int argc, char **argv)
     {
         VC.get_robot().sense();
         VC.run();
+//         VC.lat_oscillator_com();
     }
 }    
-
-
-
-
-
 
 
 

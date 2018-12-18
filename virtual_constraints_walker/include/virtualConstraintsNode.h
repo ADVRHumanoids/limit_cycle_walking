@@ -122,6 +122,9 @@ public:
     
     void run();
     
+    double lat_oscillator_com(double starting_time, double phase);
+    
+    void send(std::string type, Eigen::Vector3d command);
     void send_step(Eigen::Vector3d foot_command, Eigen::Vector3d com_command);
     
     void update_step();
@@ -151,6 +154,11 @@ public:
 protected:
     
 //     ros::NodeHandle n;
+    bool _start_walk = 0;
+    bool _end_walk = 0;
+    
+    double _starting_time;
+    
     ros::Publisher _com_pub;     
 
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
