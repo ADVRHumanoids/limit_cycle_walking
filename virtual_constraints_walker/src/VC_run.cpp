@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     
     /*synchronize this node to the cartesian interface*/
     ros::service::waitForService("cartesian/get_task_list"); 
-    
+     ros::Rate loop_rate(100);
     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
 //     std::vector<Eigen::MatrixXd> supportPolygon(VC.get_max_steps());
     
@@ -65,6 +65,8 @@ int main(int argc, char **argv)
     {
         VC.get_robot().sense();
         VC.run();
+        
+        loop_rate.sleep();
 //         VC.lat_oscillator_com();
     }
 }    

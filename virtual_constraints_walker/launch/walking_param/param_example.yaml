@@ -1,4 +1,4 @@
-initial_crouch: -0.12
+initial_crouch: -0.15
 max_steps: 5
 clearance_step: 0.05
 duration_step: 1

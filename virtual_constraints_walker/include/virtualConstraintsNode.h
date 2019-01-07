@@ -158,7 +158,8 @@ protected:
     bool _end_walk = 0;
     
     double _starting_time;
-    
+    double _reducer;
+    int _numerator = 0;
     ros::Publisher _com_pub;     
 
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
@@ -191,7 +192,6 @@ protected:
     double _terrain_heigth;
     
     int _step_counter;
-    
 //     ros::NodeHandle n;
     
     class param

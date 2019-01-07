@@ -184,13 +184,14 @@ Eigen::MatrixXd virtualConstraintsNode::get_supportPolygon()
         center_sole[robot_interface::Side::Left] = _current_pose_ROS.get_sole(robot_interface::Side::Left).head(2);
         center_sole[robot_interface::Side::Right] = _current_pose_ROS.get_sole(robot_interface::Side::Right).head(2);
         
+        //generate hull for lfoot
         for (int i = 0; i < 4; i++)
         {
             boost::geometry::append(poly[robot_interface::Side::Left], point_t(vertex_poly[robot_interface::Side::Left].coeff(i,0), vertex_poly[robot_interface::Side::Left].coeff(i,1)));
         }
         boost::geometry::convex_hull(poly[robot_interface::Side::Left], hull[robot_interface::Side::Left]);
         
-        
+        //generate hull for rfoot
         for (int i = 0; i < 4; i++)
         {
             boost::geometry::append(poly[robot_interface::Side::Right], point_t(vertex_poly[robot_interface::Side::Right].coeff(i,0), vertex_poly[robot_interface::Side::Right].coeff(i,1)));
@@ -198,7 +199,7 @@ Eigen::MatrixXd virtualConstraintsNode::get_supportPolygon()
         boost::geometry::convex_hull(poly[robot_interface::Side::Right], hull[robot_interface::Side::Right]);    
         
    
- 
+        //generate hull for double support
         if (_current_side == robot_interface::Side::Double)
         {
             Eigen::Matrix<double,8,2> temp_poly;
@@ -214,6 +215,7 @@ Eigen::MatrixXd virtualConstraintsNode::get_supportPolygon()
         {
             full_hull = hull[_current_side];
         }
+        
         
         /*---------------------------------------------------------------------------*/
 
@@ -249,12 +251,23 @@ Eigen::MatrixXd virtualConstraintsNode::get_supportPolygon()
         right_hull_point.row(right_vertex_hull_count) << x,y;
         right_vertex_hull_count++;
     }
-        _logger->add("full_polygon_hull", full_hull_point); /*TODO this is wrong, changing size*/
-        _logger->add("left_polygon_hull", left_hull_point);
-        _logger->add("right_polygon_hull", right_hull_point);
+//         _logger->add("full_hull", full_hull_point); /*TODO this is wrong, changing size*/
+        _logger->add("left_hull", left_hull_point);
+        _logger->add("right_hull", right_hull_point);
         
         _logger->add("L_sole_center", center_sole[robot_interface::Side::Left]);
         _logger->add("R_sole_center", center_sole[robot_interface::Side::Right]);
+        
+
+        
+        Eigen::VectorXd sp(Eigen::Map<Eigen::VectorXd>(full_hull_point.data(), full_hull_point.size()));
+        
+        Eigen::VectorXd vsp(20);
+        vsp.setZero();
+        vsp << sp;
+        std::cout << vsp.transpose() << std::endl;
+        
+        _logger->add("support_polygon", vsp);
         
         return full_hull_point;
     }
@@ -368,15 +381,16 @@ bool virtualConstraintsNode::impact_detected()
     {
 //
             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-5 &&  
-                fabs( _current_pose_ROS.get_sole(_current_side).coeff(0) -  _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
+                fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) -  _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
             {
 
                 _current_pose_ROS.sense();
                 
-//                 get_supportPolygon();
+                get_supportPolygon();
                 
 
                 robot_interface::Side last_side = _current_side;
+                std::cout << last_side << std::endl;
                _initial_pose = _current_pose_ROS;
                _step_counter++;
                 _current_side = robot_interface::Side::Double;
@@ -441,20 +455,10 @@ void virtualConstraintsNode::first_q1()
         ROS_INFO("command received! q1 = %f", _q1_state);
     }
     
-double virtualConstraintsNode::lat_oscillator_com(double starting_time, double phase = 0)
-    {
-        _current_pose_ROS.sense();
-        double delay = - 2* 3.14/(2*_initial_param.get_duration_step());
-        
-        double t = getTime() - starting_time + delay;
-        
-        bool flag;
-        double amp = _current_pose_ROS.get_distance_l_to_r_foot().coeff(1)/2;
-        double period = 2*3.14*t/(2*_initial_param.get_duration_step());
-       
-        double oscillator = amp * sin(period + phase);
-        return oscillator;
-    }
+// double virtualConstraintsNode::lat_controller(double starting_time, double phase = 0)
+//     {
+
+//     }
     
 void virtualConstraintsNode::update_step()
     {
@@ -469,20 +473,12 @@ void virtualConstraintsNode::update_step()
         initial_com_position = _current_pose_ROS.get_com();
         
         final_com_position = _current_pose_ROS.get_com();
-
-//         if (_step_counter == 0)
-//         {
-//             final_com_position(1) = 0;
-//         }
         
         initial_sole_position = _current_pose_ROS.get_sole(_current_side);
         final_sole_position = _current_pose_ROS.get_sole(_current_side);
 
-        calc_step(_q1_state, &delta_com, &delta_step);
-        com_clearing = lateral_com();
-        
-//         delta_com[1] = delta_com_y;
-        
+        calc_step(_q1_state, &delta_com, &delta_step);       
+
         update_position(&final_com_position, delta_com);    /*incline*/
         update_position(&final_sole_position, delta_step);  /*step*/
         
@@ -494,31 +490,31 @@ void virtualConstraintsNode::update_step()
         _step.set_data_step(initial_sole_position, final_sole_position, initial_com_position, final_com_position, step_clearing, com_clearing, starTime, endTime);
     }
 
-double virtualConstraintsNode::lateral_com()
-    {
-        _current_pose_ROS.sense();
-        double qlat = sense_qlat();ros::NodeHandle n;
-        double delta_com_y;
-        
-        Eigen::Vector3d ankle_to_com_distance;
-
-        ankle_to_com_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
-
-        /* virtual constraints - very simple */
-        if (_current_side == robot_interface::Side::Double)
-        {
-            delta_com_y = 0;
-        }
-        delta_com_y = ankle_to_com_distance.z() * tan(qlat); /*calc x com distance from given angle q1*/
-  
-        if (_step_counter == 0)
-        {
-            delta_com_y  = 0; 
-        }    
-        
-        _logger->add("delta_com_lateral", delta_com_y);
-        return delta_com_y;
-    }
+// double virtualConstraintsNode::lateral_com()
+//     {
+//         _current_pose_ROS.sense();
+//         double qlat = sense_qlat();ros::NodeHandle n;
+//         double delta_com_y;
+//         
+//         Eigen::Vector3d ankle_to_com_distance;
+// 
+//         ankle_to_com_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
+// 
+//         /* virtual constraints - very simple */
+//         if (_current_side == robot_interface::Side::Double)
+//         {
+//             delta_com_y = 0;
+//         }
+//         delta_com_y = ankle_to_com_distance.z() * tan(qlat); /*calc x com distance from given angle q1*/
+//   
+//         if (_step_counter == 0)
+//         {
+//             delta_com_y  = 0; 
+//         }    
+//         
+//         _logger->add("delta_com_lateral", delta_com_y);
+//         return delta_com_y;
+//     }
     
 void virtualConstraintsNode::run() 
     {
@@ -526,17 +522,23 @@ void virtualConstraintsNode::run()
         {    
                 first_q1();
                 _starting_time = getTime();
-        }
-        
-        if (fabs(lat_oscillator_com(_starting_time) - fabs(_current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1))) <= 1e-5)
-        {
-            if (initialized)
-            {
+                
+                
                 _current_side = _initial_param.get_first_step_side();
                 std::cout << "State changed. First side: " << _current_side << std::endl;
                 update_step();
-            }
         }
+        
+//         if (fabs(lat_oscillator_com(_starting_time) - fabs(_reducer *_current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1))) <= 1e-3)
+//         {
+//             if (initialized)
+//             {
+//                 
+//                 _current_side = _initial_param.get_first_step_side();
+//                 std::cout << "State changed. First side: " << _current_side << std::endl;
+//                 update_step();
+//             }
+//         }
         
         sense_qlat();
         sense_q1();
@@ -547,21 +549,23 @@ void virtualConstraintsNode::run()
         {
             update_step();
         }
-        
+// //         
         Eigen::Vector3d foot_trajectory, com_trajectory;
-// // // // //         _step.get_com_clearing() // old lateral swing
         foot_trajectory = compute_swing_trajectory(_step.get_foot_initial_pose(), _step.get_foot_final_pose(), _step.get_step_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xy");
         com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xz");
+// 
+//         if (fabs(lat_oscillator_com(_starting_time)) <= 1e-5)
+//         {
+//             std::cout << _numerator++ << std::endl;
+//             _numerator++;
+//         }
+//         if (_numerator >= 1) 
+//         com_trajectory[1] = lat_oscillator_com(_starting_time);
+// 
 
-        com_trajectory[1] = lat_oscillator_com(_starting_time);
-
-
-        _step.log(_logger);
-        
-//         _logger->add("output_oscillator", lat_oscillator_com());
         _logger->add("com_trajectory", com_trajectory);
         _logger->add("foot_trajectory", foot_trajectory);
-        
+//         
         send_step(foot_trajectory, com_trajectory);
     }
 
@@ -585,6 +589,7 @@ void virtualConstraintsNode::send(std::string type, Eigen::Vector3d command)
         }
         else std::cout << "you're trying to send the command to a non existent task" << std::endl;
     }
+    
 void virtualConstraintsNode::send_step(Eigen::Vector3d foot_command, Eigen::Vector3d com_command)
     {
         geometry_msgs::PoseStamped cmd_com, cmd_sole;
@@ -665,6 +670,21 @@ double virtualConstraintsNode::time_warp(double tau, double beta)
 
 
 
+
+// double virtualConstraintsNode::lat_oscillator_com(double starting_time, double phase = 0)
+//     {
+//         _current_pose_ROS.sense();
+// //         double delay = 0; //2* 3.14/(2*_initial_param.get_duration_step());
+//         double delay = 3.14/(2*_initial_param.get_duration_step());
+//         double t = getTime() - starting_time + delay;
+//         
+//         _reducer = 0.8;
+//         double amp = _current_pose_ROS.get_distance_l_to_r_foot().coeff(1)/2 * _reducer;
+//         double period = 2*3.14*t/(2*_initial_param.get_duration_step());
+//        
+//         double oscillator = amp * sin(period + phase);
+//         return oscillator;
+//     }
 
 
 
