@@ -457,7 +457,7 @@ void virtualConstraintsNode::first_q1()
     
 // double virtualConstraintsNode::lat_controller(double starting_time, double phase = 0)
 //     {
-
+// 
 //     }
     
 void virtualConstraintsNode::update_step()
@@ -489,32 +489,6 @@ void virtualConstraintsNode::update_step()
         
         _step.set_data_step(initial_sole_position, final_sole_position, initial_com_position, final_com_position, step_clearing, com_clearing, starTime, endTime);
     }
-
-// double virtualConstraintsNode::lateral_com()
-//     {
-//         _current_pose_ROS.sense();
-//         double qlat = sense_qlat();ros::NodeHandle n;
-//         double delta_com_y;
-//         
-//         Eigen::Vector3d ankle_to_com_distance;
-// 
-//         ankle_to_com_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
-// 
-//         /* virtual constraints - very simple */
-//         if (_current_side == robot_interface::Side::Double)
-//         {
-//             delta_com_y = 0;
-//         }
-//         delta_com_y = ankle_to_com_distance.z() * tan(qlat); /*calc x com distance from given angle q1*/
-//   
-//         if (_step_counter == 0)
-//         {
-//             delta_com_y  = 0; 
-//         }    
-//         
-//         _logger->add("delta_com_lateral", delta_com_y);
-//         return delta_com_y;
-//     }
     
 void virtualConstraintsNode::run() 
     {
@@ -529,16 +503,6 @@ void virtualConstraintsNode::run()
                 update_step();
         }
         
-//         if (fabs(lat_oscillator_com(_starting_time) - fabs(_reducer *_current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1))) <= 1e-3)
-//         {
-//             if (initialized)
-//             {
-//                 
-//                 _current_side = _initial_param.get_first_step_side();
-//                 std::cout << "State changed. First side: " << _current_side << std::endl;
-//                 update_step();
-//             }
-//         }
         
         sense_qlat();
         sense_q1();
@@ -549,19 +513,12 @@ void virtualConstraintsNode::run()
         {
             update_step();
         }
-// //         
+
         Eigen::Vector3d foot_trajectory, com_trajectory;
         foot_trajectory = compute_swing_trajectory(_step.get_foot_initial_pose(), _step.get_foot_final_pose(), _step.get_step_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xy");
         com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xz");
-// 
-//         if (fabs(lat_oscillator_com(_starting_time)) <= 1e-5)
-//         {
-//             std::cout << _numerator++ << std::endl;
-//             _numerator++;
-//         }
-//         if (_numerator >= 1) 
-//         com_trajectory[1] = lat_oscillator_com(_starting_time);
-// 
+
+        
 
         _logger->add("com_trajectory", com_trajectory);
         _logger->add("foot_trajectory", foot_trajectory);
@@ -601,7 +558,7 @@ void virtualConstraintsNode::send_step(Eigen::Vector3d foot_command, Eigen::Vect
     }
 
 Eigen::Vector3d virtualConstraintsNode::compute_swing_trajectory(const Eigen::Vector3d& start, 
-                                                                 const Eigen::Vector3d& end, 
+                                                                 const Eigen::Vector3d& end,
                                                                  double clearance,
                                                                  double t_start, 
                                                                  double t_end, 
@@ -612,36 +569,57 @@ Eigen::Vector3d virtualConstraintsNode::compute_swing_trajectory(const Eigen::Ve
                                                                 )
 {
     Eigen::Vector3d ret;
+
     
+    double dx0 = 1;
+    double ddx0 = 0;
+    
+    double dxf = -2;
+    double ddxf = 0;
+    
+    double dx; 
+    double ddx;
+    
+    double beta = 1; //2
     double tau = std::min(std::max((time - t_start)/(t_end - t_start), 0.0), 1.0);
-    double alpha = compute_swing_trajectory_normalized_plane(time_warp(tau, 2.0));
+    double alpha = compute_swing_trajectory_normalized_plane(dx0, ddx0, dxf, ddxf, time_warp(tau, beta), &dx, &ddx);
     
     if (plane == "xy" || plane == "yx")
     {
         ret.head<2>() = (1-alpha)*start.head<2>() + alpha*end.head<2>();
-        ret.z() = start.z() + compute_swing_trajectory_normalized_clearing(end.z()/clearance, time_warp(tau, 2.0))*clearance; /*porcodio*/
+        ret.z() = start.z() + compute_swing_trajectory_normalized_clearing(end.z()/clearance, time_warp(tau, beta))*clearance; /*porcodio*/
      }
      else if (plane == "yz" || plane == "zy")
      {
          ret.tail<2>() = (1-alpha)*start.tail<2>() + alpha*end.tail<2>();
-         ret.x() = start.x() + compute_swing_trajectory_normalized_clearing(end.x()/clearance, time_warp(tau, 2.0))*clearance; /*porcodio*/
+         ret.x() = start.x() + compute_swing_trajectory_normalized_clearing(end.x()/clearance, time_warp(tau, beta))*clearance; /*porcodio*/
      }
      else if (plane == "xz" || plane == "zx")
      {
         ret[0] = (1-alpha)*start[0] + alpha*end[0];
         ret[2] = (1-alpha)*start[2] + alpha*end[2];
-        ret.y() = start.y() + compute_swing_trajectory_normalized_clearing(end.y()/clearance, time_warp(tau, 2.0))*clearance; /*porcodio*/
+        ret.y() = start.y() + compute_swing_trajectory_normalized_clearing(end.y()/clearance, time_warp(tau, beta))*clearance; /*porcodio*/
      }
+     
+     _logger->add("alpha", alpha);
+     _logger->add("traj_pos", ret);
+     _logger->add("traj_vel", dx);
+     _logger->add("traj_acc", ddx);
     return ret;
 }
 
-double virtualConstraintsNode::compute_swing_trajectory_normalized_plane(double tau, double* __dx, double* __ddx)
+double virtualConstraintsNode::compute_swing_trajectory_normalized_plane(double dx0, double ddx0, 
+                                                                         double dxf, double ddxf, 
+                                                                         double tau, 
+                                                                         double* __dx, double* __ddx)
 {
+    
     double x, dx, ddx;
-    XBot::Utils::FifthOrderPlanning(0, 0, 0, 1, 0, 1, tau, x, dx, ddx);
+    FifthOrderPlanning(0, dx0, ddx0, 1, dxf, ddxf, 0, 1, tau, x, dx, ddx);
 
-//     if(__dx) *__dx = dx;
-//     if(__ddx) *__ddx = ddx;
+    if(__dx) *__dx = dx;
+    if(__ddx) *__ddx = ddx;
+    
     return x;
 }
 
@@ -669,8 +647,110 @@ double virtualConstraintsNode::time_warp(double tau, double beta)
 
 
 
+void virtualConstraintsNode::FifthOrderPlanning(double x0, double dx0, double ddx0,
+                                                double xf, double dxf, double ddxf,
+                                                double start_time, double end_time, 
+                                                double time, double& x, double& dx, double& ddx
+                                                )
+{
+    Eigen::Matrix6d A;
+    A << 1.0000,         0,         0,         0,         0,         0,
+              0,    1.0000,         0,         0,         0,         0,
+              0,         0,    0.5000,         0,         0,         0,
+       -10.0000,   -6.0000,   -1.5000,   10.0000,   -4.0000,    0.5000,
+        15.0000,    8.0000,    1.5000,  -15.0000,    7.0000,   -1.0000,
+        -6.0000,   -3.0000,   -0.5000,    6.0000,   -3.0000,    0.5000;
+    
+    double alpha = (end_time-start_time);
+    alpha = std::max(1e-6, alpha);
+    double tau = (time - start_time)/alpha; // d/dt = d/d(alpha*tau)
+    tau = std::max(0.0, tau);
+    tau = std::min(tau, 1.0);
+        
+    Eigen::Vector6d b;
+    b << x0, dx0*alpha, ddx0*std::pow(alpha,2.0), xf, dxf*alpha, ddxf*std::pow(alpha,2.0);
+    
+    Eigen::Vector6d coeffs = A*b;
+    
+    Eigen::Vector6d t_v, dt_v, ddt_v;
+    for(int i = 0; i < 6; i++)
+    {
+        t_v(i) = std::pow(tau, i);
+        dt_v(i) = i > 0 ? std::pow(tau, i-1)*i : 0;
+        ddt_v(i) = i > 1 ? std::pow(tau, i-2)*i*(i-1) : 0;
+        
+    }
+    
+    x = coeffs.dot(t_v);
+    dx = coeffs.dot(dt_v)/alpha;
+    ddx = coeffs.dot(ddt_v)/(alpha*alpha);
+}
 
 
+
+
+double virtualConstraintsNode::getPt( double n1 , double n2 , float perc )
+{
+    double diff = n2 - n1;
+
+    return n1 + ( diff * perc );
+} 
+
+void virtualConstraintsNode::getBezierCurve(float tau)
+{
+    double x1 = 0.4; 
+    double x2 = 0.2; 
+    double x3 = -0.8;
+    double x4 = 0.1;
+    double y1 = 0;
+    double y2 = 0.5;
+    double y3 = - 0.5;
+    double y4 = 0.3;
+    
+    double xa, ya;
+    double xb, yb;
+    double xc, yc;
+    
+    double xm, ym;
+    double xn, yn;
+    
+    double x, y;
+    
+        // The Green Lines
+        xa = getPt( x1 , x2 , tau );
+        ya = getPt( y1 , y2 , tau );
+        xb = getPt( x2 , x3 , tau );
+        yb = getPt( y2 , y3 , tau );
+        xc = getPt( x3 , x4 , tau );
+        yc = getPt( y3 , y4 , tau );
+
+        // The Blue Line
+        xm = getPt( xa , xb , tau );
+        ym = getPt( ya , yb , tau );
+        xn = getPt( xb , xc , tau );
+        yn = getPt( yb , yc , tau );
+
+        // The Black Dot
+        x = getPt( xm , xn , tau );
+        y = getPt( ym , yn , tau );
+        
+        _logger->add("x_a", xa);
+        _logger->add("y_a", ya);
+        _logger->add("x_b", xb);
+        _logger->add("y_b", yb);
+        _logger->add("x_c", xc);
+        _logger->add("y_c", yc);
+        _logger->add("x_m", xm);
+        _logger->add("y_m", ym);
+        _logger->add("x_n", xn);
+        _logger->add("y_n", yn);
+        
+        _logger->add("y_bezier", y);
+        _logger->add("x_bezier", x);
+        _logger->add("y_bezier", y);
+
+
+}
 // double virtualConstraintsNode::lat_oscillator_com(double starting_time, double phase = 0)
 //     {
 //         _current_pose_ROS.sense();

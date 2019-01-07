@@ -129,7 +129,7 @@ public:
     
     void update_step();
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    static Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
+    Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
                                                     const Eigen::Vector3d& end, 
                                                     double clearance,
                                                     double t_start, 
@@ -140,14 +140,30 @@ public:
                                                     Eigen::Vector3d * acc = nullptr
                                                     );
 
-    static double compute_swing_trajectory_normalized_plane(double tau, double* dx = 0, double* ddx = 0);
+double compute_swing_trajectory_normalized_plane(double dx0, double ddx0, 
+                                                                         double dxf, double ddxf, 
+                                                                         double tau, 
+                                                                         double* __dx, double* __ddx);
+
     static double compute_swing_trajectory_normalized_clearing(double final_height, 
-                                                        double tau,
-                                                        double* dx = 0, 
-                                                        double* ddx = 0);
+                                                               double tau,
+                                                               double* dx = 0, 
+                                                               double* ddx = 0);
 
     static double time_warp(double tau, double beta);
+    
+    void FifthOrderPlanning(double x0, double dx0, double ddx0,
+                                                double xf, double dxf, double ddxf,
+                                                double start_time, double end_time, 
+                                                double time, double& x, double& dx, double& ddx
+                                                );
+    
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    double getPt( double n1, double n2, float perc);
+    void getBezierCurve(float tau);
+
+
     void first_q1();
     int get_n_step() {return _step_counter;};
     
@@ -217,9 +233,8 @@ protected:
         int _max_steps;
 
     } _initial_param;
+    
 };
-
-
 
 
 
