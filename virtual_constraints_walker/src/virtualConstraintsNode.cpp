@@ -689,68 +689,97 @@ void virtualConstraintsNode::FifthOrderPlanning(double x0, double dx0, double dd
 
 
 
-double virtualConstraintsNode::getPt( double n1 , double n2 , float perc )
+double virtualConstraintsNode::getPt( double n1 , double n2 , double perc )
 {
     double diff = n2 - n1;
 
     return n1 + ( diff * perc );
 } 
 
-void virtualConstraintsNode::getBezierCurve(float tau)
-{
-    double x1 = 0.4; 
-    double x2 = 0.2; 
-    double x3 = -0.8;
-    double x4 = 0.1;
-    double y1 = 0;
-    double y2 = 0.5;
-    double y3 = - 0.5;
-    double y4 = 0.3;
+void virtualConstraintsNode::getBezierCurve(Eigen::VectorXd coeff_vec, double tau)
+{ 
+    double x = 0;
+    int n_points  = coeff_vec.size();
+    Eigen::VectorXd clone_vec = coeff_vec;
     
-    double xa, ya;
-    double xb, yb;
-    double xc, yc;
+    for (int temp_n_points = (n_points-1); temp_n_points >= 1; temp_n_points--)
+    {
+        for (int i = 0; i < temp_n_points; i++)
+        {
+            clone_vec[i] = getPt(clone_vec.coeff(i), clone_vec.coeff(i+1), tau);
+        }
+    }
+
+    x = clone_vec.coeff(0);
+       
     
-    double xm, ym;
-    double xn, yn;
+    _logger->add("x_bezier", x);
     
-    double x, y;
     
+    
+    
+    double x1 = coeff_vec.coeff(0); 
+    double x2 = coeff_vec.coeff(1); 
+    double x3 = coeff_vec.coeff(2);
+    double x4 = coeff_vec.coeff(3);
+    double x5 = coeff_vec.coeff(4);
+    double x6 = coeff_vec.coeff(5);
+    
+    double xa, xb, xc, xd, xe;
+    
+    double xm, xn, xk, xp;
+    
+    double xy, xz, xx;
+    
+    double xq, xw;
+    
+    double xfin;
+    
+
         // The Green Lines
         xa = getPt( x1 , x2 , tau );
-        ya = getPt( y1 , y2 , tau );
         xb = getPt( x2 , x3 , tau );
-        yb = getPt( y2 , y3 , tau );
         xc = getPt( x3 , x4 , tau );
-        yc = getPt( y3 , y4 , tau );
-
+        xd = getPt( x4 , x5 , tau );
+        xe = getPt( x5 , x6 , tau );
+        
         // The Blue Line
         xm = getPt( xa , xb , tau );
-        ym = getPt( ya , yb , tau );
         xn = getPt( xb , xc , tau );
-        yn = getPt( yb , yc , tau );
-
+        xk = getPt( xc , xd , tau );
+        xp = getPt( xd , xe , tau );
+        
+        xy = getPt( xm , xn , tau );
+        xz = getPt( xn , xk , tau );    
+        xx = getPt( xk , xp , tau );
         // The Black Dot
-        x = getPt( xm , xn , tau );
-        y = getPt( ym , yn , tau );
         
-        _logger->add("x_a", xa);
-        _logger->add("y_a", ya);
-        _logger->add("x_b", xb);
-        _logger->add("y_b", yb);
-        _logger->add("x_c", xc);
-        _logger->add("y_c", yc);
-        _logger->add("x_m", xm);
-        _logger->add("y_m", ym);
-        _logger->add("x_n", xn);
-        _logger->add("y_n", yn);
+        xq = getPt( xy , xz , tau );
+        xw = getPt( xz , xx , tau );
         
-        _logger->add("y_bezier", y);
-        _logger->add("x_bezier", x);
-        _logger->add("y_bezier", y);
-
+        xfin = getPt( xq , xw , tau );
+        
+        
+        _logger->add("x_bezier_other", xfin);
+        _logger->add("tau", tau);
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // double virtualConstraintsNode::lat_oscillator_com(double starting_time, double phase = 0)
 //     {
 //         _current_pose_ROS.sense();

@@ -26,7 +26,8 @@ robot_interface_ROS::robot_interface_ROS()
 
         
         ROS_INFO("waiting for robot..");
-//         while (_callback_counter < _subs.size())
+        _check_1 = _check_2 = _check_3 = _check_4 = false;
+        
         while (!all_check)
         {
         

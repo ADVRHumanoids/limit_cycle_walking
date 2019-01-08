@@ -160,8 +160,8 @@ double compute_swing_trajectory_normalized_plane(double dx0, double ddx0,
     
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    double getPt( double n1, double n2, float perc);
-    void getBezierCurve(float tau);
+    double getPt( double n1, double n2, double perc);
+    void getBezierCurve(Eigen::VectorXd coeff_vec, double tau);
 
 
     void first_q1();

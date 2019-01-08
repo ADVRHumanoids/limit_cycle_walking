@@ -12,8 +12,8 @@ function [torque,y] = controllerWalker(q,q_dot, D,C,G,offset_leg, offset_waist, 
     %    a_leg = [-2.27 3.26 3.11 1.89];
     %    a_waist = [0.512 0.073 0.035 -0.819];
     %    
-    %    a_leg = [1 -1 0 0]; %[-3 5 3 2];
-    %    a_waist = [0.8 -1 0 0];
+%        a_leg = [1 1 0 0]; %[-3 5 3 2];
+%        a_waist = [0.8 1 0 0];
     a_leg = [0 0 0 0]; %[-3 5 3 2];
     a_waist = [0 0 0 0];  
 

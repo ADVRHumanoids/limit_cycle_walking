@@ -80,33 +80,42 @@ int main(int argc, char **argv)
 
     ros::init(argc, argv, "virtual_constraints");
     virtualConstraintsNode VC;
-    Eigen::Vector3d starting_position, ending_position, ret;
     
+    double x1 = 0.4; 
+    double x2 = 0.2; 
+    double x3 = -0.8;
+    double x4 = 0.1;
+    double x5 = -0.3;
+    double x6 = 0.8;
     
+    ros::Rate loop_rate(100);
+    
+    Eigen::Vector4d vect;
+    vect << x1, x2, x3, x4, x5, x6;
+       
+    double tau = 0;
+    double t_min = ros::Time::now().toSec(); 
+    double t_max = ros::Time::now().toSec()+ 1;
 
-    std::string sep = "\n----------------------------------------\n";
-    starting_position << 0, 0, 0;
-    ending_position << 1, 1, 1;
-    double clearance = 0;
-    double starting_time, ending_time;
     
-    double t_max = ros::Time::now().toSec()+ 10;
-    double t_min = ros::Time::now().toSec();
-    double tau;
-    
-//     while (ros::ok() && ros::Time::now().toSec() <=  t_max)
-    for( float i = 0 ; i < 1 ; i += 0.01 )
+    while (ros::Time::now().toSec() <=  t_max)
     {
-//         tau = (ros::Time::now().toSec() - t_max) / (t_min - t_max);
-        VC.getBezierCurve(i);
+        tau = (ros::Time::now().toSec() - t_min) / (t_max - t_min);
+        VC.getBezierCurve(vect, tau);
+        
+        loop_rate.sleep();
     }
-    
-    starting_time = ros::Time::now().toSec();
-    ending_time = ros::Time::now().toSec() + 4;
-    bool flag = true;
-
-        while (ros::ok() && ros::Time::now().toSec() <= ending_time +1)
-    {  
-        ret = VC.compute_swing_trajectory(starting_position, ending_position, clearance, starting_time, ending_time, ros::Time::now().toSec(), "yz");
-    }
+//     Eigen::Vector3d starting_position, ending_position, ret;  
+//     double starting_time, ending_time;
+//     starting_position << 0, 0, 0;
+//     ending_position << 1, 1, 1;
+//     double clearance = 0;
+//     starting_time = ros::Time::now().toSec();
+//     ending_time = ros::Time::now().toSec() + 4;
+//     bool flag = true;
+// 
+//         while (ros::ok() && ros::Time::now().toSec() <= ending_time +1)
+//     {  
+//         ret = VC.compute_swing_trajectory(starting_position, ending_position, clearance, starting_time, ending_time, ros::Time::now().toSec(), "yz");
+//     }
 }
