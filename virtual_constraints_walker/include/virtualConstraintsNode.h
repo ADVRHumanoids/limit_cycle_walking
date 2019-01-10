@@ -105,6 +105,8 @@ public:
     int initial_shift_action();
     
     Eigen::Vector3d straighten_up_goal();
+    Eigen::Affine3d l_sole_orientation_goal();
+    Eigen::Affine3d r_sole_orientation_goal();
     
     void q1_callback(const std_msgs::Float64 msg_rcv); //this is called by ros
     
@@ -168,7 +170,7 @@ public:
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     double getPt( double n1, double n2, double perc);
-    void getBezierCurve(Eigen::VectorXd coeff_vec, double tau);
+    double getBezierCurve(Eigen::VectorXd coeff_vec, double tau);
 
 
     void first_q1();
@@ -187,7 +189,6 @@ protected:
 
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
     ros::Subscriber _q1_sub;
-    
     
     robot_interface _initial_pose, _previous_initial_pose;
     robot_interface_ROS _current_pose_ROS;
@@ -216,6 +217,10 @@ protected:
     
     int _step_counter;
 //     ros::NodeHandle n;
+    
+    double _q_min = 0;
+    double _q_max = 0.3;
+    
     
     class param
     {

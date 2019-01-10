@@ -47,31 +47,48 @@ int main(int argc, char **argv)
     
     /*synchronize this node to the cartesian interface*/
     ros::service::waitForService("cartesian/get_task_list"); 
-     ros::Rate loop_rate(100);
+    ros::Rate loop_rate(100);
     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
+    
+    double start_idle_time;
+    
+    ros::NodeHandle n_cmd;
+    ros::Publisher _q1_pub;
+    
+
+    _q1_pub = n_cmd.advertise<std_msgs::Float64>("/q1", 10);
+    
 //     std::vector<Eigen::MatrixXd> supportPolygon(VC.get_max_steps());
     
 // --------initialize robot so that q1 is exactly 0---------
     if (ros::ok())
     {
     robot.sense(); /*inside there is ros::spinOnce*/
-    VC.straighten_up_action();  
-//     VC.initial_shift_action();
+    VC.straighten_up_action();
     VC.sense_q1();
     }
-// // // ---------------------------------------------------------
-// //     while (ros::ok())
+    
+    start_idle_time = ros::Time::now().toSec();
+    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +5) {}
+    
+    double q1 = 0;
+    double starting_time = ros::Time::now().toSec();
+//     double ending_time = ros::Time::now().toSec();
+    
+    
     while (ros::ok() && VC.get_n_step() < VC.get_max_steps())
     {
+        while (q1 <= 0.3)
+        {
+        q1 = q1 + 0.005*(ros::Time::now().toSec() - starting_time);
+        _q1_pub.publish(q1);
+        
+        
         VC.get_robot().sense();
         VC.run();
-        
         loop_rate.sleep();
+        }
     }
-    
-    double start_idle_time = ros::Time::now().toSec();
-    
-    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +10) {}
 }    
 
 

@@ -46,6 +46,19 @@ class robot_interface
             else return _sole_state[desired_side].translation();  
         }
         
+        Eigen::Affine3d get_sole_tot(Side desired_side)
+        {
+            if (desired_side == Side::Double) 
+            {
+                if (comparePoseSimmetry(_sole_state[Side::Left], _sole_state[Side::Right])) /*TODO chemmerda*/
+                {
+                    return _sole_state[Side::Left];
+                }
+                else std::cout << "double support error (sole)" << std::endl;
+            }
+            else return _sole_state[desired_side];
+        }
+        
         bool comparePoseSimmetry(Eigen::Affine3d p1, Eigen::Affine3d p2)
         {
             /*return true if the two pose are symmetric on the xz plane (the sagittal plane)*/
