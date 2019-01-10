@@ -32,7 +32,6 @@ virtualConstraintsNode::virtualConstraintsNode()
         _q1_state = sense_q1();
         
         _terrain_heigth =  _current_pose_ROS.get_sole(_current_side).coeff(2);
-        std::cout << _terrain_heigth << std::endl;
         
         
 //      prepare subscriber node
@@ -545,23 +544,23 @@ void virtualConstraintsNode::run()
         
         
         
-//         if (impact_detected())
-//         {
-//             update_com();
-//             update_step();
-//         }
+        if (impact_detected())
+        {
+            update_com();
+            update_step();
+        }
 
         Eigen::Vector3d foot_trajectory, com_trajectory;
         foot_trajectory = compute_swing_trajectory(_step.get_foot_initial_pose(), _step.get_foot_final_pose(), _step.get_step_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xy");
         com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xz");
-
+        
         
         _logger->add("foot_trajectory", foot_trajectory);
         _logger->add("com_trajectory", com_trajectory);
         
 //      
         send_step(foot_trajectory);
-//         send_com(com_trajectory);
+        send_com(com_trajectory);
         
     }
 

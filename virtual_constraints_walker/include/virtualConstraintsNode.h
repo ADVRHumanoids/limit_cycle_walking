@@ -80,7 +80,7 @@ public:
         void set_foot_final_pose(Eigen::Vector3d step_final_pose) {_step_final_pose = step_final_pose;};
         void set_com_initial_pose(Eigen::Vector3d com_initial_pose) {_com_initial_pose = com_initial_pose;};
         void set_com_final_pose(Eigen::Vector3d com_final_pose) {_com_final_pose = com_final_pose;};
-        void set_step_clearing(double step_clearing) {_com_clearing = step_clearing;};
+        void set_step_clearing(double step_clearing) {_step_clearing = step_clearing;};
         void set_com_clearing(double com_clearing) {_com_clearing = com_clearing;};
         void set_starTime(double starTime) {_starTime = starTime;};
         void set_endTime(double endTime) {_endTime = endTime;};
@@ -147,7 +147,7 @@ public:
                                                     Eigen::Vector3d * acc = nullptr
                                                     );
 
-double compute_swing_trajectory_normalized_plane(double dx0, double ddx0, 
+    double compute_swing_trajectory_normalized_plane(double dx0, double ddx0, 
                                                                          double dxf, double ddxf, 
                                                                          double tau, 
                                                                          double* __dx, double* __ddx);
