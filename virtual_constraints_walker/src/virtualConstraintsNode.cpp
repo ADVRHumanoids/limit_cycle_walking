@@ -32,6 +32,8 @@ virtualConstraintsNode::virtualConstraintsNode()
         _q1_state = sense_q1();
         
         _terrain_heigth =  _current_pose_ROS.get_sole(_current_side).coeff(2);
+        std::cout << _terrain_heigth << std::endl;
+        
         
 //      prepare subscriber node
         _q1_sub = n.subscribe("/q1", 10, &virtualConstraintsNode::q1_callback, this); /*subscribe to /q1 topic*/
@@ -265,7 +267,6 @@ Eigen::MatrixXd virtualConstraintsNode::get_supportPolygon()
         Eigen::VectorXd vsp(20);
         vsp.setZero();
         vsp << sp;
-        std::cout << vsp.transpose() << std::endl;
         
         _logger->add("support_polygon", vsp);
         
@@ -350,31 +351,42 @@ double virtualConstraintsNode::sense_q1()
         return q1;
     }  
 
-void virtualConstraintsNode::update_position(Eigen::Vector3d *current_pose, Eigen::Vector3d update) 
+    void virtualConstraintsNode::update_pose(Eigen::Vector3d *current_pose, Eigen::Vector3d update) 
     {   
 //       // update current_pose with update
         *current_pose = *current_pose + update;
     }
     
-void virtualConstraintsNode::calc_step(double q1, Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step)
+    Eigen::Vector3d virtualConstraintsNode::calc_com(double q1)
     {
         Eigen::Vector3d com_to_ankle_distance;
+        Eigen::Vector3d delta_com;
         
         com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side); /*if take out minus the robot steps back*/
+        delta_com << - 2* com_to_ankle_distance.z() * tan(q1), 0, 0; /*calc x com distance from given angle q1*/
+        
+          if (_step_counter == 0)
+            delta_com  << (- com_to_ankle_distance.z() * tan(q1)), 0, 0; //+ _current_pose_ROS.get_com().coeff(0), 0, 0; /*calc x com distance from given angle q1*/
+ 
+        _logger->add("delta_com", delta_com);
+        return delta_com;
+    }
 
-        /* virtual constraints - very simple */
-        *delta_com << - 2* com_to_ankle_distance.z() * tan(q1), 0, 0; /*calc x com distance from given angle q1*/
-        *delta_step << - 4* com_to_ankle_distance.z() * tan(q1), 0, 0; /*calc step distance given q1*/  //lenght_leg * sin(q1)
+    
+    Eigen::Vector3d virtualConstraintsNode::calc_step(double q1)
+    {
+        Eigen::Vector3d com_to_ankle_distance;
+        Eigen::Vector3d delta_step;
+        
+        com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side); /*if take out minus the robot steps back*/
+        delta_step << - 4* com_to_ankle_distance.z() * tan(q1), 0, 0; /*calc step distance given q1*/  //lenght_leg * sin(q1)
             
             
         if (_step_counter == 0)
-        {
-            *delta_com  << (- com_to_ankle_distance.z() * tan(q1)); //+ _current_pose_ROS.get_com().coeff(0), 0, 0; /*calc x com distance from given angle q1*/
-            *delta_step << (- 2* com_to_ankle_distance.z() * tan(q1)); //+ _current_pose_ROS.get_l_sole().coeff(0), 0, 0; /*calc step distance given q1*/  //lenght_leg * sin(q1)
-        }
-                    
-        _logger->add("delta_com", *delta_com);
-        _logger->add("delta_step", *delta_step);
+            delta_step << (- 2* com_to_ankle_distance.z() * tan(q1)), 0, 0;
+
+        _logger->add("delta_step", delta_step);
+        return delta_step;
     }
 
 bool virtualConstraintsNode::impact_detected()                
@@ -386,7 +398,7 @@ bool virtualConstraintsNode::impact_detected()
 
                 _current_pose_ROS.sense();
                 
-                get_supportPolygon();
+//                 get_supportPolygon();
                 
 
                 robot_interface::Side last_side = _current_side;
@@ -395,7 +407,7 @@ bool virtualConstraintsNode::impact_detected()
                _step_counter++;
                 _current_side = robot_interface::Side::Double;
                 
-                get_supportPolygon();
+//                 get_supportPolygon();
                 
                 std::cout << "Impact! Current state: " << _current_side << std::endl;
                 _current_pose_ROS.get_sole(_current_side);
@@ -459,35 +471,59 @@ void virtualConstraintsNode::first_q1()
 //     {
 // 
 //     }
-    
-void virtualConstraintsNode::update_step()
+
+void virtualConstraintsNode::update_com()
     {
-        Eigen::Vector3d initial_com_position, initial_sole_position;
-        Eigen::Vector3d final_com_position, final_sole_position;
-        Eigen::Vector3d delta_com, delta_step;
+        Eigen::Vector3d initial_com_position;
+        Eigen::Vector3d final_com_position;
+        Eigen::Vector3d delta_com;
         
         double com_clearing;
         
         _current_pose_ROS.sense();
         
         initial_com_position = _current_pose_ROS.get_com();
-        
         final_com_position = _current_pose_ROS.get_com();
+
+        delta_com = calc_com(_q1_state);      
+
+        update_pose(&final_com_position, delta_com);    /*incline*/
+        
+        double starTime = getTime();
+        double endTime = starTime + _initial_param.get_duration_step();
+        
+        _step.set_com_initial_pose(initial_com_position);
+        _step.set_com_final_pose(final_com_position);
+        _step.set_com_clearing(com_clearing);
+        _step.set_starTime(starTime);
+        _step.set_endTime(endTime);
+    }
+    
+void virtualConstraintsNode::update_step()
+    {
+        Eigen::Vector3d initial_sole_position;
+        Eigen::Vector3d final_sole_position;
+        Eigen::Vector3d delta_step;
+        
+        _current_pose_ROS.sense();
         
         initial_sole_position = _current_pose_ROS.get_sole(_current_side);
         final_sole_position = _current_pose_ROS.get_sole(_current_side);
-
-        calc_step(_q1_state, &delta_com, &delta_step);       
-
-        update_position(&final_com_position, delta_com);    /*incline*/
-        update_position(&final_sole_position, delta_step);  /*step*/
+        
+        delta_step = calc_step(_q1_state);       
+        
+        update_pose(&final_sole_position, delta_step);  /*step*/
         
         
         double step_clearing = _initial_param.get_clearance_step();
         double starTime = getTime();
         double endTime = starTime + _initial_param.get_duration_step();
         
-        _step.set_data_step(initial_sole_position, final_sole_position, initial_com_position, final_com_position, step_clearing, com_clearing, starTime, endTime);
+        _step.set_foot_initial_pose(initial_sole_position);
+        _step.set_foot_final_pose(final_sole_position);
+        _step.set_step_clearing(step_clearing);
+        _step.set_starTime(starTime);
+        _step.set_endTime(endTime);
     }
     
 void virtualConstraintsNode::run() 
@@ -497,33 +533,36 @@ void virtualConstraintsNode::run()
                 first_q1();
                 _starting_time = getTime();
                 
-                
                 _current_side = _initial_param.get_first_step_side();
                 std::cout << "State changed. First side: " << _current_side << std::endl;
+                update_com();
                 update_step();
         }
         
         
-        sense_qlat();
+//         sense_qlat();
         sense_q1();
         
         
         
-        if (impact_detected())
-        {
-            update_step();
-        }
+//         if (impact_detected())
+//         {
+//             update_com();
+//             update_step();
+//         }
 
         Eigen::Vector3d foot_trajectory, com_trajectory;
         foot_trajectory = compute_swing_trajectory(_step.get_foot_initial_pose(), _step.get_foot_final_pose(), _step.get_step_clearing(), _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xy");
         com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xz");
 
         
-
-        _logger->add("com_trajectory", com_trajectory);
         _logger->add("foot_trajectory", foot_trajectory);
-//         
-        send_step(foot_trajectory, com_trajectory);
+        _logger->add("com_trajectory", com_trajectory);
+        
+//      
+        send_step(foot_trajectory);
+//         send_com(com_trajectory);
+        
     }
 
     
@@ -546,14 +585,19 @@ void virtualConstraintsNode::send(std::string type, Eigen::Vector3d command)
         }
         else std::cout << "you're trying to send the command to a non existent task" << std::endl;
     }
-    
-void virtualConstraintsNode::send_step(Eigen::Vector3d foot_command, Eigen::Vector3d com_command)
+
+void virtualConstraintsNode::send_com(Eigen::Vector3d com_command)
     {
-        geometry_msgs::PoseStamped cmd_com, cmd_sole;
+        geometry_msgs::PoseStamped cmd_com;
         tf::pointEigenToMsg(com_command, cmd_com.pose.position);
-        tf::pointEigenToMsg(foot_command, cmd_sole.pose.position);
         
         _com_pub.publish(cmd_com);
+    }
+void virtualConstraintsNode::send_step(Eigen::Vector3d foot_command)
+    {
+        geometry_msgs::PoseStamped cmd_com, cmd_sole;
+        tf::pointEigenToMsg(foot_command, cmd_sole.pose.position);
+        
         _sole_pubs[_current_side].publish(cmd_sole);
     }
 
@@ -571,16 +615,16 @@ Eigen::Vector3d virtualConstraintsNode::compute_swing_trajectory(const Eigen::Ve
     Eigen::Vector3d ret;
 
     
-    double dx0 = 1;
+    double dx0 = 0;
     double ddx0 = 0;
     
-    double dxf = -2;
+    double dxf = 0;
     double ddxf = 0;
     
     double dx; 
     double ddx;
     
-    double beta = 1; //2
+    double beta = 2; //2
     double tau = std::min(std::max((time - t_start)/(t_end - t_start), 0.0), 1.0);
     double alpha = compute_swing_trajectory_normalized_plane(dx0, ddx0, dxf, ddxf, time_warp(tau, beta), &dx, &ddx);
     
@@ -618,7 +662,7 @@ double virtualConstraintsNode::compute_swing_trajectory_normalized_plane(double 
     FifthOrderPlanning(0, dx0, ddx0, 1, dxf, ddxf, 0, 1, tau, x, dx, ddx);
 
     if(__dx) *__dx = dx;
-    if(__ddx) *__ddx = ddx;
+    if(__ddx) *__ddx = ddx; 
     
     return x;
 }
@@ -642,10 +686,6 @@ double virtualConstraintsNode::time_warp(double tau, double beta)
 {
     return 1.0 - std::pow(1.0 - tau, beta);
 }
-
-
-
-
 
 void virtualConstraintsNode::FifthOrderPlanning(double x0, double dx0, double ddx0,
                                                 double xf, double dxf, double ddxf,
@@ -686,9 +726,6 @@ void virtualConstraintsNode::FifthOrderPlanning(double x0, double dx0, double dd
     ddx = coeffs.dot(ddt_v)/(alpha*alpha);
 }
 
-
-
-
 double virtualConstraintsNode::getPt( double n1 , double n2 , double perc )
 {
     double diff = n2 - n1;
@@ -706,63 +743,14 @@ void virtualConstraintsNode::getBezierCurve(Eigen::VectorXd coeff_vec, double ta
     {
         for (int i = 0; i < temp_n_points; i++)
         {
-            clone_vec[i] = getPt(clone_vec.coeff(i), clone_vec.coeff(i+1), tau);
+            clone_vec(i) = getPt(clone_vec.coeff(i), clone_vec.coeff(i+1), tau);
         }
     }
 
     x = clone_vec.coeff(0);
-       
     
-    _logger->add("x_bezier", x);
-    
-    
-    
-    
-    double x1 = coeff_vec.coeff(0); 
-    double x2 = coeff_vec.coeff(1); 
-    double x3 = coeff_vec.coeff(2);
-    double x4 = coeff_vec.coeff(3);
-    double x5 = coeff_vec.coeff(4);
-    double x6 = coeff_vec.coeff(5);
-    
-    double xa, xb, xc, xd, xe;
-    
-    double xm, xn, xk, xp;
-    
-    double xy, xz, xx;
-    
-    double xq, xw;
-    
-    double xfin;
-    
-
-        // The Green Lines
-        xa = getPt( x1 , x2 , tau );
-        xb = getPt( x2 , x3 , tau );
-        xc = getPt( x3 , x4 , tau );
-        xd = getPt( x4 , x5 , tau );
-        xe = getPt( x5 , x6 , tau );
-        
-        // The Blue Line
-        xm = getPt( xa , xb , tau );
-        xn = getPt( xb , xc , tau );
-        xk = getPt( xc , xd , tau );
-        xp = getPt( xd , xe , tau );
-        
-        xy = getPt( xm , xn , tau );
-        xz = getPt( xn , xk , tau );    
-        xx = getPt( xk , xp , tau );
-        // The Black Dot
-        
-        xq = getPt( xy , xz , tau );
-        xw = getPt( xz , xx , tau );
-        
-        xfin = getPt( xq , xw , tau );
-        
-        
-        _logger->add("x_bezier_other", xfin);
-        _logger->add("tau", tau);
-
+    _logger->add("traj_bezier", x);
+    _logger->add("tau", tau);
 }
 
 

@@ -31,6 +31,10 @@
 class virtualConstraintsNode {
 public:
 
+//     class data_incline
+//     {
+//         
+//     }
     class data_step
     {
     public:
@@ -112,11 +116,12 @@ public:
     
     Eigen::MatrixXd get_supportPolygon();
     
-    void update_position(Eigen::Vector3d *current_pose, Eigen::Vector3d update);
+    void update_pose(Eigen::Vector3d *current_pose, Eigen::Vector3d update);
     
     double lateral_com();
     
-    void calc_step(double q1,  Eigen::Vector3d *delta_com,  Eigen::Vector3d *delta_step);
+    Eigen::Vector3d calc_com(double q1);
+    Eigen::Vector3d calc_step(double q1);
     
     bool impact_detected(); 
     
@@ -125,8 +130,10 @@ public:
     double lat_oscillator_com(double starting_time, double phase);
     
     void send(std::string type, Eigen::Vector3d command);
-    void send_step(Eigen::Vector3d foot_command, Eigen::Vector3d com_command);
+    void send_com(Eigen::Vector3d com_command);
+    void send_step(Eigen::Vector3d foot_command);
     
+    void update_com();
     void update_step();
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
