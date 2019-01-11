@@ -69,7 +69,7 @@ int main(int argc, char **argv)
     }
     
     start_idle_time = ros::Time::now().toSec();
-    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +5) {}
+    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
     
     double q1 = 0;
     double starting_time = ros::Time::now().toSec();
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     {
         while (q1 <= 0.3)
         {
-        q1 = q1 + 0.005*(ros::Time::now().toSec() - starting_time);
+        q1 = 0.05*(ros::Time::now().toSec() - starting_time);
         _q1_pub.publish(q1);
         
         
