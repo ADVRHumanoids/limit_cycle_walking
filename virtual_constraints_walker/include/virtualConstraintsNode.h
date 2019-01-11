@@ -218,8 +218,8 @@ protected:
     int _step_counter;
 //     ros::NodeHandle n;
     
-    double _q_min = 0;
-    double _q_max = 0.3;
+    double _q_min;
+    double _q_max;
     
     
     class param

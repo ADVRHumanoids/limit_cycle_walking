@@ -452,8 +452,8 @@ Eigen::Vector3d virtualConstraintsNode::calc_step(double q1)
 bool virtualConstraintsNode::impact_detected()                
     {
 //
-            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-5 &&  
-                fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) -  _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
+            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
+                fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
             {
 
                 _current_pose_ROS.sense();
@@ -462,15 +462,19 @@ bool virtualConstraintsNode::impact_detected()
                 
 
                 robot_interface::Side last_side = _current_side;
-                std::cout << last_side << std::endl;
+                std::cout << "Last side: " << last_side << std::endl;
                _initial_pose = _current_pose_ROS;
                _step_counter++;
                 _current_side = robot_interface::Side::Double;
                 
 //                 get_supportPolygon();
                 
+                
+                
                 std::cout << "Impact! Current state: " << _current_side << std::endl;
                 _current_pose_ROS.get_sole(_current_side);
+                
+                _step.set_com_initial_pose(_current_pose_ROS.get_com());          //ADDED
 
                 if (_step_counter < _initial_param.get_max_steps())
                 {
@@ -591,13 +595,16 @@ void virtualConstraintsNode::run()
         if (initialized) //initialized
         {    
                 first_q1();
+                _q_min = sense_q1();
+                _q_max = 0.3;
 //                 _starting_time = getTime();
-                
-                _current_side = _initial_param.get_first_step_side();
-                std::cout << "State changed. First side: " << _current_side << std::endl;
+
 //                 update_com();
 //                 update_step();
-                
+                                
+                _current_side = _initial_param.get_first_step_side();
+                std::cout << "State changed. First side: " << _current_side << std::endl;
+
                 Eigen::Vector3d com_to_ankle_distance;
                 Eigen::Vector3d delta_step;
                 com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
@@ -605,8 +612,11 @@ void virtualConstraintsNode::run()
                 
                 Eigen::Vector3d initial_sole_position;
                 Eigen::Vector3d final_sole_position;
+                Eigen::Vector3d intial_com_position;
+                
                 initial_sole_position = _current_pose_ROS.get_sole(_current_side);
                 final_sole_position = _current_pose_ROS.get_sole(_current_side);
+                
                 update_pose(&final_sole_position, delta_step);  /*step*/
                 
 //                 std::cout << "initial: " << initial_sole_position << std::endl;
@@ -618,29 +628,50 @@ void virtualConstraintsNode::run()
         }
         
         
-//         sense_qlat();
-        double q1 = sense_q1();
-//         std::cout << "q1: " << q1 << std::endl;
-        double q1_fake = get_q1();
-//         std::cout << "q1_fake: " << q1_fake << std::endl;
-        
-        
-//         if (impact_detected())
-//         {
-//             update_com();
-//             update_step();
-//         }
-
-        double tau = (q1_fake - _q_min) / (_q_max - _q_min);
-//         double tau = (ros::Time::now().toSec() - _step.get_starTime()) / (_step.get_endTime() - _step.get_starTime());
-        
         Eigen::Vector3d foot_trajectory = _step.get_foot_initial_pose();
         Eigen::Vector3d pointsBezier_z;
-        Eigen::Vector2d pointsBezier_x;
-        
+        Eigen::Vector2d pointsBezier_x;        
         double clearance = 0.1;
-        pointsBezier_z << 0,clearance*2,0;
-        pointsBezier_x << 0,1;
+        pointsBezier_z << 0, clearance*2, 0;
+        pointsBezier_x << 0, 1;
+        
+//         sense_qlat();
+        double q1 = sense_q1();
+        double q1_fake = get_q1();
+        double tau = (q1_fake - _q_min) / (_q_max - _q_min);
+        
+// ---------------------------------impact----------------------------------------------------------
+        if (impact_detected())
+        {
+            _q_min = sense_q1();
+            tau = 0;
+            
+            
+            Eigen::Vector3d com_to_ankle_distance;
+            Eigen::Vector3d delta_step;
+            com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
+            delta_step << (- 4* com_to_ankle_distance.z() * tan(_q_max)), 0, 0;
+
+            Eigen::Vector3d initial_sole_position;
+            Eigen::Vector3d final_sole_position;
+            initial_sole_position = _current_pose_ROS.get_sole(_current_side);
+            final_sole_position = _current_pose_ROS.get_sole(_current_side);
+            update_pose(&final_sole_position, delta_step);  /*step*/
+
+            _step.set_foot_initial_pose(initial_sole_position);
+            _step.set_foot_final_pose(final_sole_position);
+            _step.set_com_initial_pose(_current_pose_ROS.get_com());
+            std::cout << "ciao" << std::endl;
+            
+//             update_com();
+//             update_step();
+        }
+// -------------------------------------------------------------------------------------------------  
+//         double tau = (ros::Time::now().toSec() - _step.get_starTime()) / (_step.get_endTime() - _step.get_starTime());
+        
+
+        
+
         
         double trajectory_z = getBezierCurve(pointsBezier_z, tau);
         double trajectory_x = getBezierCurve(pointsBezier_x, tau);
@@ -651,7 +682,8 @@ void virtualConstraintsNode::run()
     
         foot_trajectory(0) = (1 - trajectory_x) * _step.get_foot_initial_pose().coeff(0) + trajectory_x * _step.get_foot_final_pose().coeff(0);
         foot_trajectory(2) = _step.get_foot_initial_pose().coeff(2) + trajectory_z;
-//         std::cout << foot_trajectory.transpose() << std::endl;
+        
+//         std::cout << _step.get_foot_initial_pose().coeff(2) - foot_trajectory.coeff(2) << std::endl;
         
 
         
@@ -662,11 +694,12 @@ void virtualConstraintsNode::run()
         // com update
         Eigen::Vector3d com_trajectory;
         robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
-        Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side); /*if take out minus the robot steps back*/
+        Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
         Eigen::Vector3d delta_com;
         delta_com << - com_to_ankle_distance.z() * tan(q1_fake), 0, 0;
         
         com_trajectory = _step.get_com_initial_pose() + delta_com;
+        
 //         com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xz");
        
         

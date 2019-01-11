@@ -67,19 +67,29 @@ int main(int argc, char **argv)
     VC.straighten_up_action();
     VC.sense_q1();
     }
-    
+// ---------------add idle time ----------------------------
     start_idle_time = ros::Time::now().toSec();
     while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
     
-    double q1 = 0;
+//----------------------------------------------------------  
+    double q1 = VC.sense_q1();
+    
+    std::cout << q1 << std::endl;
+    
     double starting_time = ros::Time::now().toSec();
 //     double ending_time = ros::Time::now().toSec();
     
     
     while (ros::ok() && VC.get_n_step() < VC.get_max_steps())
     {
-        while (q1 <= 0.3)
+        
+//         while (q1 <= 0.3)
+        if (VC.impact_detected())
         {
+            q1 = VC.sense_q1();
+            std::cout << "q1: " << std::endl;
+        }
+        
         q1 = 0.05*(ros::Time::now().toSec() - starting_time);
         _q1_pub.publish(q1);
         
@@ -87,8 +97,16 @@ int main(int argc, char **argv)
         VC.get_robot().sense();
         VC.run();
         loop_rate.sleep();
-        }
+//         }
     }
+    
+// ---------------add idle time ----------------------------
+    start_idle_time = ros::Time::now().toSec();
+    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
+    
+//----------------------------------------------------------  
+
+
 }    
 
 
