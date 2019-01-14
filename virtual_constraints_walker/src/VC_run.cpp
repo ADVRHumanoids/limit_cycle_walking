@@ -72,26 +72,27 @@ int main(int argc, char **argv)
     while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
     
 //----------------------------------------------------------  
-    double q1 = VC.sense_q1();
+    VC._q1_fake = VC.sense_q1();
     
-    std::cout << q1 << std::endl;
+    std::cout << VC._q1_fake << std::endl;
     
     double starting_time = ros::Time::now().toSec();
 //     double ending_time = ros::Time::now().toSec();
     
-    
+    double reset_condition = 0;
     while (ros::ok() && VC.get_n_step() < VC.get_max_steps())
     {
         
-//         while (q1 <= 0.3)
-        if (VC.impact_detected())
-        {
-            q1 = VC.sense_q1();
-            std::cout << "q1: " << std::endl;
-        }
+//         if (VC._flag_impact)
+//         {
+//             reset_condition = reset_condition - VC._q1_fake; // + VC.sense_q1()
+// //             q1 = VC.sense_q1();
+//             std::cout << "q1: " << VC._q1_fake << std::endl;
+//             VC._flag_impact = 0;
+//         }
         
-        q1 = 0.05*(ros::Time::now().toSec() - starting_time);
-        _q1_pub.publish(q1);
+        VC._q1_fake = VC._reset_condition + 0.1*(ros::Time::now().toSec() - starting_time);
+        _q1_pub.publish(VC._q1_fake);
         
         
         VC.get_robot().sense();

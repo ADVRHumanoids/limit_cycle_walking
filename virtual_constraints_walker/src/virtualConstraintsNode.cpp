@@ -19,6 +19,10 @@
 
 virtualConstraintsNode::virtualConstraintsNode()
     {
+        
+//         initialize_cmd_fake_q1(); //TODO
+        
+        
         std::string this_node_name = ros::this_node::getName();
         _logger = XBot::MatLogger::getLogger("/tmp/" + this_node_name);
         ros::NodeHandle n;
@@ -592,8 +596,10 @@ void virtualConstraintsNode::update_step()
     
 void virtualConstraintsNode::run() 
     {
+        
         if (initialized) //initialized
         {    
+                _starting_time = getTime();
                 first_q1();
                 _q_min = sense_q1();
                 _q_max = 0.3;
@@ -637,15 +643,18 @@ void virtualConstraintsNode::run()
         
 //         sense_qlat();
         double q1 = sense_q1();
-        double q1_fake = get_q1();
-        double tau = (q1_fake - _q_min) / (_q_max - _q_min);
         
+        double q1_fake = get_q1();
+        
+       
 // ---------------------------------impact----------------------------------------------------------
         if (impact_detected())
         {
+            q1 = sense_q1();
+            q1_fake = 0;
             _q_min = sense_q1();
-            tau = 0;
-            
+
+//             tau = 0;
             
             Eigen::Vector3d com_to_ankle_distance;
             Eigen::Vector3d delta_step;
@@ -660,12 +669,16 @@ void virtualConstraintsNode::run()
 
             _step.set_foot_initial_pose(initial_sole_position);
             _step.set_foot_final_pose(final_sole_position);
-            _step.set_com_initial_pose(_current_pose_ROS.get_com());
-            std::cout << "ciao" << std::endl;
+//             _step.set_com_initial_pose(_current_pose_ROS.get_com());
+            
+            _flag_impact = 1;
+            _reset_condition = _reset_condition - _q1_fake;
             
 //             update_com();
 //             update_step();
         }
+        
+        double tau = (q1 - _q_min) / (_q_max - _q_min);
 // -------------------------------------------------------------------------------------------------  
 //         double tau = (ros::Time::now().toSec() - _step.get_starTime()) / (_step.get_endTime() - _step.get_starTime());
         
@@ -696,9 +709,12 @@ void virtualConstraintsNode::run()
         robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
         Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
         Eigen::Vector3d delta_com;
-        delta_com << - com_to_ankle_distance.z() * tan(q1_fake), 0, 0;
         
+        delta_com << - com_to_ankle_distance.z() * tan(q1_fake), 0, 0;
         com_trajectory = _step.get_com_initial_pose() + delta_com;
+        
+        _logger->add("delta_com", delta_com);
+        _logger->add("com_initial_pose", _step.get_com_initial_pose());
         
 //         com_trajectory = compute_swing_trajectory(_step.get_com_initial_pose(), _step.get_com_final_pose(), 0, _step.get_starTime(), _step.get_endTime(), ros::Time::now().toSec(), "xz");
        
@@ -908,7 +924,19 @@ double virtualConstraintsNode::getBezierCurve(Eigen::VectorXd coeff_vec, double 
 
 
 
-
+// void virtualConstraintsNode::initialize_cmd_fake_q1()
+// {
+//     ros::NodeHandle n_cmd;
+//     
+//     _q1_pub = n_cmd.advertise<std_msgs::Float64>("/q1", 10);
+// 
+// }
+// 
+// void virtualConstraintsNode::cmd_fake_q1()
+// {
+//     _q1_fake = _reset_condition + 0.1*(getTime() - _starting_time);
+//     _q1_pub.publish(_q1_fake);
+// }
 
 
 

@@ -169,6 +169,8 @@ public:
     
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    
+    
     double getPt( double n1, double n2, double perc);
     double getBezierCurve(Eigen::VectorXd coeff_vec, double tau);
 
@@ -176,6 +178,13 @@ public:
     void first_q1();
     int get_n_step() {return _step_counter;};
     
+    
+    void initialize_cmd_fake_q1();
+    void cmd_fake_q1();
+    
+    double _flag_impact = 0;
+    double _q1_fake;
+    double _reset_condition;
 protected:
     
 //     ros::NodeHandle n;
@@ -189,6 +198,8 @@ protected:
 
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
     ros::Subscriber _q1_sub;
+    
+    ros::Publisher _q1_pub;
     
     robot_interface _initial_pose, _previous_initial_pose;
     robot_interface_ROS _current_pose_ROS;
@@ -206,6 +217,7 @@ protected:
     double _q1_step = 0;
 
     bool _check_received = false;
+    
     
     data_step _step;
     
