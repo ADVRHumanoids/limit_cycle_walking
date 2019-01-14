@@ -634,7 +634,8 @@ void virtualConstraintsNode::run()
         }
         
         
-        Eigen::Vector3d foot_trajectory = _step.get_foot_initial_pose();
+        
+        
         Eigen::Vector3d pointsBezier_z;
         Eigen::Vector2d pointsBezier_x;        
         double clearance = 0.1;
@@ -671,7 +672,6 @@ void virtualConstraintsNode::run()
             _step.set_foot_final_pose(final_sole_position);
 //             _step.set_com_initial_pose(_current_pose_ROS.get_com());
             
-            _flag_impact = 1;
             _reset_condition = _reset_condition - _q1_fake;
             
 //             update_com();
@@ -693,6 +693,7 @@ void virtualConstraintsNode::run()
         _logger->add("traj_bezier_x", trajectory_x);
         _logger->add("tau", tau);
     
+        Eigen::Vector3d foot_trajectory = _step.get_foot_initial_pose();
         foot_trajectory(0) = (1 - trajectory_x) * _step.get_foot_initial_pose().coeff(0) + trajectory_x * _step.get_foot_final_pose().coeff(0);
         foot_trajectory(2) = _step.get_foot_initial_pose().coeff(2) + trajectory_z;
         
@@ -920,9 +921,34 @@ double virtualConstraintsNode::getBezierCurve(Eigen::VectorXd coeff_vec, double 
     return x;
 }
 
-
-
-
+void virtualConstraintsNode::lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, int N, Eigen::VectorXd X, Eigen::VectorXd Y)
+{
+        int i;
+        int j=0;
+        dt = 1/100;
+        double n = x.size();
+        std::cout << n << std::endl;
+//         double N = 0;
+        
+//         for(i=0;i<n-1;i++)
+//         {
+//             N=N+(x[i+1]-x[i])/dt;
+//         }
+    
+        for(i=0;i<n-1;i++)
+        {
+            double yn,xn;
+            for(xn=x[i];xn<x[i+1];xn=xn+dt)
+            {
+                yn=(y[i+1]-y[i])*(xn-x[i])/(x[i+1]-x[i])+y[i];
+                Y[j]=yn;
+                X[j]=xn;
+                j++;
+            }
+        }
+        _logger->add("X", X);
+        _logger->add("Y", Y);
+}
 
 // void virtualConstraintsNode::initialize_cmd_fake_q1()
 // {

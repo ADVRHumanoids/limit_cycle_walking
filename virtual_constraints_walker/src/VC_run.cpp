@@ -1,5 +1,5 @@
-// #include <virtualConstraintsNode.h>
-// 
+#include <virtualConstraintsNode.h>
+
 // int main(int argc, char **argv)
 // {
 //     ros::init(argc, argv, "virtual_constraints");
@@ -9,108 +9,102 @@
 //     
 //     /*synchronize this node to the cartesian interface*/
 //     ros::service::waitForService("cartesian/get_task_list"); 
-//     
+//     ros::Rate loop_rate(100);
 //     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
+//     
+//     double start_idle_time;
+//     
+//     ros::NodeHandle n_cmd;
+//     ros::Publisher _q1_pub;
+//     
+// 
+//     _q1_pub = n_cmd.advertise<std_msgs::Float64>("/q1", 10);
+//     
 // //     std::vector<Eigen::MatrixXd> supportPolygon(VC.get_max_steps());
 //     
 // // --------initialize robot so that q1 is exactly 0---------
 //     if (ros::ok())
 //     {
 //     robot.sense(); /*inside there is ros::spinOnce*/
-//     VC.straighten_up_action();  
-// //     VC.initial_shift_action();
+//     VC.straighten_up_action();
 //     VC.sense_q1();
 //     }
-// // // // ---------------------------------------------------------
-// // //     while (ros::ok())
+// // ---------------add idle time ----------------------------
+//     start_idle_time = ros::Time::now().toSec();
+//     while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
+//     
+// //----------------------------------------------------------  
+//     VC._q1_fake = VC.sense_q1();
+//     
+//     std::cout << VC._q1_fake << std::endl;
+//     
+//     double starting_time = ros::Time::now().toSec();
+// //     double ending_time = ros::Time::now().toSec();
+//     
 //     while (ros::ok() && VC.get_n_step() < VC.get_max_steps())
 //     {
+//         
+//         VC._q1_fake = VC._reset_condition + 0.1*(ros::Time::now().toSec() - starting_time);
+//         _q1_pub.publish(VC._q1_fake);
+//         
+//         
 //         VC.get_robot().sense();
 //         VC.run();
+//         loop_rate.sleep();
+// //         }
 //     }
+//     
+// // ---------------add idle time ----------------------------
+//     start_idle_time = ros::Time::now().toSec();
+//     while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
+//     
+// //----------------------------------------------------------  
+// 
+// 
 // }    
-// 
-// 
-// 
 
 
 
-
-#include <virtualConstraintsNode.h>
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "virtual_constraints");
-    
-    
     virtualConstraintsNode VC;
-    
-    /*synchronize this node to the cartesian interface*/
-    ros::service::waitForService("cartesian/get_task_list"); 
     ros::Rate loop_rate(100);
-    robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
     
-    double start_idle_time;
+    Eigen::Vector3d x; 
+    Eigen::Vector3d y;
     
-    ros::NodeHandle n_cmd;
-    ros::Publisher _q1_pub;
+    double dt = 1/100;
     
-
-    _q1_pub = n_cmd.advertise<std_msgs::Float64>("/q1", 10);
+    x << 0, 0.5, 2;
+    y << -1, 0, 3;
     
-//     std::vector<Eigen::MatrixXd> supportPolygon(VC.get_max_steps());
+    std::cout << x.transpose() << std::endl;
+    std::cout << y.transpose() << std::endl;
     
-// --------initialize robot so that q1 is exactly 0---------
-    if (ros::ok())
-    {
-    robot.sense(); /*inside there is ros::spinOnce*/
-    VC.straighten_up_action();
-    VC.sense_q1();
-    }
-// ---------------add idle time ----------------------------
-    start_idle_time = ros::Time::now().toSec();
-    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
+    int n = 3;
+    int N = 0;
     
-//----------------------------------------------------------  
-    VC._q1_fake = VC.sense_q1();
-    
-    std::cout << VC._q1_fake << std::endl;
-    
-    double starting_time = ros::Time::now().toSec();
-//     double ending_time = ros::Time::now().toSec();
-    
-    double reset_condition = 0;
-    while (ros::ok() && VC.get_n_step() < VC.get_max_steps())
-    {
+    for(int i=0; i<n-1; i++)
+        {
+            std::cout << "saccapala: " << x.coeff(i+1)-x.coeff(i) << std::endl;
+            std::cout << "dt: " << dt << std::endl;
+            N= N + (x.coeff(i+1)-x.coeff(i))/dt;
+            std::cout << "N: " << N << std::endl;
+        }
         
-//         if (VC._flag_impact)
-//         {
-//             reset_condition = reset_condition - VC._q1_fake; // + VC.sense_q1()
-// //             q1 = VC.sense_q1();
-//             std::cout << "q1: " << VC._q1_fake << std::endl;
-//             VC._flag_impact = 0;
-//         }
-        
-        VC._q1_fake = VC._reset_condition + 0.1*(ros::Time::now().toSec() - starting_time);
-        _q1_pub.publish(VC._q1_fake);
-        
-        
-        VC.get_robot().sense();
-        VC.run();
-        loop_rate.sleep();
-//         }
-    }
+    std::cout << "end N: " << N << std::endl;
     
-// ---------------add idle time ----------------------------
-    start_idle_time = ros::Time::now().toSec();
-    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
+    Eigen::VectorXd X(N);
+    Eigen::VectorXd Y(N);
+//     
+//     VC.lSpline(x, y, dt, N, X, Y);
+
+   
+
     
-//----------------------------------------------------------  
-
-
-}    
-
-
+}
 
 
 //////////////// trial for bezier ///////////////////////////

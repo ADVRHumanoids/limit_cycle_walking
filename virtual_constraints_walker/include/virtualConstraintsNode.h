@@ -182,7 +182,8 @@ public:
     void initialize_cmd_fake_q1();
     void cmd_fake_q1();
     
-    double _flag_impact = 0;
+    void lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, int N, Eigen::VectorXd X, Eigen::VectorXd Y);
+    
     double _q1_fake;
     double _reset_condition;
 protected:
