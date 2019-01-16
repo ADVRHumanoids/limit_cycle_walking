@@ -467,7 +467,7 @@ bool virtualConstraintsNode::impact_detected()
                 
 
                 robot_interface::Side last_side = _current_side;
-                std::cout << "Last side: " << last_side << std::endl;
+//                 std::cout << "Last side: " << last_side << std::endl;
                _initial_pose = _current_pose_ROS;
                _step_counter++;
                 _current_side = robot_interface::Side::Double;
@@ -602,13 +602,15 @@ void virtualConstraintsNode::first_q1()
 //     }
 void virtualConstraintsNode::fakeCOM()
     {
+        _current_pose_ROS.sense();
+        
         if (initialized) //initialized
         {   
             _step.get_com_initial_pose() = _current_pose_ROS.get_com();
 //             std::cout << "starting com: " << _current_pose_ROS.get_com().transpose() << std::endl;
         }
         
-        _current_pose_ROS.sense();
+        
         double q1_fake = get_q1();
         
         Eigen::Vector3d com_trajectory;
@@ -932,17 +934,18 @@ double virtualConstraintsNode::getBezierCurve(Eigen::VectorXd coeff_vec, double 
     return x;
 }
 
-void virtualConstraintsNode::lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, Eigen::VectorXd &X, Eigen::VectorXd &Y)
+void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, double dt, Eigen::VectorXd &X, Eigen::VectorXd &Y)
 {
-        int j=0;
-        dt = 1.0/100;
-        double n = x.size();
-        std::cout << n << std::endl;
-        double N = 0;
+    int j=0;
+    dt = 1.0/100;
+    std::cout << "dt: " << dt << std::endl;
+    double n = times.size();
+    std::cout << "n: " << n << std::endl;
+    double N = 0;
         
     for(int i=0; i<n-1; i++)
     { 
-            N = N + (x.coeff(i+1)-x.coeff(i))/dt;
+            N = N + (times.coeff(i+1)-times.coeff(i))/dt;
     }
     
     std::cout << "N: " << N << std::endl;
@@ -953,9 +956,9 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd x, Eigen::VectorXd y, doubl
     for(int i=0; i<n-1; i++)
     {
         double yn,xn;
-        for(xn= x.coeff(i); xn < x.coeff(i+1); xn = xn+dt)
+        for(xn= times.coeff(i); xn < times.coeff(i+1); xn = xn+dt)
         {
-            yn=(y.coeff(i+1)-y.coeff(i))*(xn-x.coeff(i))/(x.coeff(i+1)-x.coeff(i))+y.coeff(i);
+            yn=(y.coeff(i+1)-y.coeff(i))*(xn-times.coeff(i))/(times.coeff(i+1)-times.coeff(i))+y.coeff(i);
             Y[j] = yn;
             X[j] = xn;
             j++;
@@ -967,27 +970,82 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd x, Eigen::VectorXd y, doubl
 
 }
 
-void virtualConstraintsNode::traj_zmp()
+void virtualConstraintsNode::traj_zmp(double y_start, double t_start, double T)
     {
-        Eigen::VectorXd x(4); 
-        Eigen::VectorXd y(4);
+
         
+        double step_duration = 0.3;
         double dt;
         dt = 1.0/100;
+        
+        double T_tot = T + t_start;
+        
+        double frac_part;
+        int step_number = floor(T/step_duration);
+        frac_part = T/step_duration - step_number;
+        
+        std::cout << "step_number: " << step_number << std::endl;
+        std::cout << "frac_part: " << frac_part << std::endl;
+        
+        Eigen::VectorXd y, times;
+        
+        if (frac_part == 0)
+        {
+            y.resize(step_number*2 + 1,1);
+            times.resize(step_number*2 + 1,1);
+        }
+        else
+        {
+            y.resize(step_number*2 + 2,1); 
+            times.resize(step_number*2 + 2,1);
+        }
+        
+        int size_y = y.size();
+        int size_times = times.size();
+        
+        std::cout << "size_y: " << size_y << std::endl;
+        std::cout << "size_times: " << size_times << std::endl;
+        
+        times(0) = t_start;
+        y(0) = y_start;
+        int myswitch = 1;
+        int j = 1;
+        for (int i = 1; i<=step_number; i++)
+        {
+            
+            times(j) = t_start + step_duration*(floor(t_start/step_duration) + i);
+            times(j+1) = t_start + step_duration*(floor(t_start/step_duration) + i);
+            
+            y(j) = myswitch * y_start;
+            y(j+1) = myswitch * -1 * y_start;
+            myswitch = -1 * myswitch;
+            j = j+2;
+            
+        }
+        
+        if (frac_part != 0)
+        {
+            times(step_number*2 + 1) = T_tot;
+                
+            if (step_number % 2)
+            {
+                y(step_number*2 + 1) = -y_start;
+            }
+            else
+            {
+                y(step_number*2 + 1) = y_start;
+            }
+        }
+        
+        std::cout << "y:" <<  y.transpose() << std::endl;
+        std::cout << "times:" <<  times.transpose() << std::endl;
+        
 
-        x << 0, 0.5, 2, 5;
-        y << -1, 0.5, 3, 10;
-        
-        
-        double n = x.size();
-        
-        std::cout << "n: " << n << std::endl;
-        
 
         Eigen::VectorXd X;
         Eigen::VectorXd Y;
         
-        lSpline(x, y, dt, X, Y);
+        lSpline(times, y, dt, X, Y);
     }
 
 // void virtualConstraintsNode::initialize_cmd_fake_q1()
@@ -1011,7 +1069,20 @@ void virtualConstraintsNode::traj_zmp()
 
 
 
-
+Eigen::VectorXd virtualConstraintsNode::zmp_traj(Eigen::VectorXd times)
+{
+    int m = 1;
+    int N = times.size();
+    Eigen::VectorXd zmp_traj(N);
+    
+    for (int i = 0; i<N; i++)
+    {
+    zmp_traj(i) = cos(m*3.14*times(i)) >0;
+    
+    _logger->add("zmp_traj",zmp_traj(i));
+    }
+    return zmp_traj;
+}
 
 
 

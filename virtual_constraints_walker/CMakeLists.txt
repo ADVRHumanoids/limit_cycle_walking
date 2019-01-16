@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(XBotInterface REQUIRED)
+find_package(OpenMpC REQUIRED)
 
 # # Generate messages in the 'msg' folder
 # add_message_files(
@@ -71,6 +72,7 @@ target_link_libraries(virtual_constraints_walker ${catkin_LIBRARIES} ${XBotInter
 
 
 add_executable(VC_run src/VC_run.cpp)
+add_executable(kajitaTest src/kajitaTraj.cpp)
 
 
 #target_link_libraries(VC_publisher ${catkin_LIBRARIES})
@@ -78,6 +80,8 @@ add_executable(VC_run src/VC_run.cpp)
 #target_link_libraries(VC_listener ${catkin_LIBRARIES})
 
 target_link_libraries(VC_run virtual_constraints_walker ${catkin_LIBRARIES})
+
+target_link_libraries(kajitaTest ${OpenMpC_LIBRARIES})
  
 #add_dependencies(VC_publisher)
 #add_dependencies(VC_subscriber)
