@@ -110,6 +110,7 @@ public:
     
     void q1_callback(const std_msgs::Float64 msg_rcv); //this is called by ros
     
+    void set_q1(double cmd_q1);
     double get_q1();
     bool new_q1();
     
@@ -126,8 +127,10 @@ public:
     Eigen::Vector3d calc_step(double q1);
     
     bool impact_detected(); 
+    bool impact();
     
-    void run();
+    void fakeCOM();
+    void run();  // put everything but this on the protected side
     
     double lat_oscillator_com(double starting_time, double phase);
     
@@ -182,17 +185,18 @@ public:
     void initialize_cmd_fake_q1();
     void cmd_fake_q1();
     
-    void lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, int N, Eigen::VectorXd X, Eigen::VectorXd Y);
+    void traj_zmp();
+    void lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, Eigen::VectorXd& X, Eigen::VectorXd& Y);
     
     double _q1_fake;
-    double _reset_condition;
+    double _reset_condition = 0;
 protected:
     
 //     ros::NodeHandle n;
     bool _start_walk = 0;
     bool _end_walk = 0;
     
-    double _starting_time;
+    double _starting_time = 0;
     double _reducer;
     int _numerator = 0;
     ros::Publisher _com_pub;     
@@ -208,7 +212,7 @@ protected:
     double _q1_cmd;
     double _q1_state;
     
-
+    double _initial_height;
     int _joint_number = 10; /*ankle_pitch_angle*/
 
     Eigen::Vector3d _foot_trajectory;
@@ -258,6 +262,7 @@ protected:
         int _max_steps;
 
     } _initial_param;
+    double _initial_q1;
     
 };
 
