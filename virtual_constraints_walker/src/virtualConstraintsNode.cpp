@@ -971,7 +971,7 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
         Y.segment(idx, temp_vec.size()) = temp_vec;
         idx += temp_vec.size();    
     }
-    std::cout << Y.transpose() << std::endl;
+//     std::cout << Y.transpose() << std::endl;
     for (int i = 0; i < times_vec.size(); i++)
     {
         _logger->add("times", times_vec(i));
@@ -979,92 +979,68 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
     }
 }
 
-void virtualConstraintsNode::traj_zmp(double y_start, double t_start, double T)
+void virtualConstraintsNode::traj_zmp(double y_start, double t_start)
     {
 
-        
         double step_duration = 0.3;
         double dt;
         dt = 1.0/100;
         
-        double T_tot = T + t_start;
+        int max_steps = 2;
+        int num_points = 2 * max_steps;
         
-        double frac_part;
-        int step_number = floor(T/step_duration);
-        frac_part = T/step_duration - step_number;
+        double t_end = t_start + step_duration*num_points;
         
-        std::cout << "step_number: " << step_number << std::endl;
-        std::cout << "frac_part: " << frac_part << std::endl;
-        
+        std::cout << "t_end: " << t_end << std::endl;
         Eigen::VectorXd y, times;
         
-        if (frac_part == 0)
-        {
-            y.resize(step_number*2 + 1,1);
-            times.resize(step_number*2 + 1,1);
-        }
-        else
-        {
-            y.resize(step_number*2 + 2,1); 
-            times.resize(step_number*2 + 2,1);
-        }
-        
-        int size_y = y.size();
-        int size_times = times.size();
-        
-        std::cout << "size_y: " << size_y << std::endl;
-        std::cout << "size_times: " << size_times << std::endl;
-        
-        times(0) = t_start;
-        y(0) = y_start;
-        int myswitch = 1;
-        int j = 1;
-        for (int i = 1; i<=step_number; i++)
-        {
+
+        y.resize(num_points*2,1);
+        times.resize(num_points*2,1);
             
-            times(j) = t_start + step_duration*(floor(t_start/step_duration) + i);
-            times(j+1) = t_start + step_duration*(floor(t_start/step_duration) + i);
+
+//         times(0) = 0;
+//         y(0) = 0;
+        
+        int myswitch = 1;
+        int j = 0;
+        //without double stance generator
+        for (int i = 0; i<num_points; i++)
+        { 
+            times(j) = t_start + step_duration* i;    
+            times(j+1) = t_start + step_duration* (i+1);
             
             y(j) = myswitch * y_start;
-            y(j+1) = myswitch * -1 * y_start;
+            y(j+1) = myswitch * y_start;
             myswitch = -1 * myswitch;
             j = j+2;
-            
         }
         
-        if (frac_part != 0)
-        {
-            times(step_number*2 + 1) = T_tot;
-                
-            if (step_number % 2)
-            {
-                y(step_number*2 + 1) = -y_start;
-            }
-            else
-            {
-                y(step_number*2 + 1) = y_start;
-            }
-        }
+    
+        Eigen::VectorXd y_tot(y.size() + 2);
+        Eigen::VectorXd times_tot(times.size() + 2);
         
-        //     check consistency
-    
-    for (int i =0; i< times.size(); i++)
-    {
-        if (times.coeff(i+1) == times.coeff(i))
-        {
-            times(i+1) = times.coeff(i+1)+dt;
-        }
-    }
-    
+//         y_tot.head(0) = 0.0;
+//         y_tot.segment(1,y.size()) = y;
+//         y_tot.tail(1) = 0.0;
+        
+//         times_tot.segment(0,1) = 0.0;
+//         times_tot.segment(1,times.size()) = times;
+//         times_tot.segment(times.size(),1) = 0.0;
+        
         std::cout << "y:" <<  y.transpose() << std::endl;
         std::cout << "times:" <<  times.transpose() << std::endl;
         
-
+        std::cout << "y_tot:" <<  y_tot.transpose() << std::endl;
+        std::cout << "times_tot:" <<  times_tot.transpose() << std::endl;
+        
+      
 
         Eigen::VectorXd X;
         Eigen::VectorXd Y;
         
-        lSpline(times, y, dt, X, Y);
+//         lSpline(times_tot, y_tot, dt, X, Y);
+//         lSpline(times, y, dt, X, Y);
     }
 
 // void virtualConstraintsNode::initialize_cmd_fake_q1()
