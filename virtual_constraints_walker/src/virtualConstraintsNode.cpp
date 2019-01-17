@@ -934,40 +934,49 @@ double virtualConstraintsNode::getBezierCurve(Eigen::VectorXd coeff_vec, double 
     return x;
 }
 
-void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, double dt, Eigen::VectorXd &X, Eigen::VectorXd &Y)
+void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, double dt, Eigen::VectorXd &times_vec, Eigen::VectorXd &Y)
 {
-    int j=0;
+
     dt = 1.0/100;
     std::cout << "dt: " << dt << std::endl;
-    double n = times.size();
+    int n = times.size();
     std::cout << "n: " << n << std::endl;
     double N = 0;
-        
+    
+    
+    Eigen::VectorXi N_chunks(n-1);
+    
     for(int i=0; i<n-1; i++)
     { 
             N = N + (times.coeff(i+1)-times.coeff(i))/dt;
+            N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);
+            
     }
     
-    std::cout << "N: " << N << std::endl;
+//     std::cout << "N: " << N << std::endl;
+//     std::cout << "N_progress: " << N_chunks.transpose() << std::endl;
     
-    X.resize(N,1);
+    
     Y.resize(N,1);
     
+    times_vec.setLinSpaced(N, dt, dt*N);
+
+
+    int idx = 0;
     for(int i=0; i<n-1; i++)
     {
-        double yn,xn;
-        for(xn= times.coeff(i); xn < times.coeff(i+1); xn = xn+dt)
-        {
-            yn=(y.coeff(i+1)-y.coeff(i))*(xn-times.coeff(i))/(times.coeff(i+1)-times.coeff(i))+y.coeff(i);
-            Y[j] = yn;
-            X[j] = xn;
-            j++;
-            
-            _logger->add("X", yn);
-            _logger->add("Y", xn);
-        }
-    }
+        Eigen::VectorXd temp_vec(N_chunks(i));
+        temp_vec.setLinSpaced(N_chunks(i), y.coeff(i), y.coeff(i+1));
 
+        Y.segment(idx, temp_vec.size()) = temp_vec;
+        idx += temp_vec.size();    
+    }
+    std::cout << Y.transpose() << std::endl;
+    for (int i = 0; i < times_vec.size(); i++)
+    {
+        _logger->add("times", times_vec(i));
+        _logger->add("Y", Y(i));
+    }
 }
 
 void virtualConstraintsNode::traj_zmp(double y_start, double t_start, double T)
@@ -1037,6 +1046,16 @@ void virtualConstraintsNode::traj_zmp(double y_start, double t_start, double T)
             }
         }
         
+        //     check consistency
+    
+    for (int i =0; i< times.size(); i++)
+    {
+        if (times.coeff(i+1) == times.coeff(i))
+        {
+            times(i+1) = times.coeff(i+1)+dt;
+        }
+    }
+    
         std::cout << "y:" <<  y.transpose() << std::endl;
         std::cout << "times:" <<  times.transpose() << std::endl;
         

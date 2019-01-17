@@ -134,7 +134,7 @@ int main(int argc, char **argv)
     starting_time = ros::Time::now().toSec();
     ending_time = ros::Time::now().toSec() + 4;
     
-    VC.traj_zmp(-0.1,0,3.2);
+    VC.traj_zmp(-0.1,1,3);
     
 //         while (ros::ok() && ros::Time::now().toSec() <= ending_time +1)
 //     {  
