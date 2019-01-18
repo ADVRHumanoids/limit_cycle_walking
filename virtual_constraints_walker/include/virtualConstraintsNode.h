@@ -185,9 +185,10 @@ public:
     void initialize_cmd_fake_q1();
     void cmd_fake_q1();
     
-    void traj_zmp(double x_start, double t_start);
-    Eigen::VectorXd zmp_traj(Eigen::VectorXd times);
+    void generate_zmp(double y_start, double t_start, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
     void lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, Eigen::VectorXd& X, Eigen::VectorXd& Y);
+    void zmp_traj(double window_start, double window_end);
+    
     
     double _q1_fake;
     double _reset_condition = 0;

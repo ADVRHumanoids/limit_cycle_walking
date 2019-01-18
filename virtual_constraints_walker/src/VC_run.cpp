@@ -82,43 +82,6 @@
 // 
 // }    
 
-//////////////// trial for trajzmp //////////////////////////
-
-
-// int main(int argc, char **argv)
-// {
-// 
-//     ros::init(argc, argv, "virtual_constraints");
-//     virtualConstraintsNode VC;
-//     ros::Rate loop_rate(100);
-// 
-// 
-//     double starting_time, ending_time;
-// 
-//     double clearance = 0.5;
-//     starting_time = ros::Time::now().toSec();
-//     ending_time = ros::Time::now().toSec() + 4;
-//     bool flag = true;
-//     double dt = 0.01;
-//     double T = 15;
-//     
-//     int n = T/dt;
-//     Eigen::VectorXd vec_times(n);
-//     
-//     for (int i=0;i<n;i++)
-//     {
-//         vec_times(i) = dt*i;
-//         
-//     }
-//     
-//     VC.zmp_traj(vec_times);
-//         while (ros::ok() && ros::Time::now().toSec() <= ending_time +1)
-//     {  
-//         VC.traj_zmp();
-//         loop_rate.sleep();
-//     }
-// }
-
 ////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv)
 {
@@ -134,7 +97,9 @@ int main(int argc, char **argv)
     starting_time = ros::Time::now().toSec();
     ending_time = ros::Time::now().toSec() + 4;
     
-    VC.traj_zmp(-0.1,2);
+    Eigen::VectorXd times;
+    
+    VC.zmp_traj(2, 4);
     
 //         while (ros::ok() && ros::Time::now().toSec() <= ending_time +1)
 //     {  
