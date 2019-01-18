@@ -948,18 +948,16 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
     
     for(int i=0; i<n-1; i++)
     { 
-            N = N + (times.coeff(i+1)-times.coeff(i))/dt;
-            N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);
-            
+        N = N + (times.coeff(i+1)-times.coeff(i))/dt;
+        N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);      
     }
     
 //     std::cout << "N: " << N << std::endl;
 //     std::cout << "N_progress: " << N_chunks.transpose() << std::endl;
+
+    Y.resize(N+1,1);
     
-    
-    Y.resize(N,1);
-    
-    times_vec.setLinSpaced(N, dt, dt*N);
+    times_vec.setLinSpaced(N+1, 0, dt*N);
 
     int idx = 0;
     for(int i=0; i<n-1; i++)
@@ -1024,41 +1022,39 @@ void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double
         lSpline(times_tot, y_tot, dt, zmp_t, zmp_y);
     }
 
-void virtualConstraintsNode::zmp_traj(double window_start, double window_end)
+void virtualConstraintsNode::zmp_traj(double window_start, double window_end, Eigen::VectorXd &zmp_window_t, Eigen::VectorXd &zmp_window_y)
     {
         double dt = 1.0/100;
         
-        if (window_start == 0)
-        {
-            window_start = dt;
-        } //TODO bad add also negative
-        
-        Eigen::VectorXd zmp_t;
-        Eigen::VectorXd zmp_y;
+
         
         double first_step = -0.1;
         double start_walk = 1;
         
       
+        Eigen::VectorXd zmp_t;
+        Eigen::VectorXd zmp_y;
+        
         generate_zmp(first_step, start_walk, dt, zmp_t, zmp_y);
         
-        std::cout << "zmp_t: " << zmp_t.transpose() << std::endl;
-//         std::cout << "zmp_y: " << zmp_y.transpose() << std::endl;
+        int window_size = round((window_end - window_start))/dt + 1;
         
-        int window_size = (window_end - window_start)/dt + 1;
+        std::cout << "(window_end - window_start)/dt: " << (window_end - window_start)/dt << std::endl;
+        std::cout << "window_start: " << window_start << std::endl;
+        std::cout << "window_end: " << window_end << std::endl;
         
-        Eigen::VectorXd zmp_window_t;
+        
+        
         zmp_window_t.setLinSpaced(window_size, window_start, window_end);
-        std::cout << "zmp_t1: " << zmp_window_t.transpose() << std::endl;
         
         int i = 0;
-        while (i < zmp_t.size() && zmp_t[i] < window_start) //
+        while (i < zmp_t.size() && zmp_t[i] < window_start)
         {
             i++;
         }
 //         
         int j = 0;
-        while (j < zmp_t.size() && zmp_t[j] < window_end) // 
+        while (j < zmp_t.size() && zmp_t[j] < window_end)
         {
             j++;
         }
@@ -1070,7 +1066,7 @@ void virtualConstraintsNode::zmp_traj(double window_start, double window_end)
             _logger->add("zmp_y", zmp_y(i));
         }
 //        
-        Eigen::VectorXd zmp_window_y(window_size);
+        zmp_window_y.resize(window_size,1);
 //        
         std::cout << "window_size: "<< window_size << std::endl;
         std::cout << "i: " << i << std::endl;
@@ -1082,8 +1078,8 @@ void virtualConstraintsNode::zmp_traj(double window_start, double window_end)
 //         
         for (int i = 0; i < zmp_window_t.size(); i++)
         {
-            _logger->add("zmp_window_t", zmp_window_t);
-            _logger->add("zmp_window_y", zmp_window_y);
+            _logger->add("zmp_window_t", zmp_window_t(i));
+            _logger->add("zmp_window_y", zmp_window_y(i));
         }
     }
     

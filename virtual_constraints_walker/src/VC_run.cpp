@@ -97,9 +97,9 @@ int main(int argc, char **argv)
     starting_time = ros::Time::now().toSec();
     ending_time = ros::Time::now().toSec() + 4;
     
-    Eigen::VectorXd times;
+    Eigen::VectorXd times, y;
     
-    VC.zmp_traj(2, 4);
+    VC.zmp_traj(0, 4, times, y);
     
 //         while (ros::ok() && ros::Time::now().toSec() <= ending_time +1)
 //     {  

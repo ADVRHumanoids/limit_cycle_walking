@@ -31,18 +31,16 @@ void lSpline(Eigen::VectorXd times, Eigen::VectorXd y, double dt, Eigen::VectorX
     
     for(int i=0; i<n-1; i++)
     { 
-            N = N + (times.coeff(i+1)-times.coeff(i))/dt;
-            N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);
-            
+        N = N + (times.coeff(i+1)-times.coeff(i))/dt;
+        N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);      
     }
     
 //     std::cout << "N: " << N << std::endl;
 //     std::cout << "N_progress: " << N_chunks.transpose() << std::endl;
+
+    Y.resize(N+1,1);
     
-    
-    Y.resize(N,1);
-    
-    times_vec.setLinSpaced(N, dt, dt*N);
+    times_vec.setLinSpaced(N+1, 0, dt*N);
 
     int idx = 0;
     for(int i=0; i<n-1; i++)
@@ -53,15 +51,22 @@ void lSpline(Eigen::VectorXd times, Eigen::VectorXd y, double dt, Eigen::VectorX
         Y.segment(idx, temp_vec.size()) = temp_vec;
         idx += temp_vec.size();    
     }
+
+    
+//     for (int i = 0; i < times_vec.size(); i++)
+//     {
+//         _logger->add("times", times_vec(i));
+//         _logger->add("Y", Y(i));
+//     }
 }
 
 void generate_zmp(double y_start, double t_start, double dt, Eigen::VectorXd &zmp_t, Eigen::VectorXd &zmp_y)
     {
 
         double step_duration = 0.3;
-        int max_steps = 10;
-    
-    
+
+        
+        int max_steps = 2;
         int num_points = 2 * max_steps;
         
         double t_end = t_start + step_duration*num_points;
@@ -104,54 +109,63 @@ void zmp_traj(double window_start, double window_end, Eigen::VectorXd &zmp_windo
     {
         double dt = 1.0/100;
         
-        if (window_start == 0)
-        {
-            window_start = dt;
-        } //TODO bad add also negative
+
         
+        double first_step = -0.1;
+        double start_walk = 1;
+        
+      
         Eigen::VectorXd zmp_t;
         Eigen::VectorXd zmp_y;
         
-        double first_step = -0.3;
-        double start_walk = 2;
-        
-      
         generate_zmp(first_step, start_walk, dt, zmp_t, zmp_y);
-
         
         int window_size = round((window_end - window_start)/dt) + 1;
         
         std::cout << "(window_end - window_start)/dt: " << (window_end - window_start)/dt << std::endl;
         std::cout << "window_start: " << window_start << std::endl;
         std::cout << "window_end: " << window_end << std::endl;
-
+        
+        
+        
         zmp_window_t.setLinSpaced(window_size, window_start, window_end);
         
         int i = 0;
-        while (i < zmp_t.size() && zmp_t[i] < window_start) //
+        while (i < zmp_t.size() && zmp_t[i] < window_start)
         {
             i++;
         }
 //         
         int j = 0;
-        while (j < zmp_t.size() && zmp_t[j] < window_end) // 
+        while (j < zmp_t.size() && zmp_t[j] < window_end)
         {
             j++;
         }
         
+        
+//         for (int i = 0; i < zmp_t.size(); i++)
+//         {
+//             _logger->add("zmp_t", zmp_t(i));
+//             _logger->add("zmp_y", zmp_y(i));
+//         }
 //        
         zmp_window_y.resize(window_size,1);
-   
+//        
+        std::cout << "window_size: "<< window_size << std::endl;
+        std::cout << "i: " << i << std::endl;
+        std::cout << "j: " << j << std::endl;      
 // 
         zmp_window_y.setZero();
         zmp_window_y.segment(0, j-i) = zmp_y.segment(i, j-i);
-        
-        std::cout << "window_size: " << window_size << std::endl;
-        std::cout << "zmp_window_y_size: " << zmp_window_y.size() << std::endl;
 //         
-        
+//         
+//         for (int i = 0; i < zmp_window_t.size(); i++)
+//         {
+//             _logger->add("zmp_window_t", zmp_window_t(i));
+//             _logger->add("zmp_window_y", zmp_window_y(i));
+//         }
     }
-
+    
 int main(int argc, char **argv)
 {
     XBot::MatLogger::Ptr _logger;
@@ -168,11 +182,11 @@ int main(int argc, char **argv)
     C_zmp<<1 ,0, -1.0/std::pow(w, 2.0);
     integrator->addOutput("zmp", C_zmp);
     
-    double Ts = 0.01;
+    double Ts = 0.01; // dt window
     
-    double T = 2;
+    double T = 4; //length window in sec
     
-    int N = 2/0.01 +1;
+    int N = T/0.01; //same as the integration time
     
     OpenMpC::UnconstrainedMpc lqr(integrator, Ts, N);
     
@@ -209,14 +223,16 @@ int main(int argc, char **argv)
     Eigen::VectorXd zmp_window_t;
     Eigen::VectorXd zmp_window_y;
     
-
+    zmp_traj(0, T, zmp_window_t, zmp_window_y);
     
+            _logger->add("zmp_window_t", zmp_window_t);
+            _logger->add("zmp_window_y", zmp_window_y);
     
     for (int i =1; i<2000; i++)
     {
         Eigen::VectorXd u(1);
         
-    zmp_traj(dt*i, T+dt*i, zmp_window_t, zmp_window_y);
+        zmp_traj(dt*i, T+dt*i, zmp_window_t, zmp_window_y);
 //         Eigen::VectorXd zmp_ref = step_width*zmp_traj(times.array() + dt*i);
          
         u = K_fb * x + K_prev * zmp_window_y;
