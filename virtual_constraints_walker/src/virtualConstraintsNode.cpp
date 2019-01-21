@@ -17,6 +17,8 @@
     return first_time.exchange(false); } ())
     
 
+ 
+    
 virtualConstraintsNode::virtualConstraintsNode()
     {
         
@@ -644,9 +646,16 @@ void virtualConstraintsNode::run()
         if (initialized) //initialized
         {    
 
-//                 start timer
-//                 set_q1(_initial_q1);             
-//                 first_q1();
+                _starting_time = ros::Time::now().toSec();
+                
+                double Ts = 0.01;
+                double T = 5;
+                std::cout << "_initial_height" << _initial_height <<  std::endl;
+                
+                double initial_pose_y = _current_pose_ROS.get_com().coeff(1);
+                _com_y << initial_pose_y, 0, 0;
+                
+                _MpC_lat = std::make_shared<item_MpC>(_initial_height, Ts, T);
                 
                 _q_min = sense_q1();
                 _q_max = 0.3;
@@ -671,9 +680,13 @@ void virtualConstraintsNode::run()
                 _step.set_foot_initial_pose(initial_sole_position);
                 _step.set_foot_final_pose(final_sole_position);
                 
+//                 ros::Duration(0.5).sleep();
+                
         }
         
 
+        Eigen::Vector3d com_lat = lateral_com();
+        
         Eigen::Vector3d pointsBezier_z;
         Eigen::Vector2d pointsBezier_x;        
         double clearance = 0.1;
@@ -687,9 +700,6 @@ void virtualConstraintsNode::run()
 //         std::cout << q1 << std::endl;
 
         double tau = (q1 - _q_min) / (_q_max - _q_min);
-        
-   
-// //                 double tau = (ros::Time::now().toSec() - _step.get_starTime()) / (_step.get_endTime() - _step.get_starTime());
 
 
         double trajectory_z = getBezierCurve(pointsBezier_z, tau);
@@ -701,6 +711,10 @@ void virtualConstraintsNode::run()
         
         _logger->add("time", getTime());
     
+//         Eigen::Vector3d com_trajectory = _current_pose_ROS.get_com();
+//         com_trajectory(1) = com_lat(0);
+//         send_com(com_trajectory);
+        
         Eigen::Vector3d foot_trajectory = _step.get_foot_initial_pose();
         foot_trajectory(0) = (1 - trajectory_x) * _step.get_foot_initial_pose().coeff(0) + trajectory_x * _step.get_foot_final_pose().coeff(0);
         foot_trajectory(2) = _step.get_foot_initial_pose().coeff(2) + trajectory_z;
@@ -938,9 +952,9 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
 {
 
     dt = 1.0/100;
-    std::cout << "dt: " << dt << std::endl;
+//     std::cout << "dt: " << dt << std::endl;
     int n = times.size();
-    std::cout << "n: " << n << std::endl;
+//     std::cout << "n: " << n << std::endl;
     double N = 0;
     
     
@@ -952,24 +966,29 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
         N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);      
     }
     
-//     std::cout << "N: " << N << std::endl;
+//      std::cout << "N: " << N << std::endl;
 //     std::cout << "N_progress: " << N_chunks.transpose() << std::endl;
 
     Y.resize(N+1,1);
+    Y.setZero();
     
     times_vec.setLinSpaced(N+1, 0, dt*N);
 
+//      std::cout << "times_vec: " << times_vec.transpose() << std::endl;
+     
     int idx = 0;
     for(int i=0; i<n-1; i++)
     {
         Eigen::VectorXd temp_vec(N_chunks(i));
         temp_vec.setLinSpaced(N_chunks(i), y.coeff(i), y.coeff(i+1));
+//         std::cout << "temp_vec: " << temp_vec.transpose() << std::endl;
         //TODO fix make it start from 0
         Y.segment(idx, temp_vec.size()) = temp_vec;
-        idx += temp_vec.size();    
+        idx += temp_vec.size();
+//         std::cout << "idx: " << idx << std::endl;
     }
 
-    
+//     std::cout << "Y: " << Y.transpose() << std::endl;
     for (int i = 0; i < times_vec.size(); i++)
     {
         _logger->add("times", times_vec(i));
@@ -982,14 +1001,12 @@ void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double
 
         double step_duration = 0.3;
 
-        
-        int max_steps = 2;
-        int num_points = 2 * max_steps;
+        int num_points = 2 * _initial_param.get_max_steps();
         
         double t_end = t_start + step_duration*num_points;
         //TODO qui potrei mettere anche un t_windows_end
         
-        std::cout << "t_end: " << t_end << std::endl;
+//         std::cout << "t_end: " << t_end << std::endl;
         Eigen::VectorXd y, times;
         
 
@@ -1028,7 +1045,7 @@ void virtualConstraintsNode::zmp_traj(double window_start, double window_end, Ei
         
 
         
-        double first_step = -0.1;
+        double first_step = _current_pose_ROS.get_sole(_initial_param.get_first_step_side()).coeff(1);
         double start_walk = 1;
         
       
@@ -1039,9 +1056,9 @@ void virtualConstraintsNode::zmp_traj(double window_start, double window_end, Ei
         
         int window_size = round((window_end - window_start))/dt + 1;
         
-        std::cout << "(window_end - window_start)/dt: " << (window_end - window_start)/dt << std::endl;
-        std::cout << "window_start: " << window_start << std::endl;
-        std::cout << "window_end: " << window_end << std::endl;
+//         std::cout << "(window_end - window_start)/dt: " << (window_end - window_start)/dt << std::endl;
+//         std::cout << "window_start: " << window_start << std::endl;
+//         std::cout << "window_end: " << window_end << std::endl;
         
         
         
@@ -1068,25 +1085,47 @@ void virtualConstraintsNode::zmp_traj(double window_start, double window_end, Ei
 //        
         zmp_window_y.resize(window_size,1);
 //        
-        std::cout << "window_size: "<< window_size << std::endl;
+/*        std::cout << "window_size: "<< window_size << std::endl;
         std::cout << "i: " << i << std::endl;
-        std::cout << "j: " << j << std::endl;      
+        std::cout << "j: " << j << std::endl;   */   
 // 
         zmp_window_y.setZero();
         zmp_window_y.segment(0, j-i) = zmp_y.segment(i, j-i);
 //         
 //         
-        for (int i = 0; i < zmp_window_t.size(); i++)
-        {
-            _logger->add("zmp_window_t", zmp_window_t(i));
-            _logger->add("zmp_window_y", zmp_window_y(i));
-        }
+//         for (int i = 0; i < zmp_window_t.size(); i++)
+//         {
+//             _logger->add("zmp_window_t", zmp_window_t(i));
+//             _logger->add("zmp_window_y", zmp_window_y(i));
+//         }
     }
     
     
+
+
+Eigen::Vector3d virtualConstraintsNode::lateral_com()
+{
     
-    
-    
+ 
+        Eigen::VectorXd zmp_window_t;
+        Eigen::VectorXd zmp_window_y;
+        
+        Eigen::VectorXd u(1);
+        double dt = 0.01;
+        
+        zmp_traj(getTime(), _MpC_lat->_window_length + getTime(), zmp_window_t, zmp_window_y);
+        u = _MpC_lat->_K_fb * _com_y + _MpC_lat->_K_prev * zmp_window_y;
+        
+        _MpC_lat->_integrator->integrate(_com_y, u, dt, _com_y);
+        
+        _logger->add("com", _com_y);
+        _logger->add("u", u);
+        _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
+        _logger->add("zmp_ref", zmp_window_y.coeff(0));
+        
+        return _com_y;    
+}
+
     
     
     

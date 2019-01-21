@@ -1,112 +1,116 @@
 #include <virtualConstraintsNode.h>
 
-// int main(int argc, char **argv)
-// {
-//     ros::init(argc, argv, "virtual_constraints");
-//     
-//     
-//     virtualConstraintsNode VC;
-//     
-//     /*synchronize this node to the cartesian interface*/
-//     ros::service::waitForService("cartesian/get_task_list"); 
-//     ros::Rate loop_rate(100);
-//     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
-//     
-//     double start_idle_time;
-//     
-//     ros::NodeHandle n_cmd;
-//     ros::Publisher _q1_pub;
-//     
-// 
-//     _q1_pub = n_cmd.advertise<std_msgs::Float64>("/q1", 10);
-//     
-// //     std::vector<Eigen::MatrixXd> supportPolygon(VC.get_max_steps());
-//     
-// // --------initialize robot so that q1 is exactly 0---------
-//     if (ros::ok())
-//     {
-//     robot.sense(); /*inside there is ros::spinOnce*/
-//     VC.straighten_up_action();
-//     VC.sense_q1();
-//     }
-// // ---------------add idle time ----------------------------
-//     start_idle_time = ros::Time::now().toSec();
-//     while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
-//     
-// //----------------------------------------------------------  
-//     double q1_fake = VC.sense_q1();
-//     double q1_temp = q1_fake;
-// //     std::cout << VC._q1_fake << std::endl;
-//     
-//     double starting_time = ros::Time::now().toSec();
-// //     double ending_time = ros::Time::now().toSec();
-//     double last_q1_fake = 0;
-//     while (ros::ok() && VC.get_n_step() < VC.get_max_steps())
-//     {
-// 
-// //         VC.get_robot().sense();
-//         
-//         
-//         q1_temp = 0.1*(ros::Time::now().toSec() - starting_time);
-//         q1_fake = q1_temp - last_q1_fake;
-//         _q1_pub.publish(q1_fake);
-//         
-//         
-//         VC.get_robot().sense();  //boh shouldn't be here
-//         
-//         
-//         VC.fakeCOM();
-//         
-//         VC.get_robot().sense();
-//         
-//         VC.run();
-//         
-//         
-//         if (VC.impact())
-//         {
-//             last_q1_fake = q1_temp;
-//         }
-//         
-//         
-//         
-//         loop_rate.sleep();
-// //         }
-//     }
-//     
-// // ---------------add idle time ----------------------------
-//     start_idle_time = ros::Time::now().toSec();
-//     while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
-//     
-// //----------------------------------------------------------  
-// 
-// 
-// }    
-
-////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv)
 {
-
     ros::init(argc, argv, "virtual_constraints");
+    
+    
     virtualConstraintsNode VC;
+    
+    /*synchronize this node to the cartesian interface*/
+    ros::service::waitForService("cartesian/get_task_list"); 
     ros::Rate loop_rate(100);
+    robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
+    
+    double start_idle_time;
+    
+    ros::NodeHandle n_cmd;
+    ros::Publisher _q1_pub;
+    
+
+    _q1_pub = n_cmd.advertise<std_msgs::Float64>("/q1", 10);
+    
+//     std::vector<Eigen::MatrixXd> supportPolygon(VC.get_max_steps());
+    
+// --------initialize robot so that q1 is exactly 0---------
+    if (ros::ok())
+    {
+    robot.sense(); /*inside there is ros::spinOnce*/
+    VC.straighten_up_action();
+    VC.sense_q1();
+    }
+// ---------------add idle time ----------------------------
+    start_idle_time = ros::Time::now().toSec();
+    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
+    
+//----------------------------------------------------------  
+    double q1_fake = VC.sense_q1();
+    double q1_temp = q1_fake;
+//     std::cout << VC._q1_fake << std::endl;
+    
+    double starting_time = ros::Time::now().toSec();
+//     double ending_time = ros::Time::now().toSec();
+    double last_q1_fake = 0;
+    while (ros::ok() && VC.get_n_step() < VC.get_max_steps())
+    {
+
+//         VC.get_robot().sense();
+        
+        
+        q1_temp = 0.1*(ros::Time::now().toSec() - starting_time);
+        q1_fake = q1_temp - last_q1_fake;
+        
+        
+        std_msgs::Float64 cmd_q1;
+        cmd_q1.data = q1_fake;
+        _q1_pub.publish(cmd_q1);
+        
+        
+        VC.get_robot().sense();  //boh shouldn't be here
+        
+        
+        VC.fakeCOM();
+        
+        VC.get_robot().sense();
+        
+        VC.run();
+        
+        
+        if (VC.impact())
+        {
+            last_q1_fake = q1_temp;
+        }
+        
+        
+        
+        loop_rate.sleep();
+//         }
+    }
+    
+// ---------------add idle time ----------------------------
+    start_idle_time = ros::Time::now().toSec();
+    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
+    
+//----------------------------------------------------------  
 
 
-    double starting_time, ending_time;
+}    
 
-    double clearance = 0.5;
-    starting_time = ros::Time::now().toSec();
-    ending_time = ros::Time::now().toSec() + 4;
-    
-    Eigen::VectorXd times, y;
-    
-    VC.zmp_traj(0, 4, times, y);
-    
-//         while (ros::ok() && ros::Time::now().toSec() <= ending_time +1)
+////////////////////////////////////////////////////////////////////
+// int main(int argc, char **argv)
+// {
+// 
+//     ros::init(argc, argv, "virtual_constraints");
+//     virtualConstraintsNode VC;
+//     ros::Rate loop_rate(100);
+// 
+// 
+//     double starting_time, ending_time;
+// 
+//     starting_time = ros::Time::now().toSec();
+//     ending_time = ros::Time::now().toSec() + 5;
+//     
+//     VC.initializeMpc();
+// //     VC.zmp_traj(0, 4, times, y);
+//     
+//     while (ros::ok() && ros::Time::now().toSec() <= ending_time)
+// //         for (int i =1; i<2000; i++)
 //     {  
-//         VC.traj_zmp();
+//         Eigen::VectorXd com_y = VC.lateral_com();
 //         loop_rate.sleep();
 //     }
-}
+//     
+// }
 
 //////////////// trial for bezier ///////////////////////////
 // int main(int argc, char **argv)

@@ -12,6 +12,8 @@
 #include <sensor_msgs/JointState.h>
 #include "std_msgs/Float64.h"
 
+#include <OpenMpC/solver/UnconstrainedMpc.h>
+
 #include <XBotInterface/MatLogger.hpp>
 
 #include <memory>
@@ -25,7 +27,7 @@
 #include <robot_interface_ROS.h>
 
 #define PI 3.141592653589793238463
-
+# define grav 9.80665 
 
 
 class virtualConstraintsNode {
@@ -93,6 +95,66 @@ public:
     };  
     
     
+    class item_MpC
+    {
+        public:
+            
+        item_MpC(double initial_height, double Ts, double T)
+        {
+            double h = initial_height; //TODO current or initial?
+            double w = sqrt(9.8/h);
+            
+            // inverted pendulum
+            _integrator = OpenMpC::dynamics::LtiDynamics::Integrator(3,1);
+            _window_length = T;
+            
+            _C_zmp << 1 ,0, -1.0/std::pow(w, 2.0);
+            
+            _integrator->addOutput("zmp", _C_zmp);
+            
+            Ts = 0.01; // dt window
+            
+            T = 5; //length window in sec
+            
+            int N = T/0.01; //same as the integration time 
+            
+            OpenMpC::UnconstrainedMpc lqr(_integrator, Ts, N+1);
+            
+            Eigen::MatrixXd Q(1,1);
+            Eigen::MatrixXd R(1,1);
+            
+            Q << 1000000; //1000000
+            R << 1;
+            
+            lqr.addInputTask(R);
+            lqr.addOutputTask("zmp", Q);
+            
+            lqr.compute();
+            
+//             _K_fb.resize(3,1);
+//             _K_prev.resize(N+1,1);
+            
+            _K_fb = lqr.getStateFeedbackGain();
+            _K_prev = lqr.getOutputFeedforwardGainPreview("zmp");
+                 
+//             std::cout << "_K_fb: " << _K_fb << std::endl;
+//             std::cout << "_K_prev: " << _K_prev << std::endl;
+//             
+//             std::cout << "K_fb_size: " << _K_fb.size() << std::endl;
+//             std::cout << "K_prev_size: " << _K_prev.size() << std::endl;
+        };
+        
+
+        
+
+        Eigen::MatrixXd _K_fb;
+        Eigen::MatrixXd _K_prev;
+        double _window_length;
+        Eigen::Matrix<double, 1,3> _C_zmp;
+        OpenMpC::dynamics::LtiDynamics::Ptr _integrator;
+        
+    };
+    
     virtualConstraintsNode();
     ~virtualConstraintsNode() {_logger->flush();};
     
@@ -121,7 +183,9 @@ public:
     
     void update_pose(Eigen::Vector3d *current_pose, Eigen::Vector3d update);
     
-    double lateral_com();
+    
+    double initialize_MpC();
+    Eigen::Vector3d lateral_com();
     
     Eigen::Vector3d calc_com(double q1);
     Eigen::Vector3d calc_step(double q1);
@@ -190,8 +254,11 @@ public:
     void zmp_traj(double window_start, double window_end, Eigen::VectorXd& zmp_window_t, Eigen::VectorXd& zmp_window_y);
     
     
+    
+    void initializeMpc();
     double _q1_fake;
     double _reset_condition = 0;
+    
 protected:
     
 //     ros::NodeHandle n;
@@ -228,6 +295,8 @@ protected:
     
     data_step _step;
     
+    std::shared_ptr<item_MpC> _MpC_lat;
+    
     robot_interface_ROS::Side _current_side = robot_interface::Side::Double; 
     
     XBot::MatLogger::Ptr _logger;
@@ -240,6 +309,8 @@ protected:
     double _q_min;
     double _q_max;
     
+
+    Eigen::Vector3d _com_y; 
     
     class param
     {
