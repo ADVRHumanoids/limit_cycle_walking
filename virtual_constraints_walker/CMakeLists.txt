@@ -45,11 +45,13 @@ find_package(OpenMpC REQUIRED)
 # )
 
 
-#catkin_package(
-#   CATKIN_DEPENDS roscpp std_msgs
-#   CATKIN_DEPENDS message_runtime
+catkin_package(
+   INCLUDE_DIRS 
+   LIBRARIES 
+#  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
-#)
+   
+)
 
 
 include_directories(${EIGEN3_INCLUDE_DIR})

@@ -8,7 +8,7 @@
                                     output="screen"
                                     launch-prefix="$(arg prefix)">
 
-<rosparam command="load" file="/home/francesco/advr-superbuild/external/limit_cycle_walking/virtual_constraints_walker/launch/walking_param/param_example.yaml"/>
+<rosparam command="load" file="$(env ROBOTOLOGY_ROOT)/external/limit_cycle_walking/virtual_constraints_walker/launch/walking_param/param_example.yaml"/>
 
 </node>
 

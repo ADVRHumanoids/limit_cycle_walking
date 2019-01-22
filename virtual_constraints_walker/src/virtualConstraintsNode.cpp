@@ -748,7 +748,7 @@ void virtualConstraintsNode::run_walk()
                 double Ts = 0.01;
                 double T = 5;
                 
-                _steep_coeff = 0.2;
+                _steep_coeff = 0.6;
                 _q_initial = sense_q1();
                 _q_min = sense_q1();
                 _q_max = 0.3;
