@@ -190,7 +190,7 @@ public:
     Eigen::Vector3d calc_com(double q1);
     Eigen::Vector3d calc_step(double q1);
     
-    bool impact_detected(); 
+    int impact_detected(); 
     bool impact();
     
     void fakeCOM();
@@ -204,6 +204,8 @@ public:
     
     void update_com();
     void update_step();
+    
+    void run_walk();
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
                                                     const Eigen::Vector3d& end, 
@@ -258,14 +260,16 @@ public:
     void initializeMpc();
     double _q1_fake;
     double _reset_condition = 0;
+    double _impact_cond = 0;
+    double _reset_time = 0;
+    double _starting_time = 0;
     
 protected:
     
 //     ros::NodeHandle n;
-    bool _start_walk = 0;
-    bool _end_walk = 0;
+    bool _start_walk;
+    double _steep_coeff;
     
-    double _starting_time = 0;
     double _reducer;
     int _numerator = 0;
     ros::Publisher _com_pub;     
@@ -306,10 +310,11 @@ protected:
     int _step_counter;
 //     ros::NodeHandle n;
     
+    double _q_initial;
     double _q_min;
     double _q_max;
     
-
+   double _step_duration;
     Eigen::Vector3d _com_y; 
     
     class param
