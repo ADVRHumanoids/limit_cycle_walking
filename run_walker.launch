@@ -1,0 +1,10 @@
+<launch>
+
+<include file="/home/francesco/advr-superbuild/external/limit_cycle_walking/cogimon_walker/launch/comanPlus_virtualConstraints.launch"/>
+<include file="/home/francesco/advr-superbuild/external/limit_cycle_walking/virtual_constraints_walker/launch/virtual_constraints_walker.launch"/>
+
+<node type="rviz" name="rviz" pkg="rviz"/>
+<node type="rqt_publisher" name="rqt_publisher" pkg="rqt_publisher"/>
+
+</launch>
+
