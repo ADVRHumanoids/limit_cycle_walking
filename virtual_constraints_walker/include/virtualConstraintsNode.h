@@ -153,6 +153,7 @@ public:
             
         item_MpC(double initial_height, double Ts, double T)
         {
+            
             double h = initial_height; //TODO current or initial?
             double w = sqrt(9.8/h);
             
@@ -160,17 +161,18 @@ public:
             _integrator = OpenMpC::dynamics::LtiDynamics::Integrator(3,1);
             _window_length = T;
             
+            _Ts = Ts;
             _C_zmp << 1 ,0, -1.0/std::pow(w, 2.0);
             
             _integrator->addOutput("zmp", _C_zmp);
             
-            Ts = 0.01; // dt window
+//             Ts = 0.01; // dt window
+//             
+//             T = 5; //length window in sec
             
-            T = 5; //length window in sec
+            int N = _window_length/0.01; //same as the integration time 
             
-            int N = T/0.01; //same as the integration time 
-            
-            OpenMpC::UnconstrainedMpc lqr(_integrator, Ts, N+1);
+            OpenMpC::UnconstrainedMpc lqr(_integrator, _Ts, N+1);
             
             Eigen::MatrixXd Q(1,1);
             Eigen::MatrixXd R(1,1);
@@ -194,6 +196,10 @@ public:
 //             
 //             std::cout << "K_fb_size: " << _K_fb.size() << std::endl;
 //             std::cout << "K_prev_size: " << _K_prev.size() << std::endl;
+            
+            
+            
+            
         };
         
 
@@ -204,8 +210,13 @@ public:
         double _window_length;
         Eigen::Matrix<double, 1,3> _C_zmp;
         OpenMpC::dynamics::LtiDynamics::Ptr _integrator;
+        double _Ts;
+        
+
         
     };
+    
+
     
     virtualConstraintsNode();
     ~virtualConstraintsNode() {_logger->flush();};
@@ -319,7 +330,7 @@ public:
 protected:
     
 //     ros::NodeHandle n;
-    bool _start_walk;
+    double _start_walk;
     double _steep_coeff;
     
     double _reducer;
@@ -348,6 +359,8 @@ protected:
     double _q1_offset;
     bool _check_received = false;
     
+    Eigen::VectorXd _zmp_t;
+    Eigen::VectorXd _zmp_y;
     
     data_step_poly _poly_step;
     data_step_bezier _bezi_step;
@@ -367,7 +380,14 @@ protected:
     double _q_min;
     double _q_max;
     
-   double _step_duration;
+    
+    Eigen::VectorXd _zmp_window_t;
+    Eigen::VectorXd _zmp_window_y;
+
+//     Eigen::VectorXd u(1);
+    Eigen::Matrix<double,1,1> _u;
+    
+    double _step_duration;
     Eigen::Vector3d _com_y; 
     
     class param
@@ -380,19 +400,24 @@ protected:
         robot_interface::Side get_first_step_side() {return _first_step_side;};
         int get_max_steps() {return _max_steps;};
         
+        double get_indent_zmp() {return _indentation_zmp;};
+        
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
         void set_duration_step(double duration_step) {_duration_step = duration_step;};
         void set_first_step_side(robot_interface::Side first_step_side) {_first_step_side = first_step_side;};
         void set_max_steps(int max_steps) {_max_steps = max_steps;};
         
+        void set_indent_zmp(double indentation_zmp) {_indentation_zmp = indentation_zmp;};
+        
     private:
         
-        double _crouch, _clearance_step, _duration_step;
+        double _crouch, _clearance_step, _duration_step, _indentation_zmp;
         robot_interface::Side _first_step_side;
         int _max_steps;
-
+        
     } _initial_param;
+    
     double _initial_q1;
     
 };

@@ -58,7 +58,7 @@ bool virtualConstraintsNode::get_param_ros()
     {
         ros::NodeHandle nh_priv("~");
         int max_steps;
-        double clearance_heigth, duration, drop;
+        double clearance_heigth, duration, drop, indentation_zmp;
         std::string first_side;
 
         /*default parameters*/
@@ -67,17 +67,20 @@ bool virtualConstraintsNode::get_param_ros()
         double default_duration = 2;
         std::string default_first_side = "Left";
         int default_max_steps = 10;
+        double default_indentation_zmp = 0;
         
         drop = nh_priv.param("initial_crouch", default_drop);
         max_steps = nh_priv.param("max_steps", default_max_steps);
         duration = nh_priv.param("duration_step", default_duration);
         clearance_heigth = nh_priv.param("clearance_step", default_clearance_heigth);
         first_side = nh_priv.param("first_step_side", default_first_side);
+        indentation_zmp = nh_priv.param("indent_zmp", default_indentation_zmp);
         
         _initial_param.set_crouch(drop);
         _initial_param.set_max_steps(max_steps);
         _initial_param.set_duration_step(duration);
         _initial_param.set_clearance_step(clearance_heigth);
+        _initial_param.set_indent_zmp(indentation_zmp);
         
         if (first_side == "Left")
                 _initial_param.set_first_step_side(robot_interface::Side::Left);
@@ -466,7 +469,8 @@ int virtualConstraintsNode::impact_detected()
 //             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
 //                 fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
         
-            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-2  && getTime() > 1.3 && _impact_cond > 0.4)
+            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-2  && getTime() > (_start_walk + 0.2)  && _impact_cond > 0.2)
+//             if (_current_pose_ROS.get_sole(_current_side).coeff(2) - _terrain_heigth <= 0.0  && getTime() > 1.3 && _impact_cond > 0.4)
             {
                 _current_pose_ROS.sense();
                 
@@ -684,7 +688,6 @@ void virtualConstraintsNode::run()
                 
                 _bezi_step.set_foot_initial_pose(initial_sole_position);
                 _bezi_step.set_foot_final_pose(final_sole_position);
-                
 //                 ros::Duration(0.5).sleep();
                 
         }
@@ -742,7 +745,7 @@ void virtualConstraintsNode::run_walk()
         {    
                 /* step */
                 
-                double clearance = 0.1;
+                double clearance = _initial_param.get_clearance_step();
                 _reset_condition = 0; 
                 Eigen::Vector3d initial_sole_position;
                 Eigen::Vector3d final_sole_position;
@@ -754,6 +757,8 @@ void virtualConstraintsNode::run_walk()
                 pointsBezier_x << 0, 1;
                 _current_side = _initial_param.get_first_step_side();
                 std::cout << "State changed. First side: " << _current_side << std::endl;
+                robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
+                
                 
                 initial_com_position = _current_pose_ROS.get_com();;
                 initial_sole_position = _current_pose_ROS.get_sole(_current_side);
@@ -763,6 +768,7 @@ void virtualConstraintsNode::run_walk()
                 Eigen::Vector3d delta_step;
                 com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
                 delta_step << (- 2* com_to_ankle_distance.z() * tan(_q_max)), 0, 0;
+                
                 
                 update_pose(&final_sole_position, delta_step);  /*step*/
                 
@@ -776,23 +782,40 @@ void virtualConstraintsNode::run_walk()
                 
                 /* comy */
                 
-                double Ts = 0.01; //rate of ros
+                double Ts = 0.01; //window resolution
                 double T = 5; //window length for MpC
-                _steep_coeff = 0.6; // how fast is the step
+                double dt = 0.01; //rate of ros
+                std::cout << "Window resolution (sec): " << Ts <<  std::endl;
+                std::cout << "Window length (sec): " << T <<  std::endl;
                 
-                _start_walk = 2;
-                _q_min = 0; 
-//                 _q_min = sense_q1(); // min angle of inclination
+                _start_walk = 1;
+                _q_min = sense_q1(); // min angle of inclination
                 _q_max = 0.3; // max angle of inclination
                 
-                _step_duration = _q_max/_steep_coeff;
+                _step_duration = _initial_param.get_duration_step();
                 
+                _steep_coeff = _q_max/_step_duration;
+                
+                std::cout << "Start walk time: " << _start_walk <<  std::endl;
+                std::cout << "Max angle of inclination: " << _q_max <<  std::endl;
                 std::cout << "Step duration: " << _step_duration <<  std::endl;
-               
-                _com_y << initial_com_position(1), 0, 0; //used by mpc // pos, vel, acc
+                
+                _com_y << initial_com_position(1), 0, 0; //com trajectory used by mpc: pos, vel, acc
+                
+                int sign_first_stance_step = (_current_pose_ROS.get_sole(other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(other_side).coeff(1) < 0);
+                
+                double first_stance_step = _current_pose_ROS.get_sole(other_side).coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
+
+                // generate zmp given start walk and first stance step
+                generate_zmp(first_stance_step, _start_walk, dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them
+        
+                for (int i = 0; i < (_zmp_t).size(); i++)
+                {
+                    _logger->add("zmp_t", (_zmp_t)(i));
+                    _logger->add("zmp_y", (_zmp_y)(i));
+                }
                 
                 _MpC_lat = std::make_shared<item_MpC>(_initial_height, Ts, T);
-
                 
                 _starting_time = ros::Time::now().toSec();
                 std::cout << "Initial time: " << getTime() << std::endl;
@@ -802,28 +825,26 @@ void virtualConstraintsNode::run_walk()
 //         
         double q1_temp = 0;
         double q1;
-        if (getTime() > 1)
+        
+        if (getTime() > _start_walk)
         {
             if (initialized)
             {
                 _q1_offset  = getTime();
                 _q_min = sense_q1(); 
-            }    
+            }
                 q1_temp = _steep_coeff*(getTime() - _q1_offset);
-                std::cout << "offset: " << _q1_offset << std::endl;
-                std::cout << "q1_temp: " << q1_temp << std::endl;
         }
         
         q1 = q1_temp - _reset_condition;
-        std::cout << "q1: " << q1 << std::endl; 
         _impact_cond = getTime() - _reset_time;
         
-        std::cout << "_impact_cond: " << _impact_cond << std::endl;
         
         if (impact_detected() == 1)
         {
             _q_min = sense_q1();
             _reset_condition = q1_temp;
+            
             Eigen::Vector3d com_to_ankle_distance;
             Eigen::Vector3d delta_step;
             com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
@@ -898,8 +919,8 @@ void virtualConstraintsNode::run_walk()
         
         if (_step_counter < _initial_param.get_max_steps())
         {
-        send_step(foot_trajectory);
-        send_com(com_trajectory_lat);
+            send_step(foot_trajectory);
+            send_com(com_trajectory_lat);
         }
 }
 bool virtualConstraintsNode::impact()
@@ -1126,10 +1147,7 @@ double virtualConstraintsNode::getBezierCurve(Eigen::VectorXd coeff_vec, double 
 void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, double dt, Eigen::VectorXd &times_vec, Eigen::VectorXd &Y)
 {
 
-    dt = 1.0/100;
-//     std::cout << "dt: " << dt << std::endl;
     int n = times.size();
-//     std::cout << "n: " << n << std::endl;
     double N = 0;
     
     
@@ -1156,11 +1174,8 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
     {
         Eigen::VectorXd temp_vec(N_chunks(i));
         temp_vec.setLinSpaced(N_chunks(i), y.coeff(i), y.coeff(i+1));
-//         std::cout << "temp_vec: " << temp_vec.transpose() << std::endl;
-        //TODO fix make it start from 0
         Y.segment(idx, temp_vec.size()) = temp_vec;
         idx += temp_vec.size();
-//         std::cout << "idx: " << idx << std::endl;
     }
 
 //     std::cout << "Y: " << Y.transpose() << std::endl;
@@ -1171,29 +1186,38 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
     }
 }
 
-void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double dt, Eigen::VectorXd &zmp_t, Eigen::VectorXd &zmp_y)
-    {
-
-        int num_points = 2 * _initial_param.get_max_steps();
-        
+void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y)
+{
+        int num_points = _initial_param.get_max_steps();
         double t_end = t_start + _step_duration*num_points;
         //TODO qui potrei mettere anche un t_windows_end
-        
-//         std::cout << "t_end: " << t_end << std::endl;
         Eigen::VectorXd y, times;
         
-
         y.resize(num_points*2,1);
         times.resize(num_points*2,1);
             
 
+//         int myswitch = 1;
+//         int j = 0;
+//         //without double stance generator
+//         for (int i = 0; i<num_points; i++)
+//         { 
+//             times(j) = t_start + _step_duration* i;    
+//             times(j+1) = t_start + _step_duration* (i+1);
+//             
+//             y(j) = myswitch * y_start;
+//             y(j+1) = myswitch * y_start;
+//             myswitch = -1 * myswitch;
+//             j = j+2;
+//         }
+        double double_stance = 0.0;
         int myswitch = 1;
+        int i = 0;
         int j = 0;
-        //without double stance generator
-        for (int i = 0; i<num_points; i++)
-        { 
-            times(j) = t_start + _step_duration* i;    
-            times(j+1) = t_start + _step_duration* (i+1);
+        for (i = 0; i<num_points; i++)
+        {
+            times(j) = t_start + _step_duration* i + double_stance*(i+1);    
+            times(j+1) = t_start + _step_duration* (i+1) + double_stance*(i+1);
             
             y(j) = myswitch * y_start;
             y(j+1) = myswitch * y_start;
@@ -1201,75 +1225,43 @@ void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double
             j = j+2;
         }
         
-    
+        
         Eigen::VectorXd y_tot(y.size() + 3);
         Eigen::VectorXd times_tot(times.size() + 3);
         
         y_tot << 0, 0, y, 0;
-        times_tot << 0, t_start, times, t_end;
+        times_tot << 0, t_start, times, t_end + double_stance*(i+1);
 
+        std::cout << "y_tot: " << y_tot.transpose() << std::endl;
+        std::cout << "times_tot: " << times_tot.transpose() << std::endl;
         
         lSpline(times_tot, y_tot, dt, zmp_t, zmp_y);
     }
 
 void virtualConstraintsNode::zmp_traj(double window_start, double window_end, Eigen::VectorXd &zmp_window_t, Eigen::VectorXd &zmp_window_y)
     {
-        double dt = 1.0/100;
-        
 
         
-        double first_step = _current_pose_ROS.get_sole((robot_interface::Side)(1 - static_cast<int>(_initial_param.get_first_step_side()))).coeff(1);
-        
-      
-        Eigen::VectorXd zmp_t;
-        Eigen::VectorXd zmp_y;
-        
-        generate_zmp(first_step, _start_walk, dt, zmp_t, zmp_y); //TODO this should be done once only OK
-        
-        int window_size = round((window_end - window_start))/dt + 1;
-        
-//         std::cout << "(window_end - window_start)/dt: " << (window_end - window_start)/dt << std::endl;
-//         std::cout << "window_start: " << window_start << std::endl;
-//         std::cout << "window_end: " << window_end << std::endl;
-        
-        
-        
+        int window_size = round((window_end - window_start))/_MpC_lat->_Ts + 1;
+
         zmp_window_t.setLinSpaced(window_size, window_start, window_end);
         
         int i = 0;
-        while (i < zmp_t.size() && zmp_t[i] < window_start)
+        while (i < _zmp_t.size() && _zmp_t(i) < window_start)
         {
             i++;
         }
 //         
         int j = 0;
-        while (j < zmp_t.size() && zmp_t[j] < window_end)
+        while (j < _zmp_t.size() && _zmp_t(j) < window_end)
         {
             j++;
         }
         
-        
-        for (int i = 0; i < zmp_t.size(); i++)
-        {
-            _logger->add("zmp_t", zmp_t(i));
-            _logger->add("zmp_y", zmp_y(i));
-        }
-//        
         zmp_window_y.resize(window_size,1);
-//        
-/*        std::cout << "window_size: "<< window_size << std::endl;
-        std::cout << "i: " << i << std::endl;
-        std::cout << "j: " << j << std::endl;   */   
-// 
+
         zmp_window_y.setZero();
-        zmp_window_y.segment(0, j-i) = zmp_y.segment(i, j-i);
-//         
-//         
-//         for (int i = 0; i < zmp_window_t.size(); i++)
-//         {
-//             _logger->add("zmp_window_t", zmp_window_t(i));
-//             _logger->add("zmp_window_y", zmp_window_y(i));
-//         }
+        zmp_window_y.segment(0, j-i) = (_zmp_y).segment(i, j-i);
     }
     
     
@@ -1279,21 +1271,21 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com()
 {
     
  
-        Eigen::VectorXd zmp_window_t;
-        Eigen::VectorXd zmp_window_y;
-        
-        Eigen::VectorXd u(1);
+//         Eigen::VectorXd zmp_window_t;
+//         Eigen::VectorXd zmp_window_y;
+//         
+//         Eigen::VectorXd u(1);
+    
         double dt = 0.01;
+        zmp_traj(getTime(), _MpC_lat->_window_length + getTime(), _zmp_window_t, _zmp_window_y);
+        _u = _MpC_lat->_K_fb * _com_y + _MpC_lat->_K_prev * _zmp_window_y;
         
-        zmp_traj(getTime(), _MpC_lat->_window_length + getTime(), zmp_window_t, zmp_window_y);
-        u = _MpC_lat->_K_fb * _com_y + _MpC_lat->_K_prev * zmp_window_y;
-        
-        _MpC_lat->_integrator->integrate(_com_y, u, dt, _com_y);
+        _MpC_lat->_integrator->integrate(_com_y, _u, dt, _com_y);
         
         _logger->add("com", _com_y);
-        _logger->add("u", u);
+        _logger->add("u", _u);
         _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
-        _logger->add("zmp_ref", zmp_window_y.coeff(0));
+        _logger->add("zmp_ref", _zmp_window_y.coeff(0));
         
         return _com_y;    
 }
