@@ -1159,8 +1159,8 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
         N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);      
     }
     
-//      std::cout << "N: " << N << std::endl;
-//     std::cout << "N_progress: " << N_chunks.transpose() << std::endl;
+    std::cout << "N: " << N << std::endl;
+    std::cout << "N_progress: " << N_chunks.transpose() << std::endl;
 
     Y.resize(N+1,1);
     Y.setZero();
@@ -1174,7 +1174,10 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
     {
         Eigen::VectorXd temp_vec(N_chunks(i));
         temp_vec.setLinSpaced(N_chunks(i), y.coeff(i), y.coeff(i+1));
+        
+        
         Y.segment(idx, temp_vec.size()) = temp_vec;
+        std::cout << "Y.segment: " << Y.segment(idx, temp_vec.size()).transpose() << std::endl;
         idx += temp_vec.size();
     }
 
@@ -1210,7 +1213,7 @@ void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double
 //             myswitch = -1 * myswitch;
 //             j = j+2;
 //         }
-        double double_stance = 0.0;
+        double double_stance = 0.5;
         int myswitch = 1;
         int i = 0;
         int j = 0;
