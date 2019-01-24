@@ -33,11 +33,7 @@
 class virtualConstraintsNode {
 public:
 
-//     class data_incline
-//     {
-//         
-//     }
-    class data_step
+    class data_step_poly
     {
     public:
         
@@ -59,24 +55,24 @@ public:
             _starTime = starTime;
             _endTime = endTime;        
         }
+    
+        void log(XBot::MatLogger::Ptr logger) { logger->add("step_initial_pose_Poly", _step_initial_pose);
+                                                logger->add("step_final_pose_Poly", _step_final_pose);
+                                                logger->add("com_initial_pose_Poly", _com_initial_pose);
+                                                logger->add("com_final_pose_Poly", _com_final_pose);
+                                                logger->add("step_clearing_Poly", _step_clearing);
+                                                logger->add("com_clearing_Poly", _com_clearing);
+                                                logger->add("starTime_Poly", _starTime);
+                                                logger->add("endTime_Poly", _endTime);}
         
-        void log(XBot::MatLogger::Ptr logger) { logger->add("step_initial_pose", _step_initial_pose);
-                                                logger->add("step_final_pose", _step_final_pose);
-                                                logger->add("com_initial_pose", _com_initial_pose);
-                                                logger->add("com_final_pose", _com_final_pose);
-                                                logger->add("step_clearing", _step_clearing);
-                                                logger->add("com_clearing", _com_clearing);
-                                                logger->add("starTime", _starTime);
-                                                logger->add("endTime", _endTime);}
-        
-        Eigen::Vector3d get_foot_initial_pose() {return _step_initial_pose;};
-        Eigen::Vector3d get_foot_final_pose() {return _step_final_pose;};
-        Eigen::Vector3d get_com_initial_pose() {return _com_initial_pose;};
-        Eigen::Vector3d get_com_final_pose() {return _com_final_pose;};
-        double get_step_clearing() {return _step_clearing;};
-        double get_com_clearing() {return _com_clearing;};
-        double get_starTime() {return _starTime;};
-        double get_endTime() {return _endTime;};
+        const Eigen::Vector3d get_foot_initial_pose() const {return _step_initial_pose;};
+        const Eigen::Vector3d get_foot_final_pose() const {return _step_final_pose;};
+        const Eigen::Vector3d get_com_initial_pose() const {return _com_initial_pose;};
+        const Eigen::Vector3d get_com_final_pose() const {return _com_final_pose;};
+        const double get_step_clearing() const {return _step_clearing;};
+        const double get_com_clearing() const {return _com_clearing;};
+        const double get_starTime() const {return _starTime;};
+        const double get_endTime() const {return _endTime;};
         
         void set_foot_initial_pose(Eigen::Vector3d step_initial_pose) {_step_initial_pose =  step_initial_pose;};
         void set_foot_final_pose(Eigen::Vector3d step_final_pose) {_step_final_pose = step_final_pose;};
@@ -94,6 +90,62 @@ public:
         double _starTime, _endTime;
     };  
     
+    class data_step_bezier
+    {
+    public:
+        
+        void set_data_step(Eigen::Vector3d step_initial_pose, 
+                           Eigen::Vector3d step_final_pose,
+                           double step_clearing)
+        {
+            _step_initial_pose =  step_initial_pose;
+            _step_final_pose = step_final_pose;
+            _step_clearing = step_clearing;   
+        }
+    
+        void log(XBot::MatLogger::Ptr logger) { logger->add("step_initial_pose_Bezier", _step_initial_pose);
+                                                logger->add("step_final_pose_Bezier", _step_final_pose);  
+                                                logger->add("step_clearing_Bezier", _step_clearing);
+                                                logger->add("points_bezier", _points_bezier_x);
+                                                logger->add("points_bezier", _points_bezier_z);
+        }
+        
+        const Eigen::Vector3d get_foot_initial_pose() const {return _step_initial_pose;};
+        const Eigen::Vector3d get_foot_final_pose() const {return _step_final_pose;};
+        const double get_step_clearing() const {return _step_clearing;};
+        const Eigen::Vector2d get_points_bezier_x() const {return _points_bezier_x;};
+        const Eigen::Vector3d get_points_bezier_z() const {return _points_bezier_z;};
+        
+        void set_foot_initial_pose(Eigen::Vector3d step_initial_pose) {_step_initial_pose =  step_initial_pose;};
+        void set_foot_final_pose(Eigen::Vector3d step_final_pose) {_step_final_pose = step_final_pose;};
+        void set_step_clearing(double step_clearing) {_step_clearing = step_clearing;};
+        Eigen::Vector2d set_points_bezier_x(Eigen::Vector2d points_bezier_x) {_points_bezier_x = points_bezier_x;}; // TODO It should be possible to add a desired number of points
+        Eigen::Vector3d set_points_bezier_z(Eigen::Vector3d points_bezier_z) {_points_bezier_z = points_bezier_z;};
+        
+    private:
+        
+        Eigen::Vector3d _step_initial_pose, _step_final_pose;
+        
+        Eigen::Vector2d _points_bezier_x;
+        Eigen::Vector3d _points_bezier_z;
+
+        double _step_clearing;
+    };  
+    
+    
+    
+    class data_com
+    {
+    public:
+        
+        void log(XBot::MatLogger::Ptr logger) { logger->add("com_initial_pose", _com_initial_pose);}
+        const Eigen::Vector3d get_com_initial_pose() const {return _com_initial_pose;};
+        void set_com_initial_pose(Eigen::Vector3d com_initial_pose) {_com_initial_pose = com_initial_pose;};
+
+    private:
+        
+        Eigen::Vector3d _com_initial_pose;
+    };  
     
     class item_MpC
     {
@@ -293,12 +345,13 @@ protected:
     bool  _flag = true;
     
     double _q1_step = 0;
-
+    double _q1_offset;
     bool _check_received = false;
     
     
-    data_step _step;
-    
+    data_step_poly _poly_step;
+    data_step_bezier _bezi_step;
+    data_com _com_info;
     std::shared_ptr<item_MpC> _MpC_lat;
     
     robot_interface_ROS::Side _current_side = robot_interface::Side::Double; 
