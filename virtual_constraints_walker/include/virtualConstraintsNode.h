@@ -314,7 +314,7 @@ public:
     void initialize_cmd_fake_q1();
     void cmd_fake_q1();
     
-    void generate_zmp(double y_start, double t_start, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
+    void generate_zmp(double y_start, double t_start, double double_stance, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
     void lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, Eigen::VectorXd& X, Eigen::VectorXd& Y);
     void zmp_traj(double window_start, double window_end, Eigen::VectorXd& zmp_window_t, Eigen::VectorXd& zmp_window_y);
     
@@ -399,7 +399,7 @@ protected:
         double get_duration_step() {return _duration_step;};
         robot_interface::Side get_first_step_side() {return _first_step_side;};
         int get_max_steps() {return _max_steps;};
-        
+        double get_double_stance() {return _double_stance;};
         double get_indent_zmp() {return _indentation_zmp;};
         
         void set_crouch(double crouch) {_crouch = crouch;};
@@ -407,12 +407,12 @@ protected:
         void set_duration_step(double duration_step) {_duration_step = duration_step;};
         void set_first_step_side(robot_interface::Side first_step_side) {_first_step_side = first_step_side;};
         void set_max_steps(int max_steps) {_max_steps = max_steps;};
-        
+        void set_double_stance(double double_stance) {_double_stance = double_stance;};
         void set_indent_zmp(double indentation_zmp) {_indentation_zmp = indentation_zmp;};
         
     private:
         
-        double _crouch, _clearance_step, _duration_step, _indentation_zmp;
+        double _crouch, _clearance_step, _duration_step, _indentation_zmp, _double_stance;
         robot_interface::Side _first_step_side;
         int _max_steps;
         

@@ -58,7 +58,7 @@ bool virtualConstraintsNode::get_param_ros()
     {
         ros::NodeHandle nh_priv("~");
         int max_steps;
-        double clearance_heigth, duration, drop, indentation_zmp;
+        double clearance_heigth, duration, drop, indentation_zmp, double_stance;
         std::string first_side;
 
         /*default parameters*/
@@ -68,6 +68,7 @@ bool virtualConstraintsNode::get_param_ros()
         std::string default_first_side = "Left";
         int default_max_steps = 10;
         double default_indentation_zmp = 0;
+        double default_double_stance = 0;
         
         drop = nh_priv.param("initial_crouch", default_drop);
         max_steps = nh_priv.param("max_steps", default_max_steps);
@@ -75,12 +76,14 @@ bool virtualConstraintsNode::get_param_ros()
         clearance_heigth = nh_priv.param("clearance_step", default_clearance_heigth);
         first_side = nh_priv.param("first_step_side", default_first_side);
         indentation_zmp = nh_priv.param("indent_zmp", default_indentation_zmp);
+        double_stance = nh_priv.param("double_stance_duration", default_double_stance);
         
         _initial_param.set_crouch(drop);
         _initial_param.set_max_steps(max_steps);
         _initial_param.set_duration_step(duration);
         _initial_param.set_clearance_step(clearance_heigth);
         _initial_param.set_indent_zmp(indentation_zmp);
+        _initial_param.set_double_stance(double_stance);
         
         if (first_side == "Left")
                 _initial_param.set_first_step_side(robot_interface::Side::Left);
@@ -806,8 +809,9 @@ void virtualConstraintsNode::run_walk()
                 
                 double first_stance_step = _current_pose_ROS.get_sole(other_side).coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
 
+                
                 // generate zmp given start walk and first stance step
-                generate_zmp(first_stance_step, _start_walk, dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them
+                generate_zmp(first_stance_step, _start_walk, _initial_param.get_double_stance(), dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them
         
                 for (int i = 0; i < (_zmp_t).size(); i++)
                 {
@@ -860,6 +864,7 @@ void virtualConstraintsNode::run_walk()
             _bezi_step.set_foot_final_pose(final_sole_position);
             
             _reset_time = getTime();
+            
         }
     else if (impact_detected() == 2)
         {
@@ -1156,29 +1161,32 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
     for(int i=0; i<n-1; i++)
     { 
         N = N + (times.coeff(i+1)-times.coeff(i))/dt;
-        N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);      
+        N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);   ; //round((times.coeff(i+1)-times.coeff(i))/dt);      
     }
     
-    std::cout << "N: " << N << std::endl;
-    std::cout << "N_progress: " << N_chunks.transpose() << std::endl;
+//     std::cout << "N: " << N << std::endl;
+//     std::cout << "N_progress: " << N_chunks.transpose() << std::endl;
 
     Y.resize(N+1,1);
     Y.setZero();
     
-    times_vec.setLinSpaced(N+1, 0, dt*N);
+    times_vec.setLinSpaced(N, dt, dt*N);
 
-//      std::cout << "times_vec: " << times_vec.transpose() << std::endl;
+//     std::cout << "times_vec_init" << times_vec(0) << std::endl;
+//     std::cout << "times_vec: " << times_vec.transpose() << std::endl;
      
     int idx = 0;
     for(int i=0; i<n-1; i++)
     {
-        Eigen::VectorXd temp_vec(N_chunks(i));
-        temp_vec.setLinSpaced(N_chunks(i), y.coeff(i), y.coeff(i+1));
+        Eigen::VectorXd temp_vec(N_chunks(i)+1);
+        temp_vec.setLinSpaced(N_chunks(i)+1, y.coeff(i), y.coeff(i+1));
+
+//         std::cout << "temp_vec.size(): " << temp_vec.size()-1 << std::endl;
         
+        Y.segment(idx, temp_vec.size()-1) = temp_vec.segment(1,temp_vec.size()-1);
+        idx += (temp_vec.size()-1);
         
-        Y.segment(idx, temp_vec.size()) = temp_vec;
-        std::cout << "Y.segment: " << Y.segment(idx, temp_vec.size()).transpose() << std::endl;
-        idx += temp_vec.size();
+//         std::cout << "idx: " << idx << std::endl;
     }
 
 //     std::cout << "Y: " << Y.transpose() << std::endl;
@@ -1189,31 +1197,17 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
     }
 }
 
-void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y)
+void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double double_stance, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y)
 {
         int num_points = _initial_param.get_max_steps();
         double t_end = t_start + _step_duration*num_points;
         //TODO qui potrei mettere anche un t_windows_end
         Eigen::VectorXd y, times;
+        std::cout << double_stance << std::endl;
         
         y.resize(num_points*2,1);
         times.resize(num_points*2,1);
             
-
-//         int myswitch = 1;
-//         int j = 0;
-//         //without double stance generator
-//         for (int i = 0; i<num_points; i++)
-//         { 
-//             times(j) = t_start + _step_duration* i;    
-//             times(j+1) = t_start + _step_duration* (i+1);
-//             
-//             y(j) = myswitch * y_start;
-//             y(j+1) = myswitch * y_start;
-//             myswitch = -1 * myswitch;
-//             j = j+2;
-//         }
-        double double_stance = 0.5;
         int myswitch = 1;
         int i = 0;
         int j = 0;
@@ -1235,8 +1229,8 @@ void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double
         y_tot << 0, 0, y, 0;
         times_tot << 0, t_start, times, t_end + double_stance*(i+1);
 
-        std::cout << "y_tot: " << y_tot.transpose() << std::endl;
-        std::cout << "times_tot: " << times_tot.transpose() << std::endl;
+//         std::cout << "y_tot: " << y_tot.transpose() << std::endl;
+//         std::cout << "times_tot: " << times_tot.transpose() << std::endl;
         
         lSpline(times_tot, y_tot, dt, zmp_t, zmp_y);
     }

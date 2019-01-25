@@ -1,6 +1,7 @@
 initial_crouch: -0.12
-max_steps: 6
+max_steps: 5
 clearance_step: 0.1
 duration_step: 1
 first_step_side: Right
 indent_zmp: 0.01
+double_stance_duration: 0.1
