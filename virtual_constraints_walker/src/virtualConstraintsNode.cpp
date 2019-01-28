@@ -16,12 +16,10 @@
     static std::atomic<bool> first_time(true); \
     return first_time.exchange(false); } ())
     
-
  
     
 virtualConstraintsNode::virtualConstraintsNode()
     {
-        
 //         initialize_cmd_fake_q1(); //TODO
         
         
@@ -753,6 +751,7 @@ void virtualConstraintsNode::run_walk()
                 Eigen::Vector3d initial_sole_position;
                 Eigen::Vector3d final_sole_position;
                 Eigen::Vector3d initial_com_position;
+                
                 Eigen::Vector3d pointsBezier_z;
                 Eigen::Vector2d pointsBezier_x; 
                 
