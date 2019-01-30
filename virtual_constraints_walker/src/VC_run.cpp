@@ -124,15 +124,15 @@ int main(int argc, char **argv)
     double q1_temp = q1_fake;
 //     std::cout << VC._q1_fake << std::endl;
     
-    VC._starting_time = ros::Time::now().toSec();
+//     double starting_time = ros::Time::now().toSec();
 //     double ending_time = ros::Time::now().toSec();
     double last_q1_fake = - VC.sense_q1();
-    while (ros::ok() && VC.get_n_step() < VC.get_max_steps())
+    while (ros::ok()) //&& VC.get_n_step() < VC.get_max_steps()
     {
 
         VC.get_robot().sense();
         
-        VC.run_walk();
+        VC.exe(ros::Time::now().toSec());
 
         loop_rate.sleep();
         

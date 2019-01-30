@@ -4,6 +4,7 @@
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
 
+#include <tf2/convert.h>
 
 #include <geometry_msgs/PoseStamped.h>
 

@@ -33,9 +33,13 @@
 
 
 class virtualConstraintsNode {
-    friend class mapSteps;
+//     friend class mapSteps;
 public:
      
+    enum class Event { IMPACT, START, STOP, EMPTY };
+    enum class State { INIT, IDLE, FIRSTSTEP, WALK, LASTSTEP };
+    
+    
     class data_step_poly
     {
     public:
@@ -251,16 +255,15 @@ public:
     
     
     double initialize_MpC();
-    Eigen::Vector3d lateral_com();
+    Eigen::Vector3d lateral_com(double t);
     
     Eigen::Vector3d calc_com(double q1);
     Eigen::Vector3d calc_step(double q1);
     
     int impact_detected(); 
     bool impact();
-    
     void fakeCOM();
-    void run();  // put everything but this on the protected side
+    void exe(double time);  // TODO put everything but this on the protected side
     
     double lat_oscillator_com(double starting_time, double phase);
     
@@ -328,8 +331,9 @@ public:
     double _reset_condition = 0;
     double _impact_cond = 0;
     double _reset_time = 0;
-    double _starting_time = 0;
     
+    double _starting_time = 0;
+    double _internal_time = 0;
 protected:
     
 //     ros::NodeHandle n;
@@ -371,6 +375,7 @@ protected:
     std::shared_ptr<item_MpC> _MpC_lat;
     
     robot_interface_ROS::Side _current_side = robot_interface::Side::Double; 
+    robot_interface::Side _other_side;
     
     XBot::MatLogger::Ptr _logger;
     
@@ -383,6 +388,7 @@ protected:
     double _q_min;
     double _q_max;
     
+    bool _init_completed = 0;
     
     Eigen::VectorXd _zmp_window_t;
     Eigen::VectorXd _zmp_window_y;
@@ -404,7 +410,7 @@ protected:
         int get_max_steps() {return _max_steps;};
         double get_double_stance() {return _double_stance;};
         double get_indent_zmp() {return _indentation_zmp;};
-        
+        double get_initial_time() {return _start_time;};
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
         void set_duration_step(double duration_step) {_duration_step = duration_step;};
@@ -412,10 +418,12 @@ protected:
         void set_max_steps(int max_steps) {_max_steps = max_steps;};
         void set_double_stance(double double_stance) {_double_stance = double_stance;};
         void set_indent_zmp(double indentation_zmp) {_indentation_zmp = indentation_zmp;};
-        
+        void set_start_time(double start_time) {_start_time = start_time;
+            
+        };
     private:
         
-        double _crouch, _clearance_step, _duration_step, _indentation_zmp, _double_stance;
+        double _crouch, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
         robot_interface::Side _first_step_side;
         int _max_steps;
         
@@ -423,6 +431,59 @@ protected:
     
     double _initial_q1;
     
+    State _current_state = State::INIT;
+    Event _event = Event::EMPTY;
+    
+    Eigen::Vector3d _pointsBezier_z;
+    Eigen::Vector2d _pointsBezier_x;
+    
+    Eigen::Vector3d _initial_com_position;
+    Eigen::Vector3d _initial_sole_position;
+    Eigen::Vector3d _final_sole_position;
+    
+    
+    Eigen::Vector3d lateral_com();
+    
+    void v_core(double time);
+    void commander(double time, double tau);
+    
+    bool ST_init(double time);
+    bool ST_idle(double time);
+    bool ST_firstStep();
+    bool ST_walk();
+    bool ST_lastStep();
+    
+    
+    bool _firstCycle = 1; //just needed to stop the code after the first cycle of walking
+    
+    
+    
+        friend std::ostream& operator<<(std::ostream& os, Event s)
+    {
+        switch (s)
+        {
+            case Event::EMPTY : return os << "empty";
+            case Event::IMPACT :  return os << "impact";
+            case Event::START :  return os << "start";
+            case Event::STOP :  return os << "stop";
+            default : return os << "wrong event";
+        }
+    };
+    
+    
+    friend std::ostream& operator<<(std::ostream& os, State s)
+    {
+        switch (s)
+        {
+            case State::IDLE :  return os << "idle";
+            case State::INIT :  return os << "init";
+            case State::FIRSTSTEP :  return os << "first step";
+            case State::LASTSTEP :  return os << "last step";
+            case State::WALK : return os << "walking";
+            default : return os << "wrong state";
+        }
+    };
+
 };
 
 

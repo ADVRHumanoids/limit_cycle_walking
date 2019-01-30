@@ -25,8 +25,8 @@ class robot_interface
                 {
                     return _ankle_to_com[Side::Left].translation();
                 }
-                else std::cout << "double support error (distance): Left:" << _ankle_to_com[Side::Left].translation() << std::endl
-                                                                << "Right:"  << _ankle_to_com[Side::Right].translation() << std::endl;
+                else std::cout << "Asked for distance from ankle to com during double stance. However, the distances are different. Left:" << _ankle_to_com[Side::Left].translation().transpose() << std::endl
+                                                                                                                              << "Right:"  << _ankle_to_com[Side::Right].translation().transpose() << std::endl;
             }
             return _ankle_to_com[desired_side].translation();
             
@@ -41,7 +41,8 @@ class robot_interface
                 {
                     return _sole_state[Side::Left].translation();
                 }
-                else std::cout << "double support error (sole)" << std::endl;
+                else std::cout << "Asked for sole pose during double stance. However, the poses are different. Left: " << _sole_state[Side::Left].translation().transpose() << std::endl
+                                                                                                          << "Right: " << _sole_state[Side::Right].translation().transpose() << std::endl;
             }
             else return _sole_state[desired_side].translation();  
         }
@@ -54,7 +55,8 @@ class robot_interface
                 {
                     return _sole_state[Side::Left];
                 }
-                else std::cout << "double support error (sole)" << std::endl;
+                else std::cout << "Asked for sole pose during double stance. However, the poses are different. Left: " << _sole_state[Side::Left].matrix() << std::endl
+                                                                                                            << "Right: " << _sole_state[Side::Right].matrix() << std::endl;
             }
             else return _sole_state[desired_side];
         }

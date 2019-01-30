@@ -87,6 +87,7 @@ Eigen::Affine3d robot_interface_ROS::listen_l_ankle_to_com()
         l_com_to_ankle_listener.lookupTransform("ci/com", "ci/l_ankle", ros::Time(0), l_com_to_ankle_transform); /*ros::Time(0)*/
         distance = l_com_to_ankle_transform;
         
+//         tf::transformTFToEigen(l_com_to_ankle_transform, l_ankle_to_com);
         tf::poseTFToEigen(distance,l_ankle_to_com);
         return l_ankle_to_com;
     }
