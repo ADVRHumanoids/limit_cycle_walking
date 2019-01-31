@@ -12,7 +12,7 @@
 
 #include <XmlRpcValue.h>
 
-#define initialized ([] { \
+#define runOnlyOnce ([] { \
     static std::atomic<bool> first_time(true); \
     return first_time.exchange(false); } ())
     
@@ -619,46 +619,10 @@ void virtualConstraintsNode::first_q1()
 //         _step.set_starTime(starTime);
 //         _step.set_endTime(endTime);
 //     }
-void virtualConstraintsNode::fakeCOM()
-    {
-        _current_pose_ROS.sense();
-        
-        if (initialized) //initialized
-        {   
-            _com_info.set_com_initial_pose(_current_pose_ROS.get_com());
-//             std::cout << "starting com: " << _current_pose_ROS.get_com().transpose() << std::endl;
-        }
-        
-        
-        double q1_fake = get_q1();
-        
-        Eigen::Vector3d com_trajectory;
-        robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
-        Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
-        Eigen::Vector3d delta_com;
-        delta_com << - com_to_ankle_distance.z() * tan(q1_fake), 0, 0;
-        
-        com_trajectory = _com_info.get_com_initial_pose() + delta_com;
-        
-//         std::cout << "q1_fake: " << get_q1() << std::endl;
-//         std::cout << "---------------------------------------" << std::endl;
-//         std::cout << "com_to_ankle_distance: " << com_to_ankle_distance.z() << std::endl;
-//         std::cout << "com_initial_pose: " << _step.get_com_initial_pose().transpose() << std::endl;
-//         std::cout << "delta_com: " << delta_com.transpose() << std::endl;
-//         std::cout << "com_trajectory: " << com_trajectory.transpose() << std::endl;
-//         std::cout << "current COM: " << _current_pose_ROS.get_com().transpose() << std::endl;
-        
-        _logger->add("com_trajectory", com_trajectory);
-        _logger->add("delta_com", delta_com);
-        _logger->add("heigth_com", com_to_ankle_distance.z());
-        _logger->add("q1_fake", q1_fake);
-
-        send_com(com_trajectory);
-    }
     
 void virtualConstraintsNode::exe(double time)
 {   
-        if (_init_completed && initialized)
+        if (_init_completed && runOnlyOnce)
         {
             _starting_time = time;
         }
@@ -677,6 +641,17 @@ void virtualConstraintsNode::exe(double time)
 
         std::cout << "Impact_cond: " << _impact_cond << std::endl;
         
+        
+    if (_init_completed && time >= _start_walk && _cycleCounter == 1 && runOnlyOnce)
+    {
+        _event = Event::START;
+    };
+    
+    if (_init_completed && _cycleCounter == 2 && runOnlyOnce)
+    {
+        _event = Event::STOP;
+    };
+    
         if (impact_detected())
         {
             _q_min = sense_q1();
@@ -696,6 +671,7 @@ void virtualConstraintsNode::exe(double time)
         
         _logger->add("tau", tau);
         _logger->add("q1", q1);
+
         
         commander(_internal_time, tau);
 
@@ -873,6 +849,7 @@ double virtualConstraintsNode::getBezierCurve(Eigen::VectorXd coeff_vec, double 
     double x = 0;
     int n_points  = coeff_vec.size();
     Eigen::VectorXd clone_vec = coeff_vec;
+
     
     for (int temp_n_points = (n_points-1); temp_n_points >= 1; temp_n_points--)
     {
@@ -882,10 +859,47 @@ double virtualConstraintsNode::getBezierCurve(Eigen::VectorXd coeff_vec, double 
         }
     }
 
-    
     x = clone_vec.coeff(0);
+    _logger->add("traj_bezier_x", x);
     
     return x;
+    
+    
+}
+
+double virtualConstraintsNode::getBezierCurve(Eigen::VectorXd coeff_vec, Eigen::VectorXd coeff_vec_t, double tau)
+{ 
+    double t = 0;
+    double p = 0;
+    
+    int n_points  = coeff_vec.size();
+    
+    Eigen::VectorXd clone_vec = coeff_vec;
+    Eigen::VectorXd clone_vec_t = coeff_vec_t;
+    
+    
+    
+    for (int temp_n_points = (n_points-1); temp_n_points >= 1; temp_n_points--)
+    {
+        for (int i = 0; i < temp_n_points; i++)
+        {
+            clone_vec(i) = getPt(clone_vec.coeff(i), clone_vec.coeff(i+1), tau);
+            clone_vec_t(i) = getPt(clone_vec_t.coeff(i), clone_vec_t.coeff(i+1), tau);
+        }
+    }
+
+    p = clone_vec.coeff(0);
+    t = clone_vec_t.coeff(0);
+    
+    
+    _logger->add("traj_bezier_p", p);
+    _logger->add("traj_bezier_t", t);
+   
+    _logger->add("tau", tau);
+    
+    return p;
+    
+    
 }
 
 void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, double dt, Eigen::VectorXd &times_vec, Eigen::VectorXd &Y)
@@ -931,8 +945,8 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
 //     std::cout << "Y: " << Y.transpose() << std::endl;
     for (int i = 0; i < times_vec.size(); i++)
     {
-        _logger->add("times", times_vec(i));
-        _logger->add("Y", Y(i));
+        _logger->add("comy_traj_planned", times_vec(i));
+        _logger->add("times_traj_planned", Y(i));
     }
 }
 
@@ -1023,7 +1037,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double t)
 void virtualConstraintsNode::commander(double time, double tau)
 {
      
-    if (_current_state == State::IDLE || _current_state == State::INIT)
+    if (_current_state == State::IDLE || _current_state == State::INIT || _current_state == State::EXIT)
     {
         ////do nothing
     }
@@ -1056,6 +1070,8 @@ void virtualConstraintsNode::commander(double time, double tau)
         
         _logger->add("traj_bezier_z", getBezierCurve(_bezi_step.get_points_bezier_z(), tau));
         _logger->add("traj_bezier_x", getBezierCurve(_bezi_step.get_points_bezier_x(), tau));
+        
+        _logger->add("time", _internal_time);
         
         send_com(com_trajectory_lat);
         send_step(foot_trajectory);
@@ -1130,12 +1146,6 @@ bool virtualConstraintsNode::ST_init(double time)
 
 bool virtualConstraintsNode::ST_idle(double time)
 {
-    if (time >= _start_walk && _initCycle == 1)
-    {
-        _event = Event::START;
-        _initCycle = 0;
-    };
-    
     return 1;
 };
 
@@ -1221,6 +1231,8 @@ void virtualConstraintsNode::v_core(double time)
                 case State::IDLE :
                     ST_idle(time);
                     break;
+                case State::EXIT :
+                    break;
                 default : std::cout << "Current state is: " << _current_state << ". Empty event. Ignored." << std::endl;
                 } 
         break;
@@ -1231,6 +1243,8 @@ void virtualConstraintsNode::v_core(double time)
                     ST_firstStep();
                     _current_state = State::FIRSTSTEP;
                     _event = Event::EMPTY;
+                    break;
+                case State::EXIT :
                     break;
                 default : std::cout << "The robot is already walking. Command 'start' ignored." << std::endl;
                 }
@@ -1250,7 +1264,7 @@ void virtualConstraintsNode::v_core(double time)
                     _event = Event::EMPTY; //burn impact event
                     break;
                 case State::WALK :
-                    if (_step_counter < _initial_param.get_max_steps())
+                    if (_step_counter < _initial_param.get_max_steps()-1) //number of steps - starting step (the idea here is 5 steps is with the starting and final)
                     {
                         _current_state = State::WALK;
                         ST_walk();
@@ -1265,12 +1279,32 @@ void virtualConstraintsNode::v_core(double time)
                     break;
                 case State::LASTSTEP :
                     ST_idle(time);
+                    _cycleCounter++;
                     _current_state = State::IDLE;
                     _event = Event::EMPTY; //burn impact event
                     break;
-
+                case State::EXIT :
+                    std::cout << "Exiting ros loop from --> " << _current_state << std::endl;
+                    ros::shutdown();
+                    break;
                 default : throw std::runtime_error(std::string("Transition not correct."));
                 } 
+        break;
+        
+        case Event::STOP :
+            switch (_current_state) {
+                case State::IDLE :
+                    std::cout << "Exiting ros loop from --> " << _current_state << std::endl;
+                    ros::shutdown();
+                    break;
+                case State::INIT :
+                    std::cout << "Exiting ros loop from --> " << _current_state << std::endl;
+                    ros::shutdown();
+                    break;
+                default :_current_state == State::EXIT;
+                    _event = Event::EMPTY;
+                    break;
+                }
         break;
         
         default: throw std::runtime_error(std::string("Event not recognized"));
@@ -1281,9 +1315,8 @@ void virtualConstraintsNode::v_core(double time)
 };
 
 
-    
-    
-    
+
+
     
     
     

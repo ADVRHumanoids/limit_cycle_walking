@@ -86,6 +86,9 @@
 // 
 // }    
 
+
+////// current one ////////////
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "virtual_constraints");
@@ -135,6 +138,7 @@ int main(int argc, char **argv)
         VC.exe(ros::Time::now().toSec());
 
         loop_rate.sleep();
+        
         
     }
     
@@ -228,26 +232,37 @@ int main(int argc, char **argv)
 //     ros::init(argc, argv, "virtual_constraints");
 //     virtualConstraintsNode VC;
 //     ros::Rate loop_rate(100);
-//     double x1 = 0.4; 
-//     double x2 = 0.2; 
-//     double x3 = -0.8;
+//     double x1 = 0;
+//     double x2 = 0.8; 
+//     double x3 = 0;
 //     double x4 = 0.1;
 //     double x5 = -0.3;
 //     double x6 = 0.8;
 //     
-
-    
-//     Eigen::VectorXd vect(6);
+//     double t1 = 0; 
+//     double t2 = 0.2; 
+//     double t3 = 1;
+// //     double t4 = 0.7;
+// //     double t5 = 0.8;
+// //     double t6 = 1;
+//     
+//     Eigen::VectorXd vect(3);
 //     vect << x1, x2, x3;
-//     vect << x1, x2, x3, x4;
-//     vect << x1, x2, x3, x4, x5;
-//     vect << x1, x2, x3, x4, x5, x6;
-       
+// //     vect << x1, x2, x3, x4;
+// //     vect << x1, x2, x3, x4, x5;
+// //     vect << x1, x2, x3, x4, x5, x6;
+//        
+//     Eigen::VectorXd vect_t(3);
+//     vect_t << t1, t2, t3;
+// //     vect_t << t1, t2, t3, t4;
+// //     vect_t << t1, t2, t3, t4, t5;
+// //     vect_t << t1, t2, t3, z4, t5, t6;
+//     
 //     double tau = 0;
 //     double t_min = ros::Time::now().toSec(); 
 //     double t_max = ros::Time::now().toSec()+ 1;
-
-    
+// 
+//     
 //     while (ros::Time::now().toSec() <=  t_max)
 //     {
 //         tau = (ros::Time::now().toSec() - t_min) / (t_max - t_min);
@@ -255,18 +270,18 @@ int main(int argc, char **argv)
 //         
 //         loop_rate.sleep();
 //     }
-//     Eigen::Vector3d starting_position, ending_position, ret;  
-//     double starting_time, ending_time;
-//     starting_position << 0, 0, 0;
-//     ending_position << 1, 1, 1;
-//     double clearance = 0.5;
-//     starting_time = ros::Time::now().toSec();
-//     ending_time = ros::Time::now().toSec() + 4;
-//     bool flag = true;
-// 
-//         while (ros::ok() && ros::Time::now().toSec() <= ending_time +1)
-//     {  
-//         ret = VC.compute_swing_trajectory(starting_position, ending_position, clearance, starting_time, ending_time, ros::Time::now().toSec(), "xy");
-//         loop_rate.sleep();
-//     }
+// //     Eigen::Vector3d starting_position, ending_position, ret;  
+// //     double starting_time, ending_time;
+// //     starting_position << 0, 0, 0;
+// //     ending_position << 1, 1, 1;
+// //     double clearance = 0.5;
+// //     starting_time = ros::Time::now().toSec();
+// //     ending_time = ros::Time::now().toSec() + 4;
+// //     bool flag = true;
+// // 
+// //         while (ros::ok() && ros::Time::now().toSec() <= ending_time +1)
+// //     {  
+// //         ret = VC.compute_swing_trajectory(starting_position, ending_position, clearance, starting_time, ending_time, ros::Time::now().toSec(), "xy");
+// //         loop_rate.sleep();
+// //     }
 // }

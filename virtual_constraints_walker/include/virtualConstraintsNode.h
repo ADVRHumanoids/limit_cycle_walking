@@ -37,7 +37,7 @@ class virtualConstraintsNode {
 public:
      
     enum class Event { IMPACT, START, STOP, EMPTY };
-    enum class State { INIT, IDLE, FIRSTSTEP, WALK, LASTSTEP };
+    enum class State { INIT, IDLE, FIRSTSTEP, WALK, LASTSTEP, EXIT };
     
     
     class data_step_poly
@@ -311,7 +311,7 @@ public:
     
     double getPt( double n1, double n2, double perc);
     double getBezierCurve(Eigen::VectorXd coeff_vec, double tau);
-
+    double getBezierCurve(Eigen::VectorXd coeff_vec, Eigen::VectorXd coeff_vec_t, double tau);
 
     void first_q1();
     int get_n_step() {return _step_counter;};
@@ -441,7 +441,6 @@ protected:
     Eigen::Vector3d _initial_sole_position;
     Eigen::Vector3d _final_sole_position;
     
-    
     Eigen::Vector3d lateral_com();
     
     void v_core(double time);
@@ -452,9 +451,9 @@ protected:
     bool ST_firstStep();
     bool ST_walk();
     bool ST_lastStep();
+    int _cycleCounter = 1;
     
-    
-    bool _firstCycle = 1; //just needed to stop the code after the first cycle of walking
+    bool _initCycle = 1; //just needed to stop the code after the first cycle of walking
     
     
     
@@ -480,6 +479,7 @@ protected:
             case State::FIRSTSTEP :  return os << "first step";
             case State::LASTSTEP :  return os << "last step";
             case State::WALK : return os << "walking";
+            case State::EXIT : return os << "exit";
             default : return os << "wrong state";
         }
     };
