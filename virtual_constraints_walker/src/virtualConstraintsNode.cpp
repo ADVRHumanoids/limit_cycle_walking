@@ -484,7 +484,7 @@ int virtualConstraintsNode::impact_detected()
 //             if (_current_pose_ROS.get_sole(_current_side).coeff(2) - _terrain_heigth <= 0.0  && getTime() > 1.3 && _impact_cond > 0.4)
             {
                 _event = Event::IMPACT; // event impact detected for core()
-                
+//                 _time_of_impact = _internal_time;
                 _current_pose_ROS.sense();
                 
 //                 get_supportPolygon();
@@ -493,7 +493,6 @@ int virtualConstraintsNode::impact_detected()
                 robot_interface::Side last_side = _current_side;
 //                 std::cout << "Last side: " << last_side << std::endl;
                _initial_pose = _current_pose_ROS;
-               _step_counter++;
                 _current_side = robot_interface::Side::Double;
                 
 //                 get_supportPolygon();
@@ -665,7 +664,7 @@ void virtualConstraintsNode::exe(double time)
         
         v_core(_internal_time);
 
-        
+        // needed for bezier
         double tau = (q1 - _q_min) / (_q_max - _q_min);
         std::cout << "tau: " << tau << std::endl;
         
@@ -735,7 +734,7 @@ Eigen::Vector3d virtualConstraintsNode::compute_swing_trajectory(const Eigen::Ve
     double dx; 
     double ddx;
     
-    double beta = 2; //2
+    double beta = 1; //2
     double tau = std::min(std::max((time - t_start)/(t_end - t_start), 0.0), 1.0);
     double alpha = compute_swing_trajectory_normalized_plane(dx0, ddx0, dxf, ddxf, time_warp(tau, beta), &dx, &ddx);
     
@@ -987,7 +986,7 @@ void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double
         lSpline(times_tot, y_tot, dt, zmp_t, zmp_y);
     }
 
-void virtualConstraintsNode::zmp_traj(double window_start, double window_end, Eigen::VectorXd &zmp_window_t, Eigen::VectorXd &zmp_window_y)
+void virtualConstraintsNode::zmp_window(double window_start, double window_end, Eigen::VectorXd &zmp_window_t, Eigen::VectorXd &zmp_window_y)
     {
 
         
@@ -1011,16 +1010,32 @@ void virtualConstraintsNode::zmp_traj(double window_start, double window_end, Ei
 
         zmp_window_y.setZero();
         zmp_window_y.segment(0, j-i) = (_zmp_y).segment(i, j-i);
+
     }
     
     
 
 
-Eigen::Vector3d virtualConstraintsNode::lateral_com(double t)
+Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 {
     
-        double dt = 0.01;
-        zmp_traj(t, _MpC_lat->_window_length + t, _zmp_window_t, _zmp_window_y);
+        double dt = 0.01; //TODO take it out from here
+        
+        
+        if (_event == Event::IMPACT && _step_counter < _initial_param.get_max_steps()-1)  // jump in time, going to closer planned impact
+        {
+            std::cout << "entered impact" << std::endl;
+            _shift_time = time - _planned_impacts(_step_counter+1); //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
+//             Eigen::MatrixXd n(_planned_impacts.size(),1);
+//             n.setOnes();
+//             _planned_impacts = _planned_impacts + _shift_time * n;
+//             std::cout << "_planned_impacts" << _planned_impacts << std::endl;
+        }
+        
+        std::cout << "Shift in time: "<< _shift_time << std::endl;     
+        double window_start = time - _shift_time;
+
+        zmp_window(window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
         
         _u = _MpC_lat->_K_fb * _com_y + _MpC_lat->_K_prev * _zmp_window_y;
         
@@ -1063,18 +1078,31 @@ void virtualConstraintsNode::commander(double time, double tau)
         //// send foot
         
         
-        Eigen::Vector3d foot_trajectory = _bezi_step.get_foot_initial_pose();
+//         Eigen::Vector3d foot_trajectory = _bezi_step.get_foot_initial_pose();
 //         foot_trajectory(0) = (1 - getBezierCurve(_bezi_step.get_points_bezier_x(), tau)) * _bezi_step.get_foot_initial_pose().coeff(0) + trajectory_x * _bezi_step.get_foot_final_pose().coeff(0);
-        foot_trajectory(2) = _bezi_step.get_foot_initial_pose().coeff(2) + getBezierCurve(_bezi_step.get_points_bezier_z(), tau);
+//         foot_trajectory(2) = _bezi_step.get_foot_initial_pose().coeff(2) + getBezierCurve(_bezi_step.get_points_bezier_z(), tau);
+        
+        
+        Eigen::Vector3d foot_trajectory = _poly_step.get_foot_initial_pose();
+        foot_trajectory = compute_swing_trajectory(_poly_step.get_foot_initial_pose(), _poly_step.get_foot_initial_pose(), _poly_step.get_step_clearing(), _poly_step.get_starTime(), _poly_step.get_endTime(), time, "xy");
+        
+        
         _logger->add("foot_trajectory", foot_trajectory);
         
-        _logger->add("traj_bezier_z", getBezierCurve(_bezi_step.get_points_bezier_z(), tau));
-        _logger->add("traj_bezier_x", getBezierCurve(_bezi_step.get_points_bezier_x(), tau));
+//         _logger->add("traj_bezier_z", getBezierCurve(_bezi_step.get_points_bezier_z(), tau));
+//         _logger->add("traj_bezier_x", getBezierCurve(_bezi_step.get_points_bezier_x(), tau));
         
         _logger->add("time", _internal_time);
         
         send_com(com_trajectory_lat);
         send_step(foot_trajectory);
+    }
+    
+    //burn impact event
+    if (_event == Event::IMPACT)
+    {
+        _event = Event::EMPTY;
+        _step_counter++;
     }
 }
     
@@ -1083,11 +1111,13 @@ bool virtualConstraintsNode::ST_init(double time)
 {
     double clearance = _initial_param.get_clearance_step();
     _reset_condition = 0; 
+    
+    // -bezier curve trajectory---------------------
     _pointsBezier_z << 0, clearance*2, 0;
     _pointsBezier_x << 0, 1;
     _bezi_step.set_points_bezier_z(_pointsBezier_z);
     _bezi_step.set_points_bezier_x(_pointsBezier_x);
-    
+    // ---------------------------------------------
     _current_side = _initial_param.get_first_step_side();
     std::cout << "First step: " << _current_side << std::endl;
     _other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
@@ -1104,7 +1134,7 @@ bool virtualConstraintsNode::ST_init(double time)
     std::cout << "Window resolution (sec): " << Ts <<  std::endl;
     std::cout << "Window length (sec): " << T <<  std::endl;
 
-    _start_walk = _initial_param.get_initial_time();
+    _start_walk = _initial_param.get_start_time(); //TODO _start_walk and _initial_param.get_start_time are the same thind
     _q_min = sense_q1(); // min angle of inclination
     _q_max = 0.3; // max angle of inclination
 
@@ -1128,6 +1158,12 @@ bool virtualConstraintsNode::ST_init(double time)
     // generate zmp given start walk and first stance step
     generate_zmp(first_stance_step, _start_walk, _initial_param.get_double_stance(), dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them
 
+    _planned_impacts.resize(_initial_param.get_max_steps(),1);
+    for (int i = 0; i < _initial_param.get_max_steps(); i++)
+    {
+    _planned_impacts(i) = _initial_param.get_start_time() +  _initial_param.get_duration_step() * i;
+    }
+    
     for (int i = 0; i < (_zmp_t).size(); i++)
     {
         _logger->add("zmp_t", (_zmp_t)(i));
@@ -1149,7 +1185,7 @@ bool virtualConstraintsNode::ST_idle(double time)
     return 1;
 };
 
-bool virtualConstraintsNode::ST_firstStep()
+bool virtualConstraintsNode::ST_firstStep(double time)
 {
     
     // step from starting position to step
@@ -1162,9 +1198,16 @@ bool virtualConstraintsNode::ST_firstStep()
     delta_step << (- 2* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q_max)), 0, 0;
     update_pose(&_final_sole_position, delta_step);  /*step update*/
 
-    _bezi_step.set_foot_initial_pose(_initial_sole_position);
-    _bezi_step.set_foot_final_pose(_final_sole_position);
-
+//     // -bezier curve trajectory---------------------
+//     _bezi_step.set_foot_initial_pose(_initial_sole_position);
+//     _bezi_step.set_foot_final_pose(_final_sole_position);
+//     // -polynomial curve trajectory-----------------
+    _poly_step.set_foot_initial_pose(_initial_sole_position);
+    _poly_step.set_foot_final_pose(_final_sole_position);
+    _poly_step.set_starTime(_initial_param.get_start_time());
+    _poly_step.set_endTime(_initial_param.get_start_time() + _initial_param.get_duration_step());
+    _poly_step.set_step_clearing(_initial_param.get_clearance_step());
+    // ---------------------------------------------
     _com_info.set_com_initial_pose(_initial_com_position);
     
     std::cout << "Updated step: " << std::endl;
@@ -1176,7 +1219,7 @@ bool virtualConstraintsNode::ST_firstStep()
     return 1;
 };
 
-bool virtualConstraintsNode::ST_walk()
+bool virtualConstraintsNode::ST_walk(double time)
 {
     // step: from step to step
     _initial_com_position = _current_pose_ROS.get_com();
@@ -1186,16 +1229,23 @@ bool virtualConstraintsNode::ST_walk()
     Eigen::Vector3d delta_step;
     delta_step << (- 4* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q_max)), 0, 0;
     update_pose(&_final_sole_position, delta_step);  /*step update*/
-
-    _bezi_step.set_foot_initial_pose(_initial_sole_position);
-    _bezi_step.set_foot_final_pose(_final_sole_position);
-
+    
+//     // -bezier curve trajectory---------------------
+//     _bezi_step.set_foot_initial_pose(_initial_sole_position);
+//     _bezi_step.set_foot_final_pose(_final_sole_position);
+//     // -polynomial curve trajectory-----------------
+    _poly_step.set_foot_initial_pose(_initial_sole_position);
+    _poly_step.set_foot_final_pose(_final_sole_position);
+    _poly_step.set_starTime(time);
+    _poly_step.set_endTime(time + _initial_param.get_duration_step());
+    _poly_step.set_step_clearing(_initial_param.get_clearance_step());
+    // ---------------------------------------------
     _com_info.set_com_initial_pose(_initial_com_position);
     
     return 1;
 };
 
-bool virtualConstraintsNode::ST_lastStep()
+bool virtualConstraintsNode::ST_lastStep(double time)
 {
     // step from step to final position
     _initial_com_position = _current_pose_ROS.get_com();
@@ -1205,10 +1255,18 @@ bool virtualConstraintsNode::ST_lastStep()
     Eigen::Vector3d delta_step;
     delta_step << (- 2* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q_max)), 0, 0;
     update_pose(&_final_sole_position, delta_step);  /*step update*/
-
-    _bezi_step.set_foot_initial_pose(_initial_sole_position);
-    _bezi_step.set_foot_final_pose(_final_sole_position);
-
+    
+//     // -bezier curve trajectory---------------------
+//     _bezi_step.set_foot_initial_pose(_initial_sole_position);
+//     _bezi_step.set_foot_final_pose(_final_sole_position);
+//     // -polynomial curve trajectory-----------------
+    _poly_step.set_foot_initial_pose(_initial_sole_position);
+    _poly_step.set_foot_final_pose(_final_sole_position);
+    _poly_step.set_starTime(time);
+    _poly_step.set_endTime(time + _initial_param.get_duration_step());
+    _poly_step.set_step_clearing(_initial_param.get_clearance_step());
+    // ---------------------------------------------
+    
     _com_info.set_com_initial_pose(_initial_com_position);
     
     return 1;
@@ -1240,7 +1298,7 @@ void virtualConstraintsNode::v_core(double time)
         case Event::START :
             switch (_current_state) {
                 case State::IDLE :
-                    ST_firstStep();
+                    ST_firstStep(time);
                     _current_state = State::FIRSTSTEP;
                     _event = Event::EMPTY;
                     break;
@@ -1259,29 +1317,29 @@ void virtualConstraintsNode::v_core(double time)
                     throw std::runtime_error(std::string("Impact during double stance. Something is wrong!"));
                     break;
                 case State::FIRSTSTEP :
-                    ST_walk();
+                    ST_walk(time);
                     _current_state = State::WALK;
-                    _event = Event::EMPTY; //burn impact event
+//                     _event = Event::EMPTY; //burn impact event
                     break;
                 case State::WALK :
                     if (_step_counter < _initial_param.get_max_steps()-1) //number of steps - starting step (the idea here is 5 steps is with the starting and final)
                     {
                         _current_state = State::WALK;
-                        ST_walk();
-                        _event = Event::EMPTY; //burn impact event
+                        ST_walk(time);
+//                         _event = Event::EMPTY; //burn impact event
                     }
                     else
                     {
                         _current_state = State::LASTSTEP;
-                        ST_lastStep();
-                        _event = Event::EMPTY; //burn impact event
+                        ST_lastStep(time);
+//                         _event = Event::EMPTY; //burn impact event
                     }
                     break;
                 case State::LASTSTEP :
                     ST_idle(time);
                     _cycleCounter++;
                     _current_state = State::IDLE;
-                    _event = Event::EMPTY; //burn impact event
+//                     _event = Event::EMPTY; //burn impact event
                     break;
                 case State::EXIT :
                     std::cout << "Exiting ros loop from --> " << _current_state << std::endl;

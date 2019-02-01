@@ -235,9 +235,9 @@ int main(int argc, char **argv)
 //     double x1 = 0;
 //     double x2 = 0.8; 
 //     double x3 = 0;
-//     double x4 = 0.1;
-//     double x5 = -0.3;
-//     double x6 = 0.8;
+// //     double x4 = 0.1;
+// //     double x5 = -0.3;
+// //     double x6 = 0.8;
 //     
 //     double t1 = 0; 
 //     double t2 = 0.2; 
@@ -266,7 +266,7 @@ int main(int argc, char **argv)
 //     while (ros::Time::now().toSec() <=  t_max)
 //     {
 //         tau = (ros::Time::now().toSec() - t_min) / (t_max - t_min);
-//         VC.getBezierCurve(vect, tau);
+//         VC.getBezierCurve(vect, vect_t, tau);
 //         
 //         loop_rate.sleep();
 //     }

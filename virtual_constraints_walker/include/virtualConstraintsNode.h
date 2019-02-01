@@ -50,8 +50,8 @@ public:
                            Eigen::Vector3d com_final_pose,
                            double step_clearing,
                            double com_clearing,
-                           double starTime, 
-                           double endTime)
+                           double start_time, 
+                           double end_time)
         {
             _step_initial_pose =  step_initial_pose;
             _step_final_pose = step_final_pose;
@@ -59,8 +59,8 @@ public:
             _com_final_pose = com_final_pose;
             _step_clearing = step_clearing;
             _com_clearing = com_clearing;
-            _starTime = starTime;
-            _endTime = endTime;        
+            _start_time = start_time;
+            _end_time = end_time;        
         }
     
         void log(XBot::MatLogger::Ptr logger) { logger->add("step_initial_pose_Poly", _step_initial_pose);
@@ -69,8 +69,8 @@ public:
                                                 logger->add("com_final_pose_Poly", _com_final_pose);
                                                 logger->add("step_clearing_Poly", _step_clearing);
                                                 logger->add("com_clearing_Poly", _com_clearing);
-                                                logger->add("starTime_Poly", _starTime);
-                                                logger->add("endTime_Poly", _endTime);}
+                                                logger->add("start_time_Poly", _start_time);
+                                                logger->add("end_time_Poly", _end_time);}
         
         const Eigen::Vector3d get_foot_initial_pose() const {return _step_initial_pose;};
         const Eigen::Vector3d get_foot_final_pose() const {return _step_final_pose;};
@@ -78,8 +78,8 @@ public:
         const Eigen::Vector3d get_com_final_pose() const {return _com_final_pose;};
         const double get_step_clearing() const {return _step_clearing;};
         const double get_com_clearing() const {return _com_clearing;};
-        const double get_starTime() const {return _starTime;};
-        const double get_endTime() const {return _endTime;};
+        const double get_starTime() const {return _start_time;};
+        const double get_endTime() const {return _end_time;};
         
         void set_foot_initial_pose(Eigen::Vector3d step_initial_pose) {_step_initial_pose =  step_initial_pose;};
         void set_foot_final_pose(Eigen::Vector3d step_final_pose) {_step_final_pose = step_final_pose;};
@@ -87,14 +87,14 @@ public:
         void set_com_final_pose(Eigen::Vector3d com_final_pose) {_com_final_pose = com_final_pose;};
         void set_step_clearing(double step_clearing) {_step_clearing = step_clearing;};
         void set_com_clearing(double com_clearing) {_com_clearing = com_clearing;};
-        void set_starTime(double starTime) {_starTime = starTime;};
-        void set_endTime(double endTime) {_endTime = endTime;};
+        void set_starTime(double start_time) {_start_time = start_time;};
+        void set_endTime(double end_time) {_end_time = end_time;};
     private:
         
         Eigen::Vector3d _step_initial_pose, _step_final_pose;
         Eigen::Vector3d _com_initial_pose, _com_final_pose;
         double _step_clearing, _com_clearing;
-        double _starTime, _endTime;
+        double _start_time, _end_time;
     };  
     
     class data_step_bezier
@@ -203,10 +203,7 @@ public:
 //             
 //             std::cout << "K_fb_size: " << _K_fb.size() << std::endl;
 //             std::cout << "K_prev_size: " << _K_prev.size() << std::endl;
-            
-            
-            
-            
+
         };
         
 
@@ -218,9 +215,7 @@ public:
         Eigen::Matrix<double, 1,3> _C_zmp;
         OpenMpC::dynamics::LtiDynamics::Ptr _integrator;
         double _Ts;
-        
 
-        
     };
     
 
@@ -255,7 +250,7 @@ public:
     
     
     double initialize_MpC();
-    Eigen::Vector3d lateral_com(double t);
+    Eigen::Vector3d lateral_com(double time);
     
     Eigen::Vector3d calc_com(double q1);
     Eigen::Vector3d calc_step(double q1);
@@ -322,7 +317,7 @@ public:
     
     void generate_zmp(double y_start, double t_start, double double_stance, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
     void lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, Eigen::VectorXd& X, Eigen::VectorXd& Y);
-    void zmp_traj(double window_start, double window_end, Eigen::VectorXd& zmp_window_t, Eigen::VectorXd& zmp_window_y);
+    void zmp_window(double window_start, double window_end, Eigen::VectorXd& zmp_window_t, Eigen::VectorXd& zmp_window_y);
     
     
     
@@ -397,7 +392,11 @@ protected:
     Eigen::Matrix<double,1,1> _u;
     
     double _step_duration;
+    
+    Eigen::VectorXd _planned_impacts;
     Eigen::Vector3d _com_y; 
+    
+    double _shift_time = 0;
     
     class param
     {
@@ -410,7 +409,7 @@ protected:
         int get_max_steps() {return _max_steps;};
         double get_double_stance() {return _double_stance;};
         double get_indent_zmp() {return _indentation_zmp;};
-        double get_initial_time() {return _start_time;};
+        double get_start_time() {return _start_time;};
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
         void set_duration_step(double duration_step) {_duration_step = duration_step;};
@@ -418,9 +417,8 @@ protected:
         void set_max_steps(int max_steps) {_max_steps = max_steps;};
         void set_double_stance(double double_stance) {_double_stance = double_stance;};
         void set_indent_zmp(double indentation_zmp) {_indentation_zmp = indentation_zmp;};
-        void set_start_time(double start_time) {_start_time = start_time;
-            
-        };
+        void set_start_time(double start_time) {_start_time = start_time;};
+        
     private:
         
         double _crouch, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
@@ -448,9 +446,9 @@ protected:
     
     bool ST_init(double time);
     bool ST_idle(double time);
-    bool ST_firstStep();
-    bool ST_walk();
-    bool ST_lastStep();
+    bool ST_firstStep(double time);
+    bool ST_walk(double time);
+    bool ST_lastStep(double time);
     int _cycleCounter = 1;
     
     bool _initCycle = 1; //just needed to stop the code after the first cycle of walking
