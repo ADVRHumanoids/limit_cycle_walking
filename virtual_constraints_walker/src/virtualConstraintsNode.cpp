@@ -480,7 +480,7 @@ int virtualConstraintsNode::impact_detected()
 //             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
 //                 fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
         
-            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-2  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
+            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-5  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
 //             if (_current_pose_ROS.get_sole(_current_side).coeff(2) - _terrain_heigth <= 0.0  && getTime() > 1.3 && _impact_cond > 0.4)
             {
                 _event = Event::IMPACT; // event impact detected for core()
@@ -638,7 +638,7 @@ void virtualConstraintsNode::exe(double time)
         }
         _impact_cond = _internal_time - _reset_time;
 
-        std::cout << "Impact_cond: " << _impact_cond << std::endl;
+//         std::cout << "Impact_cond: " << _impact_cond << std::endl;
         
         
     if (_init_completed && time >= _start_walk && _cycleCounter == 1 && runOnlyOnce)
@@ -660,13 +660,13 @@ void virtualConstraintsNode::exe(double time)
         }
         
         double q1 = q1_temp - _reset_condition;
-        std::cout << "q1: " << q1 << std::endl;
+//         std::cout << "q1: " << q1 << std::endl;
         
-        v_core(_internal_time);
+        core(_internal_time);
 
         // needed for bezier
         double tau = (q1 - _q_min) / (_q_max - _q_min);
-        std::cout << "tau: " << tau << std::endl;
+//         std::cout << "tau: " << tau << std::endl;
         
         _logger->add("tau", tau);
         _logger->add("q1", q1);
@@ -1024,18 +1024,18 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         
         if (_event == Event::IMPACT && _step_counter < _initial_param.get_max_steps()-1)  // jump in time, going to closer planned impact
         {
-            std::cout << "entered impact" << std::endl;
+            
+            std::cout << "entered impact at time: " << time << std::endl;
+            std::cout << "planned impacts: " << _planned_impacts.transpose() << std::endl;
             _shift_time = time - _planned_impacts(_step_counter+1); //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
-//             Eigen::MatrixXd n(_planned_impacts.size(),1);
-//             n.setOnes();
-//             _planned_impacts = _planned_impacts + _shift_time * n;
-//             std::cout << "_planned_impacts" << _planned_impacts << std::endl;
         }
         
-        std::cout << "Shift in time: "<< _shift_time << std::endl;     
+        std::cout << "Shift in time: " << _shift_time << std::endl;     
         double window_start = time - _shift_time;
 
         zmp_window(window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+        
+        _logger->add("zmp_window_full", _zmp_window_y);
         
         _u = _MpC_lat->_K_fb * _com_y + _MpC_lat->_K_prev * _zmp_window_y;
         
@@ -1157,7 +1157,7 @@ bool virtualConstraintsNode::ST_init(double time)
 
     // generate zmp given start walk and first stance step
     generate_zmp(first_stance_step, _start_walk, _initial_param.get_double_stance(), dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them
-
+    // get impact position in time
     _planned_impacts.resize(_initial_param.get_max_steps(),1);
     for (int i = 0; i < _initial_param.get_max_steps(); i++)
     {
@@ -1272,7 +1272,7 @@ bool virtualConstraintsNode::ST_lastStep(double time)
     return 1;
 };
     
-void virtualConstraintsNode::v_core(double time) 
+void virtualConstraintsNode::core(double time) 
 {
     std::cout << "Entered core:" << std::endl;   
     std::cout << "State --> " << _current_state << std::endl;
@@ -1322,7 +1322,7 @@ void virtualConstraintsNode::v_core(double time)
 //                     _event = Event::EMPTY; //burn impact event
                     break;
                 case State::WALK :
-                    if (_step_counter < _initial_param.get_max_steps()-1) //number of steps - starting step (the idea here is 5 steps is with the starting and final)
+                    if (_step_counter < _initial_param.get_max_steps()-2) //number of steps - starting step (the idea here is 5 steps is with the starting and final)
                     {
                         _current_state = State::WALK;
                         ST_walk(time);

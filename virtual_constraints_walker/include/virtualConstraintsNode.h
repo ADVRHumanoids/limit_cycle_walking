@@ -441,7 +441,7 @@ protected:
     
     Eigen::Vector3d lateral_com();
     
-    void v_core(double time);
+    void core(double time);
     void commander(double time, double tau);
     
     bool ST_init(double time);
