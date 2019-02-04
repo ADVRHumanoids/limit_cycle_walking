@@ -480,7 +480,7 @@ int virtualConstraintsNode::impact_detected()
 //             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
 //                 fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
         
-            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-5  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
+            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
 //             if (_current_pose_ROS.get_sole(_current_side).coeff(2) - _terrain_heigth <= 0.0  && getTime() > 1.3 && _impact_cond > 0.4)
             {
                 _event = Event::IMPACT; // event impact detected for core()
@@ -1031,10 +1031,10 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         }
         
         
-        if (time > _planned_impacts(_step_counter))
-        {
-            _shift_time = time - _planned_impacts(_step_counter);
-        }
+//         if (time > _planned_impacts(_step_counter))
+//         {
+//             _shift_time = time - _planned_impacts(_step_counter);
+//         }
         
         std::cout << "Shift in time: " << _shift_time << std::endl;  
         double window_start = time - _shift_time;

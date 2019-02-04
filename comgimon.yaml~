@@ -1,0 +1,36 @@
+XBotCore:
+  config_path: "external/WholeBodyController/configs/low_level/cogimon.yaml"
+
+XBotInterface:
+  urdf_path: "configs/ADVR_shared/cogimon/urdf/cogimon.urdf"
+  srdf_path: "external/WholeBodyController/configs/cogimon.srdf"
+  joint_map_path: "configs/ADVR_shared/cogimon/joint_map/cogimon_joint_map.yaml"
+
+RobotInterface:
+  framework_name: "OROCOS"
+
+ModelInterface:
+  model_type: "RBDL"
+  is_model_floating_base: "true"
+  
+MasterCommunicationInterface:
+  framework_name: "ROS"
+
+XBotRTPlugins:
+  plugins: ["HomingExample", "XBotRTCommunication", "chengxu_walking"] #, "HokuyoRotation", "chengxu_walking", "IkRosSMPub", "Grasp"] # "XBotRTCommunication"]
+  io_plugins: ["JointStateRemapper"] #["JointStateRemapper", "IkRosIo"]
+  
+NRTPlugins:
+  plugins: [] 
+  
+TransmissionPlugins:
+  plugins: ["CogimonAnkles"] #CogimonImpedanceAnkles CogimonAnkles
+  
+WebServer:
+  enable: "true"
+  address: "10.24.5.100"
+  port: "8081"
+
+SimulationOptions:
+  verbose_mode: "false"
+
