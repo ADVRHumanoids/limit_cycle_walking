@@ -1027,7 +1027,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
             std::cout << "current step n: " << _step_counter << std::endl;
             std::cout << "entered impact at time: " << time << std::endl;
             std::cout << "planned impacts: " << _planned_impacts.transpose() << std::endl;
-            _shift_time = time - _planned_impacts(_step_counter+1); //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
+            _shift_time = time - _planned_impacts(_step_counter); //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
         }
         
         
@@ -1036,10 +1036,10 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 //             _shift_time = time - _planned_impacts(_step_counter);
 //         }
         
-        std::cout << "Shift in time: " << _shift_time << std::endl;  
+//         std::cout << "Shift in time: " << _shift_time << std::endl;  
         double window_start = time - _shift_time;
         
-        std::cout << "window_start: " << window_start << std::endl;  
+//         std::cout << "window_start: " << window_start << std::endl;  
 
 
         
