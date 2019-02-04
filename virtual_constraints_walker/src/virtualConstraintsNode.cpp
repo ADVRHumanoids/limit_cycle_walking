@@ -1021,18 +1021,28 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
     
         double dt = 0.01; //TODO take it out from here
         
-        
-        if (_event == Event::IMPACT && _step_counter < _initial_param.get_max_steps()-1)  // jump in time, going to closer planned impact
+       
+        if (_event == Event::IMPACT && _step_counter <= _initial_param.get_max_steps())  // jump in time, going to closer planned impact
         {
-            
+            std::cout << "current step n: " << _step_counter << std::endl;
             std::cout << "entered impact at time: " << time << std::endl;
             std::cout << "planned impacts: " << _planned_impacts.transpose() << std::endl;
             _shift_time = time - _planned_impacts(_step_counter+1); //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
         }
         
-        std::cout << "Shift in time: " << _shift_time << std::endl;     
+        
+        if (time > _planned_impacts(_step_counter))
+        {
+            _shift_time = time - _planned_impacts(_step_counter);
+        }
+        
+        std::cout << "Shift in time: " << _shift_time << std::endl;  
         double window_start = time - _shift_time;
+        
+        std::cout << "window_start: " << window_start << std::endl;  
 
+
+        
         zmp_window(window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
         
         _logger->add("zmp_window_full", _zmp_window_y);
@@ -1159,9 +1169,10 @@ bool virtualConstraintsNode::ST_init(double time)
     generate_zmp(first_stance_step, _start_walk, _initial_param.get_double_stance(), dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them
     // get impact position in time
     _planned_impacts.resize(_initial_param.get_max_steps(),1);
-    for (int i = 0; i < _initial_param.get_max_steps(); i++)
+    
+    for (int i = 1; i <= _initial_param.get_max_steps(); i++)
     {
-    _planned_impacts(i) = _initial_param.get_start_time() +  _initial_param.get_duration_step() * i;
+        _planned_impacts(i-1) = _initial_param.get_start_time() +  _initial_param.get_duration_step() * i;
     }
     
     for (int i = 0; i < (_zmp_t).size(); i++)
