@@ -480,22 +480,23 @@ bool virtualConstraintsNode::left_sole_landed()
 {
     Eigen::Matrix<double, 6 ,1> ft_left = _current_pose_ROS.get_ft_sole(robot_interface::Side::Left);
     
-    double threshold = 300;
+    double threshold = 50;
     
-    if (fabs(ft_left.coeff(2)) >= threshold)
+    
+    if (fabs(ft_left.coeff(2)) <= threshold)
     {
         return 1;
     }
     else return 0;
 }
 
-bool virtualConstraintsNode::rigth_sole_landed()
+bool virtualConstraintsNode::right_sole_landed()
 {
-    double threshold = 300;
-    
     Eigen::Matrix<double, 6 ,1> ft_right = _current_pose_ROS.get_ft_sole(robot_interface::Side::Right);
-
-    if (fabs(ft_right.coeff(2)) >= threshold)
+    
+    double threshold = 50;
+    
+    if (fabs(ft_right.coeff(2)) <= threshold)
     {
         return 1;
     }
@@ -504,23 +505,18 @@ bool virtualConstraintsNode::rigth_sole_landed()
 }
 bool virtualConstraintsNode::impact_detector()
     {
-        if (left_sole_landed() == 0)
+        if (_last_left_landed == 0 && _last_left_landed != left_sole_landed())
         {
-            if (left_sole_landed() == 1)
-            {
             std::cout << "LEFT impact detected" << std::endl;
             return 1;
-            }
         }
         
-        if (rigth_sole_landed() == 0)
+        if (_last_right_landed == 0 && _last_right_landed != right_sole_landed())
         {
-            if (rigth_sole_landed() == 1)
-            {
-            std::cout << "RIGTH impact detected" << std::endl;
+            std::cout << "RIGHT impact detected" << std::endl;
             return 1;
-            }
         }
+        
         return 0;
     }
 
@@ -677,7 +673,7 @@ void virtualConstraintsNode::exe(double time)
         
         _internal_time = time - _starting_time;
         
-        std::cout << "Current time: " << _internal_time << std::endl;
+//         std::cout << "Current time: " << _internal_time << std::endl;
         
         double q1_temp = 0;
         
@@ -701,7 +697,12 @@ void virtualConstraintsNode::exe(double time)
     };
         
     bool impact = impact_detector();
-    _logger->add("impact_detected", impact);
+    _logger->add("impact_detector", impact);
+    _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
+    _logger->add("ft_rigth", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
+    
+    _logger->add("landed_rigth", right_sole_landed());
+    _logger->add("landed_left", left_sole_landed());
     
         if (impact_detect_fake())
         {
@@ -1236,6 +1237,10 @@ bool virtualConstraintsNode::ST_init(double time)
     _MpC_lat = std::make_shared<item_MpC>(_initial_height, Ts, T);
     
     _init_completed = 1;
+    
+    
+    _last_left_landed = left_sole_landed();
+    _last_right_landed = right_sole_landed();
     
     std::cout << "Initialization complete." << std::endl;
     
