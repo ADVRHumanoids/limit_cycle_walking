@@ -1,12 +1,12 @@
 <launch>
 
-<arg name="prefix" default=""/>  <? ignore or: gdb -ex run --args ?>
+<arg name="prefix" default=""/>  <?ignore or: gdb -ex run --args ?>
 
 <node pkg="virtual_constraints_walker" type="VC_run" 
-                                       name="virtual_constraints"
-                                       required="true" 
-                                       output="screen"
-                                       launch-prefix="$(arg prefix)">
+                    	             name="virtual_constraints"
+                        	     required="true" 
+                                     output="screen"
+                                     launch-prefix="$(arg prefix)">
 
 <rosparam command="load" file="$(env ROBOTOLOGY_ROOT)/external/limit_cycle_walking/virtual_constraints_walker/launch/walking_param/param_example.yaml"/>
 

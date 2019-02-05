@@ -529,7 +529,6 @@ int virtualConstraintsNode::impact_detect_fake()
 //
 //             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
 //                 fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
-        
             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
 //             if (impact_detector)
             {
@@ -700,6 +699,9 @@ void virtualConstraintsNode::exe(double time)
     {
         _event = Event::STOP;
     };
+        
+    bool impact = impact_detector();
+    _logger->add("impact_detected", impact);
     
         if (impact_detect_fake())
         {
@@ -708,7 +710,7 @@ void virtualConstraintsNode::exe(double time)
             
             _reset_time = _internal_time;
         }
-        
+
         double q1 = q1_temp - _reset_condition;
 //         std::cout << "q1: " << q1 << std::endl;
         
