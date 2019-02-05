@@ -76,10 +76,20 @@ class robot_interface
                 return 0;
         }
         
+        Eigen::Matrix<double, 6, 1> get_ft_sole(Side desired_side)
+        {
+            if (desired_side == Side::Double) 
+            {
+                std::cout << "Asked for sole force/torque during double stance.  Left: " << _sole_ft[Side::Left].matrix() << std::endl
+                                                                             << "Right: " << _sole_ft[Side::Right].matrix() << std::endl;
+                return _sole_ft[Side::Left];
+            }
+            else return _sole_ft[desired_side];
+        }
+        
+        
     protected:
         
-        
-    
         friend std::ostream& operator<<(std::ostream& os, Side s)
         {
             switch (s)
@@ -95,6 +105,7 @@ class robot_interface
 //         std::vector<Eigen::Affine3d> _sole_state;     /*0 is left, 1 is right*/
         std::map<robot_interface::Side, Eigen::Affine3d> _sole_state;
         std::map<robot_interface::Side, Eigen::Affine3d>_ankle_to_com;
+        std::map<robot_interface::Side, Eigen::Matrix<double, 6,1> > _sole_ft;
         Eigen::Affine3d _l_to_r_foot;
         bool _check_messages;
     };

@@ -18,9 +18,6 @@
 
 #include <memory>
 
-
-#include <mapSteps.h>
-
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <cartesian_interface/ReachPoseAction.h>
@@ -254,9 +251,14 @@ public:
     
     Eigen::Vector3d calc_com(double q1);
     Eigen::Vector3d calc_step(double q1);
+ 
     
-    int impact_detected(); 
-    bool impact();
+    bool rigth_sole_landed();
+    bool left_sole_landed();
+
+    bool impact_detector();
+    int impact_detect_fake(); 
+    
     void fakeCOM();
     void exe(double time);  // TODO put everything but this on the protected side
     

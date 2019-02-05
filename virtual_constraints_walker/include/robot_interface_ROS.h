@@ -7,6 +7,7 @@
 #include <tf2/convert.h>
 
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/WrenchStamped.h>
 
 #include <tf/transform_listener.h>
 
@@ -42,8 +43,10 @@ class robot_interface_ROS: public robot_interface
         void com_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
         void l_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
         void r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
+        void l_sole_ft_callback(const geometry_msgs::WrenchStamped msg_rcv);
+        void r_sole_ft_callback(const geometry_msgs::WrenchStamped msg_rcv);
         
-        bool _check_1, _check_2, _check_3, _check_4;
+        bool _check_1, _check_2, _check_3, _check_4, _check_5, _check_6;
         
 //         ros::NodeHandle n;
     };

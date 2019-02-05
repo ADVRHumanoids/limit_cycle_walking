@@ -16,6 +16,10 @@ robot_interface_ROS::robot_interface_ROS()
         _subs.push_back(n.subscribe("/cartesian/l_sole/state", 10, &robot_interface_ROS::l_sole_state_callback, this)); /*subscribe to cartesian/solution topic*/
         _subs.push_back(n.subscribe("/cartesian/r_sole/state", 10, &robot_interface_ROS::r_sole_state_callback, this)); /*subscribe to cartesian/solution topic*/
 
+        
+        _subs.push_back(n.subscribe("/xbotcore/cogimon/ft/l_leg_ft", 10, &robot_interface_ROS::l_sole_ft_callback, this));
+        _subs.push_back(n.subscribe("/xbotcore/cogimon/ft/r_leg_ft", 10, &robot_interface_ROS::r_sole_ft_callback, this));
+        
 //      prepare listener node       
         l_com_to_ankle_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
         r_com_to_ankle_listener.waitForTransform("ci/r_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
@@ -24,14 +28,18 @@ robot_interface_ROS::robot_interface_ROS()
 
          bool all_check = false;
 
+
         
         ROS_INFO("waiting for robot..");
-        _check_1 = _check_2 = _check_3 = _check_4 = false;
+        _check_1 = _check_2 = _check_3 = _check_4 = _check_5 = _check_6 = false;
+        
+//         _check_5 = true;
+//         _check_6 = true;
         
         while (!all_check)
         {
         
-            if (_check_1 && _check_2 && _check_3 && _check_4)
+            if (_check_1 && _check_2 && _check_3 && _check_4 && _check_5 && _check_6)
             {
                 all_check = true;
             }
@@ -79,6 +87,20 @@ void robot_interface_ROS::r_sole_state_callback(const geometry_msgs::PoseStamped
         _check_4 = true;
     }
 
+void robot_interface_ROS::l_sole_ft_callback(const geometry_msgs::WrenchStamped msg_rcv) //this is called by ros
+    {
+        tf::wrenchMsgToEigen(msg_rcv.wrench, _sole_ft[Side::Left]); /*TODO: is this a good implementation??*/
+//         if COUNT_ONCE {_callback_counter++;};
+        _check_5 = true;
+    }
+
+void robot_interface_ROS::r_sole_ft_callback(const geometry_msgs::WrenchStamped msg_rcv) //this is called by ros
+    {
+        tf::wrenchMsgToEigen(msg_rcv.wrench, _sole_ft[Side::Right]); /*TODO: is this a good implementation??*/
+//         if COUNT_ONCE {_callback_counter++;};
+        _check_6 = true;
+    }
+    
 Eigen::Affine3d robot_interface_ROS::listen_l_ankle_to_com()
     {
         tf::Pose distance;

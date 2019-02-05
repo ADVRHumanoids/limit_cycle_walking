@@ -1,7 +1,7 @@
 <launch>
 
-<include file="/home/francesco/advr-superbuild/external/limit_cycle_walking/cogimon_walker/launch/comanPlus_virtualConstraints.launch"/>
-<include file="/home/francesco/advr-superbuild/external/limit_cycle_walking/virtual_constraints_walker/launch/virtual_constraints_walker.launch"/>
+<include file="(env ROBOTOLOGY_ROOT)/external/limit_cycle_walking/cogimon_walker/launch/comanPlus_virtualConstraints.launch"/>
+<include file="(env ROBOTOLOGY_ROOT)/external/limit_cycle_walking/virtual_constraints_walker/launch/virtual_constraints_walker.launch"/>
 
 </launch>
 

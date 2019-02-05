@@ -48,6 +48,8 @@ virtualConstraintsNode::virtualConstraintsNode()
         _sole_pubs[robot_interface::Side::Left] = n.advertise<geometry_msgs::PoseStamped>("/cartesian/l_sole/reference", 10); /*publish to /l_sole/reference*/
         _sole_pubs[robot_interface::Side::Right] = n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 10); /*publish to /r_sole/reference*/
         
+
+        
   
     }
 
@@ -92,20 +94,20 @@ bool virtualConstraintsNode::get_param_ros()
         else std::cout << "unknown side starting command" << std::endl;
     }
             
-double virtualConstraintsNode::getTime()
-    {
-        double time;
-        if (_starting_time == 0)
-        {
-            time = 0;
-        }
-        else
-        {
-            time = ros::Time::now().toSec() - _starting_time;
-        }
-        
-        return time;
-    }
+// double virtualConstraintsNode::getTime()
+//     {
+//         double time;
+//         if (_starting_time == 0)
+//         {
+//             time = 0;
+//         }
+//         else
+//         {
+//             time = ros::Time::now().toSec() - _starting_time;
+//         }
+//         
+//         return time;
+//     }
 
 Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
     {      
@@ -474,14 +476,62 @@ void virtualConstraintsNode::update_pose(Eigen::Vector3d *current_pose, Eigen::V
 //         return delta_step;
 //     }
 
-int virtualConstraintsNode::impact_detected()                
+bool virtualConstraintsNode::left_sole_landed()
+{
+    Eigen::Matrix<double, 6 ,1> ft_left = _current_pose_ROS.get_ft_sole(robot_interface::Side::Left);
+    
+    double threshold = 300;
+    
+    if (fabs(ft_left.coeff(2)) >= threshold)
+    {
+        return 1;
+    }
+    else return 0;
+}
+
+bool virtualConstraintsNode::rigth_sole_landed()
+{
+    double threshold = 300;
+    
+    Eigen::Matrix<double, 6 ,1> ft_right = _current_pose_ROS.get_ft_sole(robot_interface::Side::Right);
+
+    if (fabs(ft_right.coeff(2)) >= threshold)
+    {
+        return 1;
+    }
+    else return 0;
+    
+}
+bool virtualConstraintsNode::impact_detector()
+    {
+        if (left_sole_landed() == 0)
+        {
+            if (left_sole_landed() == 1)
+            {
+            std::cout << "LEFT impact detected" << std::endl;
+            return 1;
+            }
+        }
+        
+        if (rigth_sole_landed() == 0)
+        {
+            if (rigth_sole_landed() == 1)
+            {
+            std::cout << "RIGTH impact detected" << std::endl;
+            return 1;
+            }
+        }
+        return 0;
+    }
+
+int virtualConstraintsNode::impact_detect_fake()                
     {
 //
 //             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
 //                 fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
         
             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
-//             if (_current_pose_ROS.get_sole(_current_side).coeff(2) - _terrain_heigth <= 0.0  && getTime() > 1.3 && _impact_cond > 0.4)
+//             if (impact_detector)
             {
                 _event = Event::IMPACT; // event impact detected for core()
 //                 _time_of_impact = _internal_time;
@@ -651,7 +701,7 @@ void virtualConstraintsNode::exe(double time)
         _event = Event::STOP;
     };
     
-        if (impact_detected())
+        if (impact_detect_fake())
         {
             _q_min = sense_q1();
             _reset_condition = q1_temp;
@@ -1024,19 +1074,19 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
        
         if (_event == Event::IMPACT && _step_counter <= _initial_param.get_max_steps())  // jump in time, going to closer planned impact
         {
-            std::cout << "current step n: " << _step_counter << std::endl;
-            std::cout << "entered impact at time: " << time << std::endl;
-            std::cout << "planned impacts: " << _planned_impacts.transpose() << std::endl;
+//             std::cout << "current step n: " << _step_counter << std::endl;
+//             std::cout << "entered impact at time: " << time << std::endl;
+//             std::cout << "planned impacts: " << _planned_impacts.transpose() << std::endl;
             _shift_time = time - _planned_impacts(_step_counter); //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
         }
-        
         
 //         if (time > _planned_impacts(_step_counter))
 //         {
 //             _shift_time = time - _planned_impacts(_step_counter);
 //         }
         
-//         std::cout << "Shift in time: " << _shift_time << std::endl;  
+//         std::cout << "Shift in time: " << _shift_time << std::endl;
+
         double window_start = time - _shift_time;
         
 //         std::cout << "window_start: " << window_start << std::endl;  
@@ -1221,9 +1271,9 @@ bool virtualConstraintsNode::ST_firstStep(double time)
     // ---------------------------------------------
     _com_info.set_com_initial_pose(_initial_com_position);
     
-    std::cout << "Updated step: " << std::endl;
-    std::cout << "From step --> " << _bezi_step.get_foot_initial_pose().transpose() << std::endl;
-    std::cout << "To step --> " << _bezi_step.get_foot_final_pose().transpose() << std::endl;
+//     std::cout << "Updated step: " << std::endl;
+//     std::cout << "From step --> " << _bezi_step.get_foot_initial_pose().transpose() << std::endl;
+//     std::cout << "To step --> " << _bezi_step.get_foot_final_pose().transpose() << std::endl;
     
     
     
@@ -1285,9 +1335,9 @@ bool virtualConstraintsNode::ST_lastStep(double time)
     
 void virtualConstraintsNode::core(double time) 
 {
-    std::cout << "Entered core:" << std::endl;   
-    std::cout << "State --> " << _current_state << std::endl;
-    std::cout << "Event --> " << _event << std::endl;
+//     std::cout << "Entered core:" << std::endl;   
+//     std::cout << "State --> " << _current_state << std::endl;
+//     std::cout << "Event --> " << _event << std::endl;
     
     switch (_event) {
         case Event::EMPTY :
@@ -1302,7 +1352,7 @@ void virtualConstraintsNode::core(double time)
                     break;
                 case State::EXIT :
                     break;
-                default : std::cout << "Current state is: " << _current_state << ". Empty event. Ignored." << std::endl;
+//                 default : std::cout << "Current state is: " << _current_state << ". Empty event. Ignored." << std::endl;
                 } 
         break;
         
@@ -1315,7 +1365,7 @@ void virtualConstraintsNode::core(double time)
                     break;
                 case State::EXIT :
                     break;
-                default : std::cout << "The robot is already walking. Command 'start' ignored." << std::endl;
+//                 default : std::cout << "The robot is already walking. Command 'start' ignored." << std::endl;
                 }
         break;
         

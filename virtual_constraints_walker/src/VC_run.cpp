@@ -101,13 +101,6 @@ int main(int argc, char **argv)
     ros::Rate loop_rate(100); //TODO set it from the robot
     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
     
-    double start_idle_time;
-    
-    ros::NodeHandle n_cmd;
-    ros::Publisher _q1_pub;
-    
-
-    _q1_pub = n_cmd.advertise<std_msgs::Float64>("/q1", 10);
     
 //     std::vector<Eigen::MatrixXd> supportPolygon(VC.get_max_steps());
     
@@ -117,46 +110,18 @@ int main(int argc, char **argv)
     robot.sense(); /*inside there is ros::spinOnce*/
     VC.straighten_up_action();
     VC.sense_q1();
-    }
-// ---------------add idle time ----------------------------
-    start_idle_time = ros::Time::now().toSec();
-    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
-    
-//----------------------------------------------------------  
-    double q1_fake = VC.sense_q1();
-    double q1_temp = q1_fake;
-//     std::cout << VC._q1_fake << std::endl;
-    
-//     double starting_time = ros::Time::now().toSec();
-//     double ending_time = ros::Time::now().toSec();
-    double last_q1_fake = - VC.sense_q1();
-    while (ros::ok()) //&& VC.get_n_step() < VC.get_max_steps()
+    } 
+    while (ros::ok())
     {
-
         VC.get_robot().sense();
+        
+        VC.impact_detector();
         
         VC.exe(ros::Time::now().toSec());
 
         loop_rate.sleep();
-        
-        
     }
-    
-// ---------------add idle time ----------------------------
-    start_idle_time = ros::Time::now().toSec();
-    while (ros::ok() && ros::Time::now().toSec() <= start_idle_time +4) {}
-    
-//----------------------------------------------------------  
-
-
 }   
-
-
-
-
-
-
-
 
 
 
