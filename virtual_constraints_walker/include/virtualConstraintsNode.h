@@ -33,6 +33,7 @@ class virtualConstraintsNode {
 //     friend class mapSteps;
 public:
      
+    enum class Phase {FLIGHT = 0, LAND = 1};
     enum class Event { IMPACT, START, STOP, EMPTY };
     enum class State { INIT, IDLE, FIRSTSTEP, WALK, LASTSTEP, EXIT };
     
@@ -253,8 +254,8 @@ public:
     Eigen::Vector3d calc_step(double q1);
  
     
-    bool right_sole_landed();
-    bool left_sole_landed();
+    Phase right_sole_phase();
+    Phase left_sole_phase();
 
     bool impact_detector();
     int impact_detect_fake(); 
@@ -371,8 +372,6 @@ protected:
     data_com _com_info;
     std::shared_ptr<item_MpC> _MpC_lat;
     
-    bool _last_right_landed;
-    bool _last_left_landed;
     
     robot_interface_ROS::Side _current_side = robot_interface::Side::Double;
     robot_interface::Side _other_side;
@@ -436,6 +435,12 @@ protected:
     
     State _current_state = State::INIT;
     Event _event = Event::EMPTY;
+    
+    Phase _current_phase_left = Phase::LAND;
+    Phase _previous_phase_left = Phase::LAND;
+
+    Phase _current_phase_right = Phase::LAND;
+    Phase _previous_phase_right = Phase::LAND;
     
     Eigen::Vector3d _pointsBezier_z;
     Eigen::Vector2d _pointsBezier_x;

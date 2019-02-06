@@ -476,44 +476,72 @@ void virtualConstraintsNode::update_pose(Eigen::Vector3d *current_pose, Eigen::V
 //         return delta_step;
 //     }
 
-bool virtualConstraintsNode::left_sole_landed()
+virtualConstraintsNode::Phase virtualConstraintsNode::left_sole_phase()
 {
     Eigen::Matrix<double, 6 ,1> ft_left = _current_pose_ROS.get_ft_sole(robot_interface::Side::Left);
     
-    double threshold = 50;
+    double threshold_min = 50;
+    double threshold_max = 200;
     
-    
-    if (fabs(ft_left.coeff(2)) <= threshold)
-    {
-        return 1;
+    switch (_current_phase_right) {
+        case Phase::LAND :
+            if (fabs(ft_left.coeff(2)) <= threshold_min)
+            {
+                _current_phase_right = Phase::FLIGHT;
+            }
+            break;
+        case Phase::FLIGHT : 
+            if (fabs(ft_left.coeff(2)) >= threshold_max)
+            {
+                _current_phase_right = Phase::LAND;
+            }
+            break;
+        default : 
+            throw std::runtime_error(std::string("Phase not recognized (left sole)!"));
+            break;
     }
-    else return 0;
 }
 
-bool virtualConstraintsNode::right_sole_landed()
+virtualConstraintsNode::Phase virtualConstraintsNode::right_sole_phase()
 {
     Eigen::Matrix<double, 6 ,1> ft_right = _current_pose_ROS.get_ft_sole(robot_interface::Side::Right);
     
-    double threshold = 50;
+    double threshold_min = 50;
+    double threshold_max = 200;
     
-    if (fabs(ft_right.coeff(2)) <= threshold)
-    {
-        return 1;
+    switch (_current_phase_right) {
+        case Phase::LAND :
+            if (fabs(ft_right.coeff(2)) <= threshold_min)
+            {
+                _current_phase_right = Phase::FLIGHT;
+            }
+            break;
+        case Phase::FLIGHT : 
+            if (fabs(ft_right.coeff(2)) >= threshold_max)
+            {
+                _current_phase_right = Phase::LAND;
+            }
+            break;
+        default : 
+            throw std::runtime_error(std::string("Phase not recognized (right sole)!"));
+            break;
     }
-    else return 0;
-    
 }
 bool virtualConstraintsNode::impact_detector()
     {
-        if (_last_left_landed == 0 && _last_left_landed != left_sole_landed())
+        // left foot
+        if (_previous_phase_left == Phase::FLIGHT &&  _current_phase_left == Phase::LAND)
         {
             std::cout << "LEFT impact detected" << std::endl;
+            _previous_phase_left = _current_phase_left;
             return 1;
         }
         
-        if (_last_right_landed == 0 && _last_right_landed != right_sole_landed())
+        // right foot
+        if (_previous_phase_right == Phase::FLIGHT &&  _current_phase_right == Phase::LAND)
         {
-            std::cout << "RIGHT impact detected" << std::endl;
+            std::cout << "LEFT impact detected" << std::endl;
+            _previous_phase_right = _current_phase_right;
             return 1;
         }
         
@@ -701,8 +729,9 @@ void virtualConstraintsNode::exe(double time)
     _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
     _logger->add("ft_rigth", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
     
-    _logger->add("landed_rigth", right_sole_landed());
-    _logger->add("landed_left", left_sole_landed());
+    
+    _logger->add("landed_rigth", static_cast<int>(right_sole_phase()));
+    _logger->add("landed_left",  static_cast<int>(left_sole_phase()));
     
         if (impact_detect_fake())
         {
@@ -1236,12 +1265,9 @@ bool virtualConstraintsNode::ST_init(double time)
 
     _MpC_lat = std::make_shared<item_MpC>(_initial_height, Ts, T);
     
+    
+    
     _init_completed = 1;
-    
-    
-    _last_left_landed = left_sole_landed();
-    _last_right_landed = right_sole_landed();
-    
     std::cout << "Initialization complete." << std::endl;
     
     return 1;
