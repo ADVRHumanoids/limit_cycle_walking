@@ -23,7 +23,6 @@ hold on;plot(1 +foot_trajectory(3,:)','r');
 
 
 hold on; plot(zmp_ref')
-plot(0.1*landed_left,'k--');
- plot(0.1*landed_right, 'r--');
- 
- plot(com_trajectory')
+plot(zmp')
+plot(0.1*landed_left,'k');
+hold on; plot(0.1*landed_right, 'r--');

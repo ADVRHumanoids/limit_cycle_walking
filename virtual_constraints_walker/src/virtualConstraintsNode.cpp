@@ -512,7 +512,7 @@ void virtualConstraintsNode::right_sole_phase()
     Eigen::Matrix<double, 6 ,1> ft_right = _current_pose_ROS.get_ft_sole(robot_interface::Side::Right);
     
     double threshold_min = 50;
-    double threshold_max = 200;
+    double threshold_max = 150;
     
     switch (_current_phase_right) {
         case Phase::LAND :
@@ -535,20 +535,21 @@ void virtualConstraintsNode::right_sole_phase()
             break;
     }
 }
+
 bool virtualConstraintsNode::impact_detector()
-    {
-        bool impact_detected = 0;
+{
         right_sole_phase();
         left_sole_phase();
         
 //         std::cout << "previous left phase: "<<_previous_phase_left << " and current left phase: " << _current_phase_left << std::endl;
 //         std::cout << "previous right phase: "<<_previous_phase_right << " and current right phase: " << _current_phase_right << std::endl;
+        
         // left foot
         if (_previous_phase_left == Phase::FLIGHT &&  _current_phase_left == Phase::LAND)
         {
             std::cout << "LEFT impact detected" << std::endl;
             _previous_phase_left = _current_phase_left;
-            impact_detected = 1;
+            return true;
         }
         
         // right foot
@@ -556,11 +557,12 @@ bool virtualConstraintsNode::impact_detector()
         {
             std::cout << "RIGHT impact detected" << std::endl;
             _previous_phase_right = _current_phase_right;
-            impact_detected = 1;
+            return true;
         }
         
-        return impact_detected;
-    }
+        
+        return false;
+}
 
 int virtualConstraintsNode::impact_detect_fake()                
     {
@@ -568,7 +570,7 @@ int virtualConstraintsNode::impact_detect_fake()
 //             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
 //                 fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
-//             if (impact_detector)
+//             if (impact_detector() && _init_completed)
             {
                 _event = Event::IMPACT; // event impact detected for core()
 //                 _time_of_impact = _internal_time;
@@ -735,13 +737,15 @@ void virtualConstraintsNode::exe(double time)
     
     if (_init_completed && _cycleCounter == 2 && runOnlyOnce)
     {
-        _impact_cond = 0;
+//         _impact_cond = 0;
         _event = Event::STOP;
     };
         
-    bool impact = impact_detector();
+//     bool impact = impact_detector();
+//     if(impact)
+//         std::cout << "impact_detected!!!!"<< std::endl;
     
-    _logger->add("impact_detector", impact);
+//     _logger->add("impact_detector", impact);
     _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
     _logger->add("ft_right", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
     

@@ -114,11 +114,7 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
         VC.get_robot().sense();
-        
-        VC.impact_detector();
-        
         VC.exe(ros::Time::now().toSec());
-
         loop_rate.sleep();
     }
 }   
