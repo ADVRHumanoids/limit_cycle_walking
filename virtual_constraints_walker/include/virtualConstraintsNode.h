@@ -254,8 +254,8 @@ public:
     Eigen::Vector3d calc_step(double q1);
  
     
-    Phase right_sole_phase();
-    Phase left_sole_phase();
+    void right_sole_phase();
+    void left_sole_phase();
 
     bool impact_detector();
     int impact_detect_fake(); 
@@ -414,6 +414,8 @@ protected:
         double get_double_stance() {return _double_stance;};
         double get_indent_zmp() {return _indentation_zmp;};
         double get_start_time() {return _start_time;};
+        double get_lean_forward() {return _lean_forward;};
+        
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
         void set_duration_step(double duration_step) {_duration_step = duration_step;};
@@ -422,10 +424,10 @@ protected:
         void set_double_stance(double double_stance) {_double_stance = double_stance;};
         void set_indent_zmp(double indentation_zmp) {_indentation_zmp = indentation_zmp;};
         void set_start_time(double start_time) {_start_time = start_time;};
-        
+        void set_lean_forward(double lean_forward) {_lean_forward = lean_forward;};
     private:
         
-        double _crouch, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
+        double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
         robot_interface::Side _first_step_side;
         int _max_steps;
         
@@ -489,6 +491,16 @@ protected:
             case State::WALK : return os << "walking";
             case State::EXIT : return os << "exit";
             default : return os << "wrong state";
+        }
+    };
+    
+    friend std::ostream& operator<<(std::ostream& os, Phase s)
+    {
+        switch (s)
+        {
+            case Phase::LAND :  return os << "land";
+            case Phase::FLIGHT :  return os << "flight";
+            default : return os << "wrong phase";
         }
     };
 

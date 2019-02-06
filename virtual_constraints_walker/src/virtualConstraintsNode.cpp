@@ -57,7 +57,7 @@ bool virtualConstraintsNode::get_param_ros()
     {
         ros::NodeHandle nh_priv("~");
         int max_steps;
-        double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time;
+        double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time, lean_forward;
         std::string first_side;
 
         /*default parameters*/
@@ -69,6 +69,7 @@ bool virtualConstraintsNode::get_param_ros()
         double default_indentation_zmp = 0;
         double default_double_stance = 0;
         double default_start_time = 1;
+        double default_lean_forward = 0;
         
         drop = nh_priv.param("initial_crouch", default_drop);
         max_steps = nh_priv.param("max_steps", default_max_steps);
@@ -78,6 +79,7 @@ bool virtualConstraintsNode::get_param_ros()
         indentation_zmp = nh_priv.param("indent_zmp", default_indentation_zmp);
         double_stance = nh_priv.param("double_stance_duration", default_double_stance);
         start_time = nh_priv.param("start_time", default_start_time);
+        lean_forward = nh_priv.param("lean_forward", default_lean_forward);
         
         _initial_param.set_crouch(drop);
         _initial_param.set_max_steps(max_steps);
@@ -86,6 +88,7 @@ bool virtualConstraintsNode::get_param_ros()
         _initial_param.set_indent_zmp(indentation_zmp);
         _initial_param.set_double_stance(double_stance);
         _initial_param.set_start_time(start_time);
+        _initial_param.set_lean_forward(lean_forward);
         
         if (first_side == "Left")
                 _initial_param.set_first_step_side(robot_interface::Side::Left);
@@ -113,8 +116,8 @@ Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
     {      
         Eigen::Vector3d straight_com = _current_pose_ROS.get_com();
         
-        straight_com(0) = _current_pose_ROS.get_sole(_current_side).coeff(0); /*TODO*/
-//         straight_com(1) = _current_pose_ROS.get_sole(_current_side).coeff(1) ;       /*TODO TOCHANGE*/ /* - _current_pose_ROS.get_sole(_current_side).coeff(1)/3.2 */
+        straight_com(0) = _current_pose_ROS.get_sole(_current_side).coeff(0) + _initial_param.get_lean_forward(); /*TODO*/
+//         straight_com(1) = _current_pose_ROS.get_sole(_current_side).coeff(1);       /*TODO TOCHANGE*/ /* - _current_pose_ROS.get_sole(_current_side).coeff(1)/3.2 */
         straight_com(2) = _initial_param.get_crouch();
         /*TODO PUT DEFAULT POSITION*/
 //         _poly_step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), straight_com, straight_com, 0, 0, getTime(), getTime()+2);
@@ -476,24 +479,26 @@ void virtualConstraintsNode::update_pose(Eigen::Vector3d *current_pose, Eigen::V
 //         return delta_step;
 //     }
 
-virtualConstraintsNode::Phase virtualConstraintsNode::left_sole_phase()
+void virtualConstraintsNode::left_sole_phase()
 {
     Eigen::Matrix<double, 6 ,1> ft_left = _current_pose_ROS.get_ft_sole(robot_interface::Side::Left);
     
     double threshold_min = 50;
     double threshold_max = 200;
     
-    switch (_current_phase_right) {
+    switch (_current_phase_left) {
         case Phase::LAND :
             if (fabs(ft_left.coeff(2)) <= threshold_min)
             {
-                _current_phase_right = Phase::FLIGHT;
+                _previous_phase_left = _current_phase_left;
+                _current_phase_left = Phase::FLIGHT;
             }
             break;
         case Phase::FLIGHT : 
             if (fabs(ft_left.coeff(2)) >= threshold_max)
             {
-                _current_phase_right = Phase::LAND;
+                _previous_phase_left = _current_phase_left;
+                _current_phase_left = Phase::LAND;
             }
             break;
         default : 
@@ -502,7 +507,7 @@ virtualConstraintsNode::Phase virtualConstraintsNode::left_sole_phase()
     }
 }
 
-virtualConstraintsNode::Phase virtualConstraintsNode::right_sole_phase()
+void virtualConstraintsNode::right_sole_phase()
 {
     Eigen::Matrix<double, 6 ,1> ft_right = _current_pose_ROS.get_ft_sole(robot_interface::Side::Right);
     
@@ -513,12 +518,15 @@ virtualConstraintsNode::Phase virtualConstraintsNode::right_sole_phase()
         case Phase::LAND :
             if (fabs(ft_right.coeff(2)) <= threshold_min)
             {
+                _previous_phase_right = _current_phase_right;
                 _current_phase_right = Phase::FLIGHT;
+                
             }
             break;
         case Phase::FLIGHT : 
             if (fabs(ft_right.coeff(2)) >= threshold_max)
             {
+                _previous_phase_right = _current_phase_right;
                 _current_phase_right = Phase::LAND;
             }
             break;
@@ -529,23 +537,29 @@ virtualConstraintsNode::Phase virtualConstraintsNode::right_sole_phase()
 }
 bool virtualConstraintsNode::impact_detector()
     {
+        bool impact_detected = 0;
+        right_sole_phase();
+        left_sole_phase();
+        
+//         std::cout << "previous left phase: "<<_previous_phase_left << " and current left phase: " << _current_phase_left << std::endl;
+//         std::cout << "previous right phase: "<<_previous_phase_right << " and current right phase: " << _current_phase_right << std::endl;
         // left foot
         if (_previous_phase_left == Phase::FLIGHT &&  _current_phase_left == Phase::LAND)
         {
             std::cout << "LEFT impact detected" << std::endl;
             _previous_phase_left = _current_phase_left;
-            return 1;
+            impact_detected = 1;
         }
         
         // right foot
         if (_previous_phase_right == Phase::FLIGHT &&  _current_phase_right == Phase::LAND)
         {
-            std::cout << "LEFT impact detected" << std::endl;
+            std::cout << "RIGHT impact detected" << std::endl;
             _previous_phase_right = _current_phase_right;
-            return 1;
+            impact_detected = 1;
         }
         
-        return 0;
+        return impact_detected;
     }
 
 int virtualConstraintsNode::impact_detect_fake()                
@@ -721,17 +735,19 @@ void virtualConstraintsNode::exe(double time)
     
     if (_init_completed && _cycleCounter == 2 && runOnlyOnce)
     {
+        _impact_cond = 0;
         _event = Event::STOP;
     };
         
     bool impact = impact_detector();
+    
     _logger->add("impact_detector", impact);
     _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
-    _logger->add("ft_rigth", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
+    _logger->add("ft_right", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
     
-    
-    _logger->add("landed_rigth", static_cast<int>(right_sole_phase()));
-    _logger->add("landed_left",  static_cast<int>(left_sole_phase()));
+    _logger->add("landed_left", static_cast<int>(_current_phase_left));
+    _logger->add("landed_right",  static_cast<int>(_current_phase_right));
+  
     
         if (impact_detect_fake())
         {
@@ -1147,6 +1163,11 @@ void virtualConstraintsNode::commander(double time, double tau)
     if (_current_state == State::IDLE || _current_state == State::INIT || _current_state == State::EXIT)
     {
         ////do nothing
+        Eigen::Vector3d com_trajectory_lat, foot_trajectory;
+        com_trajectory_lat.setZero();
+        foot_trajectory.setZero();
+         _logger->add("com_trajectory", com_trajectory_lat);
+         _logger->add("foot_trajectory", foot_trajectory);
     }
     else
     {
@@ -1184,7 +1205,7 @@ void virtualConstraintsNode::commander(double time, double tau)
 //         _logger->add("traj_bezier_z", getBezierCurve(_bezi_step.get_points_bezier_z(), tau));
 //         _logger->add("traj_bezier_x", getBezierCurve(_bezi_step.get_points_bezier_x(), tau));
         
-        _logger->add("time", _internal_time);
+        _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
         
         send_com(com_trajectory_lat);
         send_step(foot_trajectory);
