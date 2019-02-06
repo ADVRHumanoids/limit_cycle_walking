@@ -1,6 +1,6 @@
 <launch>
 
-<arg name="prefix" default=""/>  <? ignore or: gdb -ex run --args ?>
+<arg name="prefix" default=""/>  <?ignore or: gdb -ex run --args ?>
 
 <node pkg="virtual_constraints_walker" type="VC_run" 
                                        name="virtual_constraints"
