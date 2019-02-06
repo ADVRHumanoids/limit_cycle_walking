@@ -253,7 +253,7 @@ public:
     Eigen::Vector3d calc_step(double q1);
  
     
-    bool rigth_sole_landed();
+    bool right_sole_landed();
     bool left_sole_landed();
 
     bool impact_detector();
@@ -371,7 +371,10 @@ protected:
     data_com _com_info;
     std::shared_ptr<item_MpC> _MpC_lat;
     
-    robot_interface_ROS::Side _current_side = robot_interface::Side::Double; 
+    bool _last_right_landed;
+    bool _last_left_landed;
+    
+    robot_interface_ROS::Side _current_side = robot_interface::Side::Double;
     robot_interface::Side _other_side;
     
     XBot::MatLogger::Ptr _logger;

@@ -12,7 +12,6 @@ class robot_interface
     public:
         
         enum class Side { Left = 0, Right = 1, Double = -1}; /*Side that is SWINGING*/    
-        
         typedef std::shared_ptr<robot_interface> Ptr;
 
         Eigen::Vector3d get_com() {return _com_state.translation();};
