@@ -483,8 +483,8 @@ void virtualConstraintsNode::left_sole_phase()
 {
     Eigen::Matrix<double, 6 ,1> ft_left = _current_pose_ROS.get_ft_sole(robot_interface::Side::Left);
     
-    double threshold_min = 50;
-    double threshold_max = 150;
+    double threshold_min = 40;
+    double threshold_max = 90;
     
     switch (_current_phase_left) {
         case Phase::LAND :
@@ -511,8 +511,8 @@ void virtualConstraintsNode::right_sole_phase()
 {
     Eigen::Matrix<double, 6 ,1> ft_right = _current_pose_ROS.get_ft_sole(robot_interface::Side::Right);
     
-    double threshold_min = 50;
-    double threshold_max = 150;
+    double threshold_min = 40; //good 50
+    double threshold_max = 90; //good 100
     
     switch (_current_phase_right) {
         case Phase::LAND :
@@ -569,8 +569,8 @@ int virtualConstraintsNode::impact_detect_fake()
 //
 //             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
 //                 fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
-//             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
-            if (impact_detector() && _init_completed)
+            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
+//             if (impact_detector() && _init_completed)
             {
                 _event = Event::IMPACT; // event impact detected for core()
 //                 _time_of_impact = _internal_time;

@@ -6,4 +6,4 @@ first_step_side: Right
 indent_zmp: 0.02
 double_stance_duration: 0.0
 start_time: 1
-lean_forward: 0
+lean_forward: 0.01
