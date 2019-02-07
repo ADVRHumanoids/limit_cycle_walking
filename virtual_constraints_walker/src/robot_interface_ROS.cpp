@@ -33,8 +33,8 @@ robot_interface_ROS::robot_interface_ROS()
         ROS_INFO("waiting for robot..");
         _check_1 = _check_2 = _check_3 = _check_4 = _check_5 = _check_6 = false;
         
-//         _check_5 = true;
-//         _check_6 = true;
+        _check_5 = true; //TODO take them out
+        _check_6 = true;
         
         while (!all_check)
         {

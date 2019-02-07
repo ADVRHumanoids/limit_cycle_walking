@@ -484,7 +484,7 @@ void virtualConstraintsNode::left_sole_phase()
     Eigen::Matrix<double, 6 ,1> ft_left = _current_pose_ROS.get_ft_sole(robot_interface::Side::Left);
     
     double threshold_min = 50;
-    double threshold_max = 200;
+    double threshold_max = 150;
     
     switch (_current_phase_left) {
         case Phase::LAND :
@@ -569,8 +569,8 @@ int virtualConstraintsNode::impact_detect_fake()
 //
 //             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
 //                 fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
-            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
-//             if (impact_detector() && _init_completed)
+//             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
+            if (impact_detector() && _init_completed)
             {
                 _event = Event::IMPACT; // event impact detected for core()
 //                 _time_of_impact = _internal_time;
@@ -741,9 +741,7 @@ void virtualConstraintsNode::exe(double time)
         _event = Event::STOP;
     };
         
-
   
-    
         if (impact_detect_fake())
         {
             _q_min = sense_q1();
@@ -1114,31 +1112,35 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
     
         double dt = 0.01; //TODO take it out from here
         
-       
+       double entered = 0;
         if (_event == Event::IMPACT && _step_counter <= _initial_param.get_max_steps())  // jump in time, going to closer planned impact
         {
 //             std::cout << "current step n: " << _step_counter << std::endl;
 //             std::cout << "entered impact at time: " << time << std::endl;
 //             std::cout << "planned impacts: " << _planned_impacts.transpose() << std::endl;
-            _shift_time = time - _planned_impacts(_step_counter); //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
+                entered = 1;  
+            _shift_time = time - _planned_impacts(_step_counter) - dt; //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
         }
         
-        int entered = 0;
-        if (time > _planned_impacts(_step_counter) + _shift_time)
-        {
-            _shift_time = time - _planned_impacts(_step_counter);
-            entered = 1;
-            
-        }
-        
-        _logger->add("delay_period", entered);
+         _logger->add("shifted", entered);
+// VERSION ONE seems to work with fake impacts
+//         if (time > _planned_impacts(_step_counter) + _shift_time)
+//         {
+//             _shift_time = time - _planned_impacts(_step_counter);    
+//         }
 //         std::cout << "Shift in time: " << _shift_time << std::endl;
 
         double window_start = time - _shift_time;
         
+        // VERSION TWO 
+        if (time > _planned_impacts(_step_counter) + _shift_time)
+        {
+            window_start = _planned_impacts(_planned_impacts.size() -1) +1;
+        }
+        
 //         std::cout << "window_start: " << window_start << std::endl;  
-
-
+        
+        std::cout << "window:" << window_start << std::endl;
         
         zmp_window(window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
         

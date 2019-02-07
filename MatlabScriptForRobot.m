@@ -9,7 +9,7 @@ plot(com_trajectory')
 
 plot(zmp_y(20:end)');
 
-plot(delay_period')
+plot(shifted');
 
 plot(1 + foot_trajectory(3,:)');
 %% phase LAND 1/FLIGHT 0
