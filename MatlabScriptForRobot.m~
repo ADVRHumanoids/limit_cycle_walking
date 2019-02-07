@@ -1,28 +1,34 @@
 %figure(1);
 %plot(foot_trajectory');
 
+%% zmp
 figure(2);
 plot(zmp');
 hold on; plot(zmp_ref', 'r--');
 
+%% phase LAND 1/FLIGHT 0
 figure(3);
 plot(landed_left);
 hold on; plot(landed_right, 'r--');
 
+%% force sensors
 figure(4);
 hold on; plot(abs(ft_right(3,:))', 'r--')
 plot(abs(ft_left(3,:))')
 
+%% impact detector
 figure(5);
 plot(impact_detector');
 hold on;plot(1 +foot_trajectory(3,:)','r');
 
+%% 
 hold on; plot(zmp_ref')
 plot(zmp')
 hold on;plot(1 +foot_trajectory(3,:)','r');
 
 
 hold on; plot(zmp_ref')
-plot(zmp')
-plot(0.1*landed_left,'k');
-hold on; plot(0.1*landed_right, 'r--');
+plot(0.1*landed_left,'k--');
+ plot(0.1*landed_right, 'r--');
+ 
+ plot(com_trajectory')

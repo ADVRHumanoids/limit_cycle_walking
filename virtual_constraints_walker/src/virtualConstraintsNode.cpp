@@ -741,16 +741,7 @@ void virtualConstraintsNode::exe(double time)
         _event = Event::STOP;
     };
         
-//     bool impact = impact_detector();
-//     if(impact)
-//         std::cout << "impact_detected!!!!"<< std::endl;
-    
-//     _logger->add("impact_detector", impact);
-    _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
-    _logger->add("ft_right", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
-    
-    _logger->add("landed_left", static_cast<int>(_current_phase_left));
-    _logger->add("landed_right",  static_cast<int>(_current_phase_right));
+
   
     
         if (impact_detect_fake())
@@ -1132,11 +1123,15 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
             _shift_time = time - _planned_impacts(_step_counter); //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
         }
         
-//         if (time > _planned_impacts(_step_counter))
-//         {
-//             _shift_time = time - _planned_impacts(_step_counter);
-//         }
+        int entered = 0;
+        if (time > _planned_impacts(_step_counter) + _shift_time)
+        {
+            _shift_time = time - _planned_impacts(_step_counter);
+            entered = 1;
+            
+        }
         
+        _logger->add("delay_period", entered);
 //         std::cout << "Shift in time: " << _shift_time << std::endl;
 
         double window_start = time - _shift_time;
@@ -1164,14 +1159,28 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 void virtualConstraintsNode::commander(double time, double tau)
 {
      
-    if (_current_state == State::IDLE || _current_state == State::INIT || _current_state == State::EXIT)
+    if (_current_state == State::IDLE)
     {
-        ////do nothing
+        ////do nothing just logging
         Eigen::Vector3d com_trajectory_lat, foot_trajectory;
         com_trajectory_lat.setZero();
         foot_trajectory.setZero();
          _logger->add("com_trajectory", com_trajectory_lat);
          _logger->add("foot_trajectory", foot_trajectory);
+        _logger->add("com_trajectory", com_trajectory_lat);
+        _logger->add("foot_trajectory", foot_trajectory);
+
+        _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
+        
+        _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
+        _logger->add("ft_right", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
+
+        _logger->add("landed_left", static_cast<int>(_current_phase_left));
+        _logger->add("landed_right",  static_cast<int>(_current_phase_right));
+    }
+    else if (_current_state == State::INIT ||  _current_state == State::EXIT)
+    {
+        ////do nothing
     }
     else
     {
@@ -1211,6 +1220,12 @@ void virtualConstraintsNode::commander(double time, double tau)
         
         _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
         
+        _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
+        _logger->add("ft_right", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
+
+        _logger->add("landed_left", static_cast<int>(_current_phase_left));
+        _logger->add("landed_right",  static_cast<int>(_current_phase_right));
+    
         send_com(com_trajectory_lat);
         send_step(foot_trajectory);
     }
