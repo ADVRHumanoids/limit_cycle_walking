@@ -7,3 +7,6 @@ indent_zmp: 0.02
 double_stance_duration: 0.0
 start_time: 1
 lean_forward: 0.01
+real_impacts: 0
+force_sensor_threshold_right: 50 100
+force_sensor_threshold_left: 50 100

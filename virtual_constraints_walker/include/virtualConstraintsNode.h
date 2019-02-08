@@ -257,8 +257,11 @@ public:
     void right_sole_phase();
     void left_sole_phase();
 
+    bool real_impacts();
+    bool fake_impacts();
+    
     bool impact_detector();
-    int impact_detect_fake(); 
+    int impact_routine(); 
     
     void fakeCOM();
     void exe(double time);  // TODO put everything but this on the protected side
@@ -415,6 +418,9 @@ protected:
         double get_indent_zmp() {return _indentation_zmp;};
         double get_start_time() {return _start_time;};
         double get_lean_forward() {return _lean_forward;};
+        std::vector<double> get_threshold_right() {return _threshold_right;};
+        std::vector<double> get_threshold_left() {return _threshold_left;};
+        bool get_switch_real_impact() {return _real_impacts;};
         
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
@@ -425,16 +431,25 @@ protected:
         void set_indent_zmp(double indentation_zmp) {_indentation_zmp = indentation_zmp;};
         void set_start_time(double start_time) {_start_time = start_time;};
         void set_lean_forward(double lean_forward) {_lean_forward = lean_forward;};
+        void set_threshold_right(std::vector<double> threshold_right) {_threshold_right = threshold_right;};
+        void set_threshold_left(std::vector<double> threshold_left) {_threshold_left = threshold_left;};
+        void set_switch_real_impact(bool real_impacts) {_real_impacts = real_impacts;};
+        
     private:
         
         double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
         robot_interface::Side _first_step_side;
+        
+        bool _real_impacts;
+        std::vector<double> _threshold_right;
+        std::vector<double> _threshold_left;
+        
         int _max_steps;
         
     } _initial_param;
     
     double _initial_q1;
-    
+   
     State _current_state = State::INIT;
     Event _event = Event::EMPTY;
     

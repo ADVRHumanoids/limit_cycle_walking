@@ -58,6 +58,10 @@ bool virtualConstraintsNode::get_param_ros()
         ros::NodeHandle nh_priv("~");
         int max_steps;
         double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time, lean_forward;
+        std::vector<double> thresholds_right(2), thresholds_left(2);
+        
+        bool real_impacts; 
+        
         std::string first_side;
 
         /*default parameters*/
@@ -70,6 +74,9 @@ bool virtualConstraintsNode::get_param_ros()
         double default_double_stance = 0;
         double default_start_time = 1;
         double default_lean_forward = 0;
+        std::vector<double> default_thresholds_right = {50, 100};
+        std::vector<double> default_thresholds_left = {50, 100};
+        bool default_real_impacts = 0;
         
         drop = nh_priv.param("initial_crouch", default_drop);
         max_steps = nh_priv.param("max_steps", default_max_steps);
@@ -80,6 +87,9 @@ bool virtualConstraintsNode::get_param_ros()
         double_stance = nh_priv.param("double_stance_duration", default_double_stance);
         start_time = nh_priv.param("start_time", default_start_time);
         lean_forward = nh_priv.param("lean_forward", default_lean_forward);
+        thresholds_right = nh_priv.param("force_sensor_threshold_right", default_thresholds_right);
+        thresholds_left = nh_priv.param("force_sensor_threshold_left", default_thresholds_left);
+        real_impacts = nh_priv.param("real_impacts", default_real_impacts);
         
         _initial_param.set_crouch(drop);
         _initial_param.set_max_steps(max_steps);
@@ -89,6 +99,9 @@ bool virtualConstraintsNode::get_param_ros()
         _initial_param.set_double_stance(double_stance);
         _initial_param.set_start_time(start_time);
         _initial_param.set_lean_forward(lean_forward);
+        _initial_param.set_threshold_right(thresholds_right);
+        _initial_param.set_threshold_left(thresholds_left);
+        _initial_param.set_switch_real_impact(real_impacts);
         
         if (first_side == "Left")
                 _initial_param.set_first_step_side(robot_interface::Side::Left);
@@ -482,20 +495,17 @@ void virtualConstraintsNode::update_pose(Eigen::Vector3d *current_pose, Eigen::V
 void virtualConstraintsNode::left_sole_phase()
 {
     Eigen::Matrix<double, 6 ,1> ft_left = _current_pose_ROS.get_ft_sole(robot_interface::Side::Left);
-    
-    double threshold_min = 40;
-    double threshold_max = 90;
-    
+  
     switch (_current_phase_left) {
         case Phase::LAND :
-            if (fabs(ft_left.coeff(2)) <= threshold_min)
+            if (fabs(ft_left.coeff(2)) <= _initial_param.get_threshold_left().at(0)) //threshold_min
             {
                 _previous_phase_left = _current_phase_left;
                 _current_phase_left = Phase::FLIGHT;
             }
             break;
         case Phase::FLIGHT : 
-            if (fabs(ft_left.coeff(2)) >= threshold_max)
+            if (fabs(ft_left.coeff(2)) >= _initial_param.get_threshold_left().at(1)) //threshold_max
             {
                 _previous_phase_left = _current_phase_left;
                 _current_phase_left = Phase::LAND;
@@ -510,13 +520,10 @@ void virtualConstraintsNode::left_sole_phase()
 void virtualConstraintsNode::right_sole_phase()
 {
     Eigen::Matrix<double, 6 ,1> ft_right = _current_pose_ROS.get_ft_sole(robot_interface::Side::Right);
-    
-    double threshold_min = 40; //good 50
-    double threshold_max = 90; //good 100
-    
+
     switch (_current_phase_right) {
         case Phase::LAND :
-            if (fabs(ft_right.coeff(2)) <= threshold_min)
+            if (fabs(ft_right.coeff(2)) <= _initial_param.get_threshold_right().at(0)) //threshold_min
             {
                 _previous_phase_right = _current_phase_right;
                 _current_phase_right = Phase::FLIGHT;
@@ -524,7 +531,7 @@ void virtualConstraintsNode::right_sole_phase()
             }
             break;
         case Phase::FLIGHT : 
-            if (fabs(ft_right.coeff(2)) >= threshold_max)
+            if (fabs(ft_right.coeff(2)) >= _initial_param.get_threshold_right().at(1)) //threshold_max
             {
                 _previous_phase_right = _current_phase_right;
                 _current_phase_right = Phase::LAND;
@@ -536,8 +543,8 @@ void virtualConstraintsNode::right_sole_phase()
     }
 }
 
-bool virtualConstraintsNode::impact_detector()
-{
+bool virtualConstraintsNode::real_impacts()
+{       
         right_sole_phase();
         left_sole_phase();
         
@@ -564,13 +571,34 @@ bool virtualConstraintsNode::impact_detector()
         return false;
 }
 
-int virtualConstraintsNode::impact_detect_fake()                
-    {
-//
+bool virtualConstraintsNode::fake_impacts()
+{
 //             if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3 &&  
 //                 fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0))>  0.1)
-            if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  &&  _init_completed && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
-//             if (impact_detector() && _init_completed)
+    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4 && _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2)
+    {
+        return true;
+    }
+    
+    return false;
+}
+
+bool virtualConstraintsNode::impact_detector()
+{
+    if (_initial_param.get_switch_real_impact() == 1)
+    {
+        real_impacts();
+    }
+    else
+    {
+        fake_impacts();
+    }
+}
+
+int virtualConstraintsNode::impact_routine()                
+    {
+            
+            if (impact_detector() && _init_completed)
             {
                 _event = Event::IMPACT; // event impact detected for core()
 //                 _time_of_impact = _internal_time;
@@ -742,7 +770,7 @@ void virtualConstraintsNode::exe(double time)
     };
         
   
-        if (impact_detect_fake())
+        if (impact_routine())
         {
             _q_min = sense_q1();
             _reset_condition = q1_temp;
@@ -776,7 +804,7 @@ void virtualConstraintsNode::send(std::string type, Eigen::Vector3d command)
         {
             _sole_pubs[robot_interface::Side::Right].publish(cmd);
         }
-        else if (type == "left") 
+        else if (type == "left")
         {
             _sole_pubs[robot_interface::Side::Left].publish(cmd);
         }
@@ -1140,7 +1168,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         
 //         std::cout << "window_start: " << window_start << std::endl;  
         
-        std::cout << "window:" << window_start << std::endl;
+//         std::cout << "window:" << window_start << std::endl;
         
         zmp_window(window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
         
