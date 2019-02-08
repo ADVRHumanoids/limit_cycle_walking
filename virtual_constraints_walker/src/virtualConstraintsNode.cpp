@@ -1068,9 +1068,9 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
     }
 }
 
-void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double double_stance, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y)
+void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double double_stance, int num_points, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y)
 {
-        int num_points = _initial_param.get_max_steps();
+//         int num_points = _initial_param.get_max_steps();
         double t_end = t_start + _step_duration*num_points;
         //TODO qui potrei mettere anche un t_windows_end
         Eigen::VectorXd y, times;
@@ -1105,7 +1105,7 @@ void virtualConstraintsNode::generate_zmp(double y_start, double t_start, double
         lSpline(times_tot, y_tot, dt, zmp_t, zmp_y);
     }
 
-void virtualConstraintsNode::zmp_window(double window_start, double window_end, Eigen::VectorXd &zmp_window_t, Eigen::VectorXd &zmp_window_y)
+void virtualConstraintsNode::zmp_window(Eigen::VectorXd zmp_t, Eigen::VectorXd zmp_y, double window_start, double window_end, Eigen::VectorXd &zmp_window_t, Eigen::VectorXd &zmp_window_y)
     {
 
         
@@ -1114,13 +1114,13 @@ void virtualConstraintsNode::zmp_window(double window_start, double window_end, 
         zmp_window_t.setLinSpaced(window_size, window_start, window_end);
         
         int i = 0;
-        while (i < _zmp_t.size() && _zmp_t(i) < window_start)
+        while (i < zmp_t.size() && zmp_t(i) < window_start)
         {
             i++;
         }
 //         
         int j = 0;
-        while (j < _zmp_t.size() && _zmp_t(j) < window_end)
+        while (j < zmp_t.size() && zmp_t(j) < window_end)
         {
             j++;
         }
@@ -1128,13 +1128,10 @@ void virtualConstraintsNode::zmp_window(double window_start, double window_end, 
         zmp_window_y.resize(window_size,1);
 
         zmp_window_y.setZero();
-        zmp_window_y.segment(0, j-i) = (_zmp_y).segment(i, j-i);
+        zmp_window_y.segment(0, j-i) = (zmp_y).segment(i, j-i);
 
     }
     
-    
-
-
 Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 {
     
@@ -1159,18 +1156,13 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 //         std::cout << "Shift in time: " << _shift_time << std::endl;
 
         double window_start = time - _shift_time;
-        
         // VERSION TWO 
         if (time > _planned_impacts(_step_counter) + _shift_time)
         {
             window_start = _planned_impacts(_planned_impacts.size() -1) +1;
         }
         
-//         std::cout << "window_start: " << window_start << std::endl;  
-        
-//         std::cout << "window:" << window_start << std::endl;
-        
-        zmp_window(window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+            zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
         
         _logger->add("zmp_window_full", _zmp_window_y);
         
@@ -1318,7 +1310,20 @@ bool virtualConstraintsNode::ST_init(double time)
 
 
     // generate zmp given start walk and first stance step
-    generate_zmp(first_stance_step, _start_walk, _initial_param.get_double_stance(), dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them
+    generate_zmp(first_stance_step, _start_walk, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them
+    
+    
+    
+        for (int i = 0; i < (_zmp_t_fake_right).size(); i++)
+    {
+        _logger->add("zmp_t_fake_right", (_zmp_t_fake_right)(i));
+        _logger->add("zmp_y_fake_right", (_zmp_y_fake_right)(i));
+    }
+        for (int i = 0; i < (_zmp_t_fake_left).size(); i++)
+    {
+        _logger->add("zmp_y_fake_left", (_zmp_t_fake_left)(i));
+        _logger->add("zmp_t_fake_left", (_zmp_y_fake_left)(i));
+    }
     // get impact position in time
     _planned_impacts.resize(_initial_param.get_max_steps(),1);
     

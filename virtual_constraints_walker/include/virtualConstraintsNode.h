@@ -321,9 +321,9 @@ public:
     void initialize_cmd_fake_q1();
     void cmd_fake_q1();
     
-    void generate_zmp(double y_start, double t_start, double double_stance, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
+    void generate_zmp(double y_start, double t_start, double double_stance, int num_points, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
     void lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, Eigen::VectorXd& X, Eigen::VectorXd& Y);
-    void zmp_window(double window_start, double window_end, Eigen::VectorXd& zmp_window_t, Eigen::VectorXd& zmp_window_y);
+    void zmp_window(Eigen::VectorXd zmp_t, Eigen::VectorXd zmp_y, double window_start, double window_end, Eigen::VectorXd& zmp_window_t, Eigen::VectorXd& zmp_window_y);
     
     
     
@@ -369,6 +369,9 @@ protected:
     
     Eigen::VectorXd _zmp_t;
     Eigen::VectorXd _zmp_y;
+
+    Eigen::VectorXd _zmp_t_fake_right, _zmp_t_fake_left;
+    Eigen::VectorXd _zmp_y_fake_right, _zmp_y_fake_left;
     
     data_step_poly _poly_step;
     data_step_bezier _bezi_step;
