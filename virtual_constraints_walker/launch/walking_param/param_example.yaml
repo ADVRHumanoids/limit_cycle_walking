@@ -1,5 +1,5 @@
 initial_crouch: -0.12
-max_steps: 8
+max_steps: 10
 clearance_step: 0.05
 duration_step: 0.5
 first_step_side: Right
@@ -7,6 +7,11 @@ indent_zmp: 0.02
 double_stance_duration: 0.0
 start_time: 1
 lean_forward: 0.01
-real_impacts: 0
-force_sensor_threshold_right: 50 100
-force_sensor_threshold_left: 50 100
+real_impacts: false
+force_sensor_threshold_right: 40 70
+force_sensor_threshold_left: 40 70
+slope_delay_impact: 1
+walking_forward: false
+max_inclination: 0.05
+mpc_Q: 100000
+mpc_R: 1

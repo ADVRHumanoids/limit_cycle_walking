@@ -1,19 +1,24 @@
-%figure(1);zmp_window_full
+%figure(1);
 %plot(foot_trajectory');
 
 %% zmp
 figure(2);
 plot(zmp');
 hold on; plot(zmp_ref', 'r--');
-plot(com_trajectory')
+plot(com_trajectory(2,:)')
+for i = 1:size(window_tot,2)
+    plot(window_tot(:,i)')
+end
+% plot(zmp_y(20:end)');
 
-plot(zmp_y_fake_left')
-plot(zmp_y_fake_right')
+% plot(shifted');
+plot(delayed');
 
-plot(zmp_y(20:end)');
+hold on; plot(zmp_y_fake_right');
+plot(zmp_y_fake_left');
 
-plot(shifted');
 
+plot(zmp_sloped(:,1)');
 plot(1 + foot_trajectory(3,:)');
 %% phase LAND 1/FLIGHT 0
 figure(3);
@@ -41,4 +46,7 @@ plot(0.1*landed_left,'k--');
 plot(0.1*landed_right, 'r--');
 
 %% com trajectory
+plot(q1)
 plot(com_trajectory')
+hold on;
+plot(foot_trajectory');hold on;

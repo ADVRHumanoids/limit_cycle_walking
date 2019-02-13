@@ -145,18 +145,21 @@ public:
         
         void log(XBot::MatLogger::Ptr logger) { logger->add("com_initial_pose", _com_initial_pose);}
         const Eigen::Vector3d get_com_initial_pose() const {return _com_initial_pose;};
+        const Eigen::Vector3d get_com_final_pose() const {return _com_final_pose;};
+        
         void set_com_initial_pose(Eigen::Vector3d com_initial_pose) {_com_initial_pose = com_initial_pose;};
+        void set_com_final_pose(Eigen::Vector3d com_final_pose) {_com_final_pose = com_final_pose;};
 
     private:
         
-        Eigen::Vector3d _com_initial_pose;
+        Eigen::Vector3d _com_initial_pose, _com_final_pose;
     };  
     
     class item_MpC
     {
         public:
             
-        item_MpC(double initial_height, double Ts, double T)
+        item_MpC(double initial_height, double Ts, double T, Eigen::MatrixXd Q, Eigen::MatrixXd R)
         {
             
             double h = initial_height; //TODO current or initial?
@@ -179,11 +182,11 @@ public:
             
             OpenMpC::UnconstrainedMpc lqr(_integrator, _Ts, N+1);
             
-            Eigen::MatrixXd Q(1,1);
-            Eigen::MatrixXd R(1,1);
+//             Eigen::MatrixXd Q(1,1);
+//             Eigen::MatrixXd R(1,1);
             
-            Q << 1000000; //1000000
-            R << 1;
+//             Q << 1000000; //1000000
+//             R << 1;
             
             lqr.addInputTask(R);
             lqr.addOutputTask("zmp", Q);
@@ -259,6 +262,7 @@ public:
 
     bool real_impacts();
     bool fake_impacts();
+    bool yet_another_impact();
     
     bool impact_detector();
     int impact_routine(); 
@@ -285,8 +289,7 @@ public:
                                                     double time,
                                                     std::string side,
                                                     Eigen::Vector3d * vel = nullptr,
-                                                    Eigen::Vector3d * acc = nullptr
-                                                    );
+                                                    Eigen::Vector3d * acc = nullptr);
 
     double compute_swing_trajectory_normalized_plane(double dx0, double ddx0, 
                                                                          double dxf, double ddxf, 
@@ -397,7 +400,7 @@ protected:
     
     Eigen::VectorXd _zmp_window_t;
     Eigen::VectorXd _zmp_window_y;
-
+    
 //     Eigen::VectorXd u(1);
     Eigen::Matrix<double,1,1> _u;
     
@@ -406,6 +409,7 @@ protected:
     Eigen::VectorXd _planned_impacts;
     Eigen::Vector3d _com_y; 
     
+    double _delay_time = 0;
     double _shift_time = 0;
     
     class param
@@ -424,6 +428,11 @@ protected:
         std::vector<double> get_threshold_right() {return _threshold_right;};
         std::vector<double> get_threshold_left() {return _threshold_left;};
         bool get_switch_real_impact() {return _real_impacts;};
+        double get_slope_delay_impact() {return _slope_delay_impact;};
+        bool get_walking_forward() {return _walking_forward;};
+        double get_max_inclination() {return _max_inclination;};
+        double get_MPC_Q() {return _mpc_Q;};
+        double get_MPC_R() {return _mpc_R;};
         
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
@@ -437,13 +446,18 @@ protected:
         void set_threshold_right(std::vector<double> threshold_right) {_threshold_right = threshold_right;};
         void set_threshold_left(std::vector<double> threshold_left) {_threshold_left = threshold_left;};
         void set_switch_real_impact(bool real_impacts) {_real_impacts = real_impacts;};
-        
+        void set_slope_delay_impact(double slope_delay_impact) {_slope_delay_impact = slope_delay_impact;};
+        void set_walking_forward(bool walking_forward) {_walking_forward = walking_forward;};
+        void set_max_inclination(double max_inclination) {_max_inclination = max_inclination;};
+        void set_MPC_Q(double mpc_Q) {_mpc_Q = mpc_Q;};
+        void set_MPC_R(double mpc_R) {_mpc_R = mpc_R;};
     private:
         
-        double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
+        double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time, _slope_delay_impact, _max_inclination, _mpc_Q, _mpc_R;
         robot_interface::Side _first_step_side;
         
-        bool _real_impacts;
+        bool _real_impacts, _walking_forward;
+        
         std::vector<double> _threshold_right;
         std::vector<double> _threshold_left;
         
@@ -465,14 +479,13 @@ protected:
     Eigen::Vector3d _pointsBezier_z;
     Eigen::Vector2d _pointsBezier_x;
     
-    Eigen::Vector3d _initial_com_position;
-    Eigen::Vector3d _initial_sole_position;
-    Eigen::Vector3d _final_sole_position;
+    Eigen::Vector3d _initial_com_position, _final_com_position;
+    Eigen::Vector3d _initial_sole_position, _final_sole_position;
     
     Eigen::Vector3d lateral_com();
     
     void core(double time);
-    void commander(double time, double tau);
+    void commander(double time, double q1);
     
     bool ST_init(double time);
     bool ST_idle(double time);
