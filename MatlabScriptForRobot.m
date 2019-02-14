@@ -57,3 +57,11 @@ plot(q1)
 plot(com_trajectory')
 hold on;
 plot(foot_trajectory');hold on;
+% plot(delayed');hold on;
+plot(current_side);hold on;
+plot(entered_period_delay');hold on;
+plot(lateral_step); hold on;
+plot(reset_lateral); hold on;
+plot(event);hold on;
+% plot(entered_left);
+% plot(entered_right);

@@ -34,8 +34,8 @@ class virtualConstraintsNode {
 public:
      
     enum class Phase {FLIGHT = 0, LAND = 1};
-    enum class Event { IMPACT, START, STOP, EMPTY };
-    enum class State { INIT, IDLE, FIRSTSTEP, WALK, LASTSTEP, EXIT };
+    enum class Event { IMPACT = 0, START = 1, STOP = 2, EMPTY = 3 };
+    enum class State { INIT = 0, IDLE = 1, FIRSTSTEP = 2, WALK = 3, LASTSTEP = 4, EXIT = 5};
     
     
     class data_step_poly
@@ -336,6 +336,11 @@ public:
     double _impact_cond = 0;
     double _reset_time = 0;
     
+    double _entered_delay = 0;
+    double _period_delay = 0;
+    
+    double _lateral_step;
+//     double _lateral_step_left, _lateral_step_right;
     double _starting_time = 0;
     double _internal_time = 0;
 protected:
@@ -397,7 +402,7 @@ protected:
     double _q_max;
     
     bool _init_completed = 0;
-    
+    double _initial_step_lat;
     Eigen::VectorXd _zmp_window_t;
     Eigen::VectorXd _zmp_window_y;
     
@@ -405,7 +410,7 @@ protected:
     Eigen::Matrix<double,1,1> _u;
     
     double _step_duration;
-    
+    bool _saving_step;
     Eigen::VectorXd _planned_impacts;
     Eigen::Vector3d _com_y; 
     
@@ -433,6 +438,7 @@ protected:
         double get_max_inclination() {return _max_inclination;};
         double get_MPC_Q() {return _mpc_Q;};
         double get_MPC_R() {return _mpc_R;};
+        double get_lateral_step() {return _lat_step;};
         
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
@@ -451,9 +457,10 @@ protected:
         void set_max_inclination(double max_inclination) {_max_inclination = max_inclination;};
         void set_MPC_Q(double mpc_Q) {_mpc_Q = mpc_Q;};
         void set_MPC_R(double mpc_R) {_mpc_R = mpc_R;};
+        void set_lateral_step(double lat_step) {_lat_step = lat_step;};
     private:
         
-        double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time, _slope_delay_impact, _max_inclination, _mpc_Q, _mpc_R;
+        double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time, _slope_delay_impact, _max_inclination, _mpc_Q, _mpc_R, _lat_step;
         robot_interface::Side _first_step_side;
         
         bool _real_impacts, _walking_forward;

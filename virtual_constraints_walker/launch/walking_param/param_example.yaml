@@ -15,3 +15,4 @@ walking_forward: false
 max_inclination: 0.05
 mpc_Q: 100000
 mpc_R: 1
+lateral_step: 0.01
