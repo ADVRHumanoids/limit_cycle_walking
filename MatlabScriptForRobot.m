@@ -25,7 +25,7 @@ for i = 1:size(window_tot,2)
     plot(window_tot(:,i)')
     ylim([-.1,.1])
     drawnow;
-    pause(0.1)
+    pause(0.01)
 end
 %% phase LAND 1/FLIGHT 0
 figure(3);

@@ -30,7 +30,7 @@ virtualConstraintsNode::virtualConstraintsNode()
         get_param_ros(); //initial parameters from ros
         
         _initial_pose = _current_pose_ROS;
-        _initial_step_lat = _current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1);
+        _initial_step_y = _current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1);
         
 //         _poly_step.set_data_step( _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_com(), _current_pose_ROS.get_com(), 0,0, getTime(),getTime()+2);
         _bezi_step.set_data_step(_current_pose_ROS.get_sole(_current_side), _current_pose_ROS.get_sole(_current_side), 0);
@@ -58,9 +58,9 @@ virtualConstraintsNode::virtualConstraintsNode()
 bool virtualConstraintsNode::get_param_ros()
     {
         ros::NodeHandle nh_priv("~");
-        int max_steps;
-        double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time, lean_forward, slope_delay_impact, max_inclination, mpc_Q, mpc_R, lat_step;
-        std::vector<double> thresholds_right(2), thresholds_left(2);
+        int max_steps, delay_impact_scenario;
+        double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time, lean_forward, slope_delay_impact, max_inclination, mpc_Q, mpc_R, lat_step, threshold_delay;
+        std::vector<double> thresholds_impact_right(2), thresholds_impact_left(2);
         
         bool real_impacts, walking_forward; 
         
@@ -76,8 +76,8 @@ bool virtualConstraintsNode::get_param_ros()
         double default_double_stance = 0;
         double default_start_time = 1;
         double default_lean_forward = 0;
-        std::vector<double> default_thresholds_right = {50, 100};
-        std::vector<double> default_thresholds_left = {50, 100};
+        std::vector<double> default_thresholds_impact_right = {50, 100};
+        std::vector<double> default_thresholds_impact_left = {50, 100};
         bool default_real_impacts = 0;
         double default_slope_delay_impact;
         bool default_walking_forward = 0;
@@ -85,6 +85,8 @@ bool virtualConstraintsNode::get_param_ros()
         double default_mpc_Q = 1000000;
         double default_mpc_R = 1;
         double default_lat_step = 0;
+        double default_threshold_delay = 0;
+        int default_delay_impact_scenario = 0;
         
         drop = nh_priv.param("initial_crouch", default_drop);
         max_steps = nh_priv.param("max_steps", default_max_steps);
@@ -95,8 +97,8 @@ bool virtualConstraintsNode::get_param_ros()
         double_stance = nh_priv.param("double_stance_duration", default_double_stance);
         start_time = nh_priv.param("start_time", default_start_time);
         lean_forward = nh_priv.param("lean_forward", default_lean_forward);
-        thresholds_right = nh_priv.param("force_sensor_threshold_right", default_thresholds_right);
-        thresholds_left = nh_priv.param("force_sensor_threshold_left", default_thresholds_left);
+        thresholds_impact_right = nh_priv.param("force_sensor_threshold_right", default_thresholds_impact_right);
+        thresholds_impact_left = nh_priv.param("force_sensor_threshold_left", default_thresholds_impact_left);
         real_impacts = nh_priv.param("real_impacts", default_real_impacts);
         slope_delay_impact = nh_priv.param("slope_delay_impact", default_slope_delay_impact); // 0 is max Steepness
         walking_forward = nh_priv.param("walking_forward", default_walking_forward); 
@@ -104,6 +106,8 @@ bool virtualConstraintsNode::get_param_ros()
         mpc_Q = nh_priv.param("mpc_Q", default_mpc_Q); 
         mpc_R = nh_priv.param("mpc_R", default_mpc_R); 
         lat_step = nh_priv.param("lateral_step", default_lat_step); 
+        threshold_delay = nh_priv.param("threshold_delay", default_threshold_delay);
+        delay_impact_scenario = nh_priv.param("delay_impact_scenario", default_delay_impact_scenario);
         
         _initial_param.set_crouch(drop);
         _initial_param.set_max_steps(max_steps);
@@ -113,8 +117,8 @@ bool virtualConstraintsNode::get_param_ros()
         _initial_param.set_double_stance(double_stance);
         _initial_param.set_start_time(start_time);
         _initial_param.set_lean_forward(lean_forward);
-        _initial_param.set_threshold_right(thresholds_right);
-        _initial_param.set_threshold_left(thresholds_left);
+        _initial_param.set_threshold_impact_right(thresholds_impact_right);
+        _initial_param.set_threshold_impact_left(thresholds_impact_left);
         _initial_param.set_switch_real_impact(real_impacts);
         _initial_param.set_slope_delay_impact(slope_delay_impact);
         _initial_param.set_walking_forward(walking_forward);
@@ -122,6 +126,8 @@ bool virtualConstraintsNode::get_param_ros()
         _initial_param.set_MPC_Q(mpc_Q);
         _initial_param.set_MPC_R(mpc_R);
         _initial_param.set_lateral_step(lat_step);
+        _initial_param.set_threshold_delay(threshold_delay);
+        _initial_param.set_delay_impact_scenario(delay_impact_scenario);
         
         if (first_side == "Left")
                 _initial_param.set_first_step_side(robot_interface::Side::Left);
@@ -518,14 +524,14 @@ void virtualConstraintsNode::left_sole_phase()
   
     switch (_current_phase_left) {
         case Phase::LAND :
-            if (fabs(ft_left.coeff(2)) <= _initial_param.get_threshold_left().at(0)) //threshold_min
+            if (fabs(ft_left.coeff(2)) <= _initial_param.get_threshold_impact_left().at(0)) //threshold_min
             {
                 _previous_phase_left = _current_phase_left;
                 _current_phase_left = Phase::FLIGHT;
             }
             break;
         case Phase::FLIGHT : 
-            if (fabs(ft_left.coeff(2)) >= _initial_param.get_threshold_left().at(1)) //threshold_max
+            if (fabs(ft_left.coeff(2)) >= _initial_param.get_threshold_impact_left().at(1)) //threshold_max
             {
                 _previous_phase_left = _current_phase_left;
                 _current_phase_left = Phase::LAND;
@@ -543,7 +549,7 @@ void virtualConstraintsNode::right_sole_phase()
 
     switch (_current_phase_right) {
         case Phase::LAND :
-            if (fabs(ft_right.coeff(2)) <= _initial_param.get_threshold_right().at(0)) //threshold_min
+            if (fabs(ft_right.coeff(2)) <= _initial_param.get_threshold_impact_right().at(0)) //threshold_min
             {
                 _previous_phase_right = _current_phase_right;
                 _current_phase_right = Phase::FLIGHT;
@@ -551,7 +557,7 @@ void virtualConstraintsNode::right_sole_phase()
             }
             break;
         case Phase::FLIGHT : 
-            if (fabs(ft_right.coeff(2)) >= _initial_param.get_threshold_right().at(1)) //threshold_max
+            if (fabs(ft_right.coeff(2)) >= _initial_param.get_threshold_impact_right().at(1)) //threshold_max
             {
                 _previous_phase_right = _current_phase_right;
                 _current_phase_right = Phase::LAND;
@@ -1195,50 +1201,8 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
                 entered_forward = 1;  
             _shift_time = time - _planned_impacts(_step_counter) - dt; //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
             
-            
-            // // ---------------SAVE THE FALL ---------------------------------
-//             if (_entered_delay == 1 && _period_delay >= 0.3) //TODO 0.3 is the threshold to activate lateral step
-//             {
-// //                 // if I want the lateral stepping in the next next step
-//                 _lateral_step = _initial_param.get_lateral_step();
-//                 
-// //                 // if I want the lateral stepping in the very next step
-// //                 Eigen::Vector3d newpose = _poly_step.get_foot_final_pose();
-// //                 newpose(1) = _lateral_step;
-// //                 _poly_step.set_foot_final_pose(newpose);
-//                 
-//                 _period_delay = 0;
-//             }
             _period_delay = 0;
-            
-//             if (_lateral_step != 0)
-//             {
-//                 
-//                 Eigen::Vector3d reset_pose;
-//                 reset_pose = _poly_step.get_foot_final_pose();
-//                 reset_pose(1) = _initial_step_lat;
-//                 _poly_step.set_foot_final_pose(reset_pose);
-//                 _lateral_step = 0;
-//                 reset_lateral = 1;
-//             }
-            
-//                 if (_lateral_step_left != 0)
-//                 {
-//                     Eigen::Vector3d reset_pose;
-//                     reset_pose = _poly_step.get_foot_final_pose();
-//                     reset_pose(1) = _initial_step_lat;
-//                     _poly_step.set_foot_final_pose(reset_pose);
-//                     _lateral_step_left = 0;
-//                 }
-//                         
-//                 if (_lateral_step_right != 0)
-//                 {
-//                     Eigen::Vector3d reset_pose;
-//                     reset_pose = _poly_step.get_foot_final_pose();
-//                     reset_pose(1) = - _initial_step_lat;
-//                     _poly_step.set_foot_final_pose(reset_pose);
-//                     _lateral_step_right = 0;
-//                 }
+
                 
         }
 //         // -----------------------------------------------------------------------------------------------------------------------------
@@ -1265,14 +1229,20 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         bool entered_period_delay = 0;
         bool entered_right = 0;
         bool entered_left = 0;
-        if (time > _planned_impacts(_step_counter) + _shift_time)
+        
+        if (time > _planned_impacts(_step_counter) + _shift_time) // if it entered inside delay
         {
             
             _entered_delay = 1;
             _period_delay = _internal_time - _planned_impacts(_step_counter) + _shift_time; // HOW MUCH TIME IT IS STAYING HERE
             
+            
+            
+            
+            // // --------------------------------------------------------------
             // // ---------------SAVE THE FALL ---------------------------------
-            if (_period_delay >= 0.0) //TODO 0.3 is the threshold to activate lateral step
+            // // --------------------------------------------------------------
+            if (_period_delay >= _initial_param.get_threshold_delay())
             {
                 entered_period_delay = 1;
 //                 // if I want  the lateral stepping immediately
@@ -1285,50 +1255,21 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
                 {
                     entered_left = 1;
                     _lateral_step = _initial_param.get_lateral_step();
-                }           
-                
-
-                
-//                 if (_current_side == robot_interface::Side::Right)
-//                 {
-// //                     std::cout << "ENTERED RIGHT" << std::endl;
-//                     _lateral_step_right = - _initial_param.get_lateral_step();
-//                     Eigen::Vector3d newpose = _poly_step.get_foot_final_pose();
-//                     newpose(1) = _poly_step.get_foot_final_pose().coeff(1) + _lateral_step_right;
-//                     _poly_step.set_foot_final_pose(newpose);
-//                 }
-//                 else if (_current_side == robot_interface::Side::Left)
-//                 {
-// //                     std::cout << "ENTERED LEFT" << std::endl;
-//                     _lateral_step_left = _initial_param.get_lateral_step();
-//                     Eigen::Vector3d newpose = _poly_step.get_foot_final_pose();
-//                     newpose(1) = _poly_step.get_foot_final_pose().coeff(1) + _lateral_step_left;
-//                     _poly_step.set_foot_final_pose(newpose);
-//                 }
-                
-
-                
+                }                        
             }
-            
 
-                
-
-
-                
-                
             if (_event == Event::IMPACT)
             {
-
                 Eigen::Vector3d reset_pose;
                 reset_pose = _poly_step.get_foot_final_pose();
                 
                 if (_current_side == robot_interface::Side::Left)
                 {
-                    reset_pose(1) = _initial_step_lat;
+                    reset_pose(1) = _initial_step_y;
                 }
                 else if (_current_side == robot_interface::Side::Right)
                 {
-                    reset_pose(1) = - _initial_step_lat;
+                    reset_pose(1) = - _initial_step_y;
                 }
                 
                 _poly_step.set_foot_final_pose(reset_pose);
@@ -1336,50 +1277,73 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
             }
             
             
-                std::cout << "UPDATING:" << std::endl;
-                std::cout << "final pose: " << _poly_step.get_foot_final_pose().transpose() << std::endl;
+//                 std::cout << "UPDATING:" << std::endl;
+//                 std::cout << "final pose: " << _poly_step.get_foot_final_pose().transpose() << std::endl;
 
                 Eigen::Vector3d newpose = _poly_step.get_foot_final_pose();
                 newpose[1] += _lateral_step;
                 
-                if (newpose[1] > (_initial_step_lat + _lateral_step))
+                if (newpose[1] > (_initial_step_y + _lateral_step))
                 {
-                    newpose[1] = _initial_step_lat + _lateral_step;
+                    newpose[1] = _initial_step_y + _lateral_step;
                 }
                 
-                if (newpose[1] < (- _initial_step_lat + _lateral_step))
+                if (newpose[1] < (- _initial_step_y + _lateral_step))
                 {
-                    newpose[1] = -_initial_step_lat + _lateral_step;
+                    newpose[1] = -_initial_step_y + _lateral_step;
                 }
                 
                 _poly_step.set_foot_final_pose(newpose);
                 
-                std::cout << "NEW final pose: " << _poly_step.get_foot_final_pose().transpose() << std::endl;
-                std::cout << std::endl;
+//                 std::cout << "NEW final pose: " << _poly_step.get_foot_final_pose().transpose() << std::endl;
+//                 std::cout << std::endl;
             
-            // // ---------------------------------------------------------------
-            
-            window_start = time - (_planned_impacts(_step_counter) + _shift_time);  
-            
+
+       
+            if (_initial_param.get_delay_impact_scenario() == 0 || _initial_param.get_delay_impact_scenario() == 1) // RAMP or STAY FIXED
+            {
                 if (_step_counter % 2 == 0)
                 {
-                            zmp_window(_zmp_t_fake_left, _zmp_y_fake_right, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-                            _logger->add("zmp_ref", _zmp_window_y.coeff(0));
-                            _logger->add("window_tot", _zmp_window_y);
+                            window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
+                            zmp_window(_zmp_t_fake_right, _zmp_y_fake_right, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+//                             _logger->add("window_tot", _zmp_window_y);
+                            if (_period_delay >= _initial_param.get_threshold_delay())
+                            {
+                                zmp_window(_zmp_t_fake_right_lat, _zmp_y_fake_right_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                            }
                 }
                 else
                 {
-                            zmp_window(_zmp_t_fake_right, _zmp_y_fake_left, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-                            _logger->add("zmp_ref", _zmp_window_y.coeff(0));
-                            _logger->add("window_tot", _zmp_window_y);
+                            window_start = time - (_planned_impacts(_step_counter) + _shift_time);
+                            zmp_window(_zmp_t_fake_left, _zmp_y_fake_left, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+//                             _logger->add("window_tot", _zmp_window_y);
+                            if (_period_delay >= _initial_param.get_threshold_delay())
+                            {
+                                zmp_window(_zmp_t_fake_left_lat, _zmp_y_fake_left_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                            }
                 }
+            }
+//             else if (_initial_param.get_delay_impact_scenario() == 2) // ??????????????
+//             {
+//                 window_start = time - _period_delay;
+//                 zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+//             }
+
+         // MOVE COM LATERALLY WHEN STEPS LATERALLY   
+//             if (_period_delay >= _initial_param.get_threshold_delay()) // this shift a little bit the zmp for the lateral step
+//             {
+//                     window_start = time - _period_delay;
+//                     zmp_window(_zmp_t_lat, _zmp_y_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);  
+//             }
+            
+        _logger->add("zmp_ref", _zmp_window_y.coeff(0));
+        _logger->add("window_tot", _zmp_window_y);
         }
-        else
+        else // if it's not entered inside delay
         {
                     zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
                     _logger->add("zmp_ref", _zmp_window_y.coeff(0));
                     _logger->add("window_tot", _zmp_window_y);
-            
         }
 
         
@@ -1452,7 +1416,6 @@ void virtualConstraintsNode::commander(double time, double q1)
             
             if (_current_state == State::FIRSTSTEP || _current_state == State::LASTSTEP)
             {
-                
                 delta_com << - com_to_ankle_distance.z() * tan(q1), 0, 0;
                 com_trajectory(0) = _com_info.get_com_initial_pose().coeff(0) + delta_com(0);
             }
@@ -1567,6 +1530,21 @@ bool virtualConstraintsNode::ST_init(double time)
     std::cout << "Steepness: " << _steep_coeff <<  std::endl;
     std::cout << "Real impacts: " << _initial_param.get_switch_real_impact() <<  std::endl;
     
+    switch (_initial_param.get_delay_impact_scenario())
+    {
+        case 0 :
+            std::cout << "delay adjustment: RAMP TO 0" << std::endl;
+            break;
+        case 1 :
+            std::cout << "delay adjustment: KEEP CONSTANT ZMP" << std::endl;
+            break;
+        case 2 :
+            std::cout << "delay adjustment: DON'T UPDATE, STOP WINDOW (does not work well in theory)" << std::endl;
+            break;
+        default : 
+            std::cout << "delay adjustment: WRONG scenario" << std::endl;
+            break;
+    }
     _com_y << _initial_com_position(1), 0, 0; //com trajectory used by mpc: pos, vel, acc
 
     int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0);
@@ -1576,47 +1554,67 @@ bool virtualConstraintsNode::ST_init(double time)
 
     // generate zmp given start walk and first stance step
     generate_zmp(first_stance_step, _start_walk, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them
-    
-//     // generate different ZMP with ramp to 0
-    Eigen::VectorXd point_t(3);
-    Eigen::VectorXd point_y_right(3), point_y_left(3);
-    
-    point_t << 0, _initial_param.get_slope_delay_impact(), 5;
-    point_y_right << first_stance_step, 0, 0;
-    
-    lSpline(point_t, point_y_right, dt, _zmp_t_fake_right, _zmp_y_fake_right);
-    _zmp_t_fake_left = _zmp_t_fake_right;
-    _zmp_y_fake_left = -_zmp_y_fake_right;
-    
-        for (int i = 0; i < (_zmp_y_fake_right).size(); i++)
-    {
-        _logger->add("zmp_y_fake_right", (_zmp_y_fake_right)(i));
-    }
-        for (int i = 0; i < (_zmp_y_fake_left).size(); i++)
-    {
-        _logger->add("zmp_y_fake_left", (_zmp_y_fake_left)(i));
-    }
+//     // -----------------------------------------------------
+    // generate zmp when lateral step is needed
+    double first_stance_step_lat = _current_pose_ROS.get_sole(_other_side).coeff(1) - sign_first_stance_step * (_initial_param.get_indent_zmp() - _initial_param.get_lateral_step());;
+    generate_zmp(first_stance_step_lat, _start_walk, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t_lat, _zmp_y_lat); //TODO once filled, I shouldn't be able to modify them
 //     // -----------------------------------------------------
     
-//     // generate different ZMP with bigger higher time of step
-//     Eigen::VectorXd point_t(2);
-//     Eigen::VectorXd point_y_right(2), point_y_left(2);
-//     
-//     point_t << 0, 5;
-//     point_y_right << -first_stance_step, -first_stance_step;
-//     
-//     lSpline(point_t, point_y_right, dt, _zmp_t_fake_right, _zmp_y_fake_right);
-//     _zmp_t_fake_left = _zmp_t_fake_right;
-//     _zmp_y_fake_left = -_zmp_y_fake_right;
-//     
-//         for (int i = 0; i < (_zmp_y_fake_right).size(); i++)
-//     {
-//         _logger->add("zmp_y_fake_right", (_zmp_y_fake_right)(i));
-//     }
-//         for (int i = 0; i < (_zmp_y_fake_left).size(); i++)
-//     {
-//         _logger->add("zmp_y_fake_left", (_zmp_y_fake_left)(i));
-//     }
+    
+    if (_initial_param.get_delay_impact_scenario() == 0) // generate different ZMP with ramp to 0
+    {
+        Eigen::VectorXd point_t(3);
+        Eigen::VectorXd point_y_right(3), point_y_left(3);
+        
+        point_t << 0, _initial_param.get_slope_delay_impact(), 10;
+        point_y_right << first_stance_step, 0, 0;
+        
+        lSpline(point_t, point_y_right, dt, _zmp_t_fake_right, _zmp_y_fake_right);
+        _zmp_t_fake_left = _zmp_t_fake_right;
+        _zmp_y_fake_left = -_zmp_y_fake_right;
+        
+            for (int i = 0; i < (_zmp_y_fake_right).size(); i++)
+        {
+            _logger->add("zmp_y_fake_right", (_zmp_y_fake_right)(i));
+        }
+            for (int i = 0; i < (_zmp_y_fake_left).size(); i++)
+        {
+            _logger->add("zmp_y_fake_left", (_zmp_y_fake_left)(i));
+        }
+    }
+    else if (_initial_param.get_delay_impact_scenario() == 1)  // generate different ZMP keeping the ZMP constant
+    {  
+        Eigen::VectorXd point_t(2);
+        Eigen::VectorXd point_y_right(2), point_y_left(2);
+        
+        point_t << 0, 10; //TODO horizon for the delay
+        point_y_right << -first_stance_step, -first_stance_step;
+        
+        lSpline(point_t, point_y_right, dt, _zmp_t_fake_right, _zmp_y_fake_right);
+        _zmp_t_fake_left = _zmp_t_fake_right;
+        _zmp_y_fake_left = -_zmp_y_fake_right;
+        
+            for (int i = 0; i < (_zmp_y_fake_right).size(); i++)
+        {
+            _logger->add("zmp_y_fake_right", (_zmp_y_fake_right)(i));
+        }
+            for (int i = 0; i < (_zmp_y_fake_left).size(); i++)
+        {
+            _logger->add("zmp_y_fake_left", (_zmp_y_fake_left)(i));
+        }
+        
+//         if lateral step
+
+        point_t << 0, 10; //TODO horizon for the delay
+        point_y_right << -first_stance_step - _initial_param.get_lateral_step(), -first_stance_step - _initial_param.get_lateral_step();
+        lSpline(point_t, point_y_right, dt, _zmp_t_fake_right_lat, _zmp_y_fake_right_lat);
+        _zmp_t_fake_left_lat = _zmp_t_fake_right_lat;
+        _zmp_y_fake_left_lat  = -_zmp_y_fake_right_lat;
+    }
+    else if (_initial_param.get_delay_impact_scenario() == 2)  // keep ZMP generated the same
+    {
+        // do nothing
+    }
 //     // -----------------------------------------------------
     
     
@@ -1670,11 +1668,11 @@ bool virtualConstraintsNode::ST_firstStep(double time)
     
     if (_current_side == robot_interface::Side::Left)
     {
-        _final_sole_position[1] = _initial_step_lat;
+        _final_sole_position[1] = _initial_step_y;
     }
     else if (_current_side == robot_interface::Side::Right)
     {
-        _final_sole_position[1] = - _initial_step_lat;
+        _final_sole_position[1] = - _initial_step_y;
     }
    
     
@@ -1730,11 +1728,11 @@ bool virtualConstraintsNode::ST_walk(double time)
     
     if (_current_side == robot_interface::Side::Left)
     {
-        _final_sole_position[1] = _initial_step_lat;
+        _final_sole_position[1] = _initial_step_y;
     }
     else if (_current_side == robot_interface::Side::Right)
     {
-        _final_sole_position[1] = - _initial_step_lat;
+        _final_sole_position[1] = - _initial_step_y;
     }
     
     
@@ -1771,11 +1769,11 @@ bool virtualConstraintsNode::ST_lastStep(double time)
     
     if (_current_side == robot_interface::Side::Left)
     {
-        _final_sole_position[1] = _initial_step_lat;
+        _final_sole_position[1] = _initial_step_y;
     }
     else if (_current_side == robot_interface::Side::Right)
     {
-        _final_sole_position[1] = - _initial_step_lat;
+        _final_sole_position[1] = - _initial_step_y;
     }
     
     Eigen::Vector3d delta_step;

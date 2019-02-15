@@ -378,8 +378,14 @@ protected:
     Eigen::VectorXd _zmp_t;
     Eigen::VectorXd _zmp_y;
 
+    Eigen::VectorXd _zmp_t_lat;
+    Eigen::VectorXd _zmp_y_lat;
+    
     Eigen::VectorXd _zmp_t_fake_right, _zmp_t_fake_left;
     Eigen::VectorXd _zmp_y_fake_right, _zmp_y_fake_left;
+    
+    Eigen::VectorXd _zmp_y_fake_left_lat, _zmp_y_fake_right_lat;
+    Eigen::VectorXd _zmp_t_fake_left_lat, _zmp_t_fake_right_lat;
     
     data_step_poly _poly_step;
     data_step_bezier _bezi_step;
@@ -402,7 +408,7 @@ protected:
     double _q_max;
     
     bool _init_completed = 0;
-    double _initial_step_lat;
+    double _initial_step_y;
     Eigen::VectorXd _zmp_window_t;
     Eigen::VectorXd _zmp_window_y;
     
@@ -430,8 +436,8 @@ protected:
         double get_indent_zmp() {return _indentation_zmp;};
         double get_start_time() {return _start_time;};
         double get_lean_forward() {return _lean_forward;};
-        std::vector<double> get_threshold_right() {return _threshold_right;};
-        std::vector<double> get_threshold_left() {return _threshold_left;};
+        std::vector<double> get_threshold_impact_right() {return _threshold_impact_right;};
+        std::vector<double> get_threshold_impact_left() {return _threshold_impact_left;};
         bool get_switch_real_impact() {return _real_impacts;};
         double get_slope_delay_impact() {return _slope_delay_impact;};
         bool get_walking_forward() {return _walking_forward;};
@@ -439,6 +445,8 @@ protected:
         double get_MPC_Q() {return _mpc_Q;};
         double get_MPC_R() {return _mpc_R;};
         double get_lateral_step() {return _lat_step;};
+        double get_threshold_delay() {return _threshold_delay;};
+        int get_delay_impact_scenario() {return _delay_impact_scenario;};
         
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
@@ -449,8 +457,8 @@ protected:
         void set_indent_zmp(double indentation_zmp) {_indentation_zmp = indentation_zmp;};
         void set_start_time(double start_time) {_start_time = start_time;};
         void set_lean_forward(double lean_forward) {_lean_forward = lean_forward;};
-        void set_threshold_right(std::vector<double> threshold_right) {_threshold_right = threshold_right;};
-        void set_threshold_left(std::vector<double> threshold_left) {_threshold_left = threshold_left;};
+        void set_threshold_impact_right(std::vector<double> threshold_impact_right) {_threshold_impact_right = threshold_impact_right;};
+        void set_threshold_impact_left(std::vector<double> threshold_impact_left) {_threshold_impact_left = threshold_impact_left;};
         void set_switch_real_impact(bool real_impacts) {_real_impacts = real_impacts;};
         void set_slope_delay_impact(double slope_delay_impact) {_slope_delay_impact = slope_delay_impact;};
         void set_walking_forward(bool walking_forward) {_walking_forward = walking_forward;};
@@ -458,17 +466,22 @@ protected:
         void set_MPC_Q(double mpc_Q) {_mpc_Q = mpc_Q;};
         void set_MPC_R(double mpc_R) {_mpc_R = mpc_R;};
         void set_lateral_step(double lat_step) {_lat_step = lat_step;};
+        void set_threshold_delay(double threshold_delay) {_threshold_delay = threshold_delay;};
+        void set_delay_impact_scenario(double delay_impact_scenario) {_delay_impact_scenario = delay_impact_scenario;};
     private:
         
-        double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time, _slope_delay_impact, _max_inclination, _mpc_Q, _mpc_R, _lat_step;
+        double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
+        double _slope_delay_impact, _max_inclination, _mpc_Q, _mpc_R, _lat_step, _threshold_delay;
+        
+        
         robot_interface::Side _first_step_side;
         
         bool _real_impacts, _walking_forward;
         
-        std::vector<double> _threshold_right;
-        std::vector<double> _threshold_left;
+        std::vector<double> _threshold_impact_right;
+        std::vector<double> _threshold_impact_left;
         
-        int _max_steps;
+        int _max_steps, _delay_impact_scenario;
         
     } _initial_param;
     
