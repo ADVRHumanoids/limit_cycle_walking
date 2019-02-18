@@ -1103,7 +1103,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 {
     
         double dt = 0.01; //TODO take it out from here
-        double window_start = time;
+        double window_start = time - _start_walk;
         
 //         double entered_forward = 0;
 //         double reset_lateral = 0;
@@ -1243,7 +1243,8 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
                     _logger->add("window_tot", _zmp_window_y);
 //         }
 
-        
+            std::cout << "window_start: " << window_start << std::endl;
+            
 //         _logger->add("delayed", _entered_delay);
 //         _logger->add("period_delay", _period_delay);
 //         _logger->add("entered_period_delay", entered_period_delay);
@@ -1364,7 +1365,7 @@ bool virtualConstraintsNode::ST_idle(double time)
 
 bool virtualConstraintsNode::ST_halfStep(double time)
 {
-    std::cout << "ENTERED HALF STEP PLANNER at time: " << time << std::endl;
+//     std::cout << "ENTERED HALF STEP PLANNER at time: " << time << std::endl;
     
     _initial_com_position = _current_pose_ROS.get_com();
     _initial_sole_position = _current_pose_ROS.get_sole(_current_side);
@@ -1372,14 +1373,14 @@ bool virtualConstraintsNode::ST_halfStep(double time)
     _final_sole_position = _initial_sole_position;
     _final_com_position = _initial_com_position;
     
-//     if (_current_side == robot_interface::Side::Left)
-//     {
-//         _final_sole_position[1] = _initial_step_y;
-//     }
-//     else if (_current_side == robot_interface::Side::Right)
-//     {
-//         _final_sole_position[1] = - _initial_step_y;
-//     }
+    if (_current_side == robot_interface::Side::Left)
+    {
+        _final_sole_position[1] = _initial_step_y;
+    }
+    else if (_current_side == robot_interface::Side::Right)
+    {
+        _final_sole_position[1] = - _initial_step_y;
+    }
    
 
     Eigen::Vector3d delta_com;
