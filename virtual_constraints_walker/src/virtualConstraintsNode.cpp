@@ -731,9 +731,10 @@ void virtualConstraintsNode::exe(double time)
 {   
     if (_init_completed == 0)
         ST_init(time);
-        
+    
+    
     _internal_time = time - _starting_time;
-
+    std::cout << "time now: " << _internal_time << std::endl;
         
         
     _impact_cond = _internal_time - _reset_time;
@@ -744,11 +745,11 @@ void virtualConstraintsNode::exe(double time)
         _event = Event::START;
     };
     
-    if (_cycleCounter == 2 && runOnlyOnce)
-    {
-//         _impact_cond = 0;
-        _event = Event::STOP;
-    };
+//     if (_cycleCounter == 2 && runOnlyOnce)
+//     {
+// //         _impact_cond = 0;
+//         _event = Event::STOP;
+//     };
         
 
         if (impact_routine())
@@ -1297,7 +1298,7 @@ void virtualConstraintsNode::commander(double time)
             com_trajectory = compute_swing_trajectory(_poly_com.get_com_initial_pose(), _poly_com.get_com_final_pose(), 0, _poly_com.get_starTime(), _poly_com.get_endTime(), time, "xy");
         }
         
-//         com_trajectory(1) = lateral_com(time).coeff(0);   
+        com_trajectory(1) = lateral_com(time).coeff(0);   
         
 //         std::cout << "initial com send to commander " << _poly_com.get_com_initial_pose().transpose() << std::endl;
 //          std::cout << "final com send to commander " << _poly_com.get_com_final_pose().transpose() << std::endl;
@@ -1340,7 +1341,7 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("landed_left", static_cast<int>(_current_phase_left));
         _logger->add("landed_right",  static_cast<int>(_current_phase_right));
     
-        std::cout << "foot_trajectory " << foot_trajectory.transpose() << std::endl;
+//         std::cout << "foot_trajectory " << foot_trajectory.transpose() << std::endl;
         send_com(com_trajectory);
         send_step(foot_trajectory);
     }
@@ -1401,9 +1402,6 @@ bool virtualConstraintsNode::ST_halfStep(double time)
     
     _poly_com.set_starTime(time);
     _poly_com.set_endTime(time + _initial_param.get_duration_step());
-    
-    std::cout << "_initial_sole_position: " << _initial_sole_position.transpose() << std::endl;
-    std::cout << "_final_sole_position: " << _final_sole_position.transpose() << std::endl;
     
     return 1;
 };
@@ -1482,7 +1480,7 @@ void virtualConstraintsNode::planner(double time)
 
 void virtualConstraintsNode::core(double time)
 {
-    std::cout << "Entering core with event: " << _event << " during state: " << _current_state << std::endl;
+//     std::cout << "Entering core with event: " << _event << " during state: " << _current_state << std::endl;
     
     
     switch (_event)
@@ -1578,14 +1576,20 @@ bool virtualConstraintsNode::ST_init(double time)
     _final_sole_position = _initial_sole_position;
     _final_com_position = _initial_com_position;
 
-
+    planner(time);
+    Eigen::Vector3d foot_trajectory;
+    Eigen::Vector3d fake_pose;
+    fake_pose.setZero();
+    
+    // just to run it once, heat up the process
+    foot_trajectory = compute_swing_trajectory(fake_pose, fake_pose, 0, 0, 0, time, "xy");
     /* comy */
 
     double Ts = 0.01; //window resolution
     double T = 5; //window length for MpC
     double dt = 0.01; //rate of ros
 
-    _start_walk = _initial_param.get_start_time(); //TODO _start_walk and _initial_param.get_start_time are the same thind
+    _start_walk = _initial_param.get_start_time(); //TODO _start_walk and _initial_param.get_start_time are the same thing
     _q_min = sense_q1(); // min angle of inclination
     _q_max = _initial_param.get_max_inclination(); // max angle of inclination
 
