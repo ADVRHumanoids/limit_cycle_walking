@@ -87,7 +87,7 @@
 // }    
 
 
-////// current one ////////////
+//// current one ////////////
 
 int main(int argc, char **argv)
 {
@@ -245,4 +245,59 @@ int main(int argc, char **argv)
 // //         ret = VC.compute_swing_trajectory(starting_position, ending_position, clearance, starting_time, ending_time, ros::Time::now().toSec(), "xy");
 // //         loop_rate.sleep();
 // //     }
+// }
+
+
+//////////////// trial for  polynomial ////////////////////////
+
+// int main(int argc, char **argv)
+// {
+// 
+//     ros::init(argc, argv, "virtual_constraints");
+//     virtualConstraintsNode VC;
+//     ros::Rate loop_rate(100);
+//     
+//     XBot::MatLogger::Ptr _logger;
+//         _logger = XBot::MatLogger::getLogger("/tmp/porcodio");
+//     Eigen::Vector3d starting_position, ending_position, ret;
+//     Eigen::Vector3d new_starting_position, new_ending_position;
+//     double starting_time, ending_time;
+//     starting_position <<  -0.0776479, 0.000462967,       -0.12;
+//     ending_position <<  -0.0391377, 0.000462967,       -0.12;
+//     
+// 
+//  
+//  
+//  
+//     new_ending_position = ending_position;
+//     double clearance = 0.5;
+//     starting_time = ros::Time::now().toSec();
+//     ending_time = ros::Time::now().toSec() + 10;
+//     bool flag = true;
+// 
+//         while (ros::ok() && ros::Time::now().toSec() <= ending_time +1)
+//     {  
+// //         if (ros::Time::now().toSec() > ending_time - 5)
+// //         {
+// //             std::cout << "commanded new end position" << std::endl;
+// //             new_ending_position << 8, 8, 8;
+// //         }
+// //         
+// //         if (new_ending_position != ending_position)
+// //         {
+// //             starting_position = ret;
+// //              std::cout << "changed new ending position from : " << ending_position.transpose() << " to: " << new_ending_position.transpose() <<std::endl;
+// //             ending_position = new_ending_position;
+// //             starting_time = ros::Time::now().toSec();
+// //             std::cout << "starting_time: " << starting_time <<std::endl;
+// //             std::cout << "ending_time: " << ending_time <<std::endl;
+// //            
+// //             std::cout << "changed new starting position: " << starting_position.transpose() << std::endl;
+// //             
+// //         }
+//         ret = VC.compute_swing_trajectory(starting_position, ending_position, 0, starting_time, ending_time, ros::Time::now().toSec(), "xy");
+//         _logger->add("traj", ret);
+//         loop_rate.sleep();
+//     }
+//     _logger->flush();
 // }

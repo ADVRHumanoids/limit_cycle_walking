@@ -1,11 +1,12 @@
 %figure(1);
-%plot(foot_trajectory');
+plot(foot_trajectory');
 
 %% zmp
 figure(2);
 plot(zmp');
 hold on; plot(zmp_ref', 'r--');
 plot(com_trajectory(2,:)')
+plot(foot_trajectory');
 
 
 % plot(zmp_y(20:end)');

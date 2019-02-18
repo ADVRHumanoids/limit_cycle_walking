@@ -35,7 +35,7 @@ public:
      
     enum class Phase {FLIGHT = 0, LAND = 1};
     enum class Event { IMPACT = 0, START = 1, STOP = 2, EMPTY = 3 };
-    enum class State { INIT = 0, IDLE = 1, FIRSTSTEP = 2, WALK = 3, LASTSTEP = 4, EXIT = 5};
+    enum class State {IDLE = 0, WALK = 1, STARTING = 2, STOPPING = 4 };
     
     
     class data_step_poly
@@ -139,22 +139,27 @@ public:
     
     
     
-    class data_com
+    class data_com_poly
     {
     public:
         
         void log(XBot::MatLogger::Ptr logger) { logger->add("com_initial_pose", _com_initial_pose);}
         const Eigen::Vector3d get_com_initial_pose() const {return _com_initial_pose;};
         const Eigen::Vector3d get_com_final_pose() const {return _com_final_pose;};
+        const double get_starTime() const {return _start_time;};
+        const double get_endTime() const {return _end_time;};
         
         void set_com_initial_pose(Eigen::Vector3d com_initial_pose) {_com_initial_pose = com_initial_pose;};
         void set_com_final_pose(Eigen::Vector3d com_final_pose) {_com_final_pose = com_final_pose;};
+        void set_starTime(double start_time) {_start_time = start_time;};
+        void set_endTime(double end_time) {_end_time = end_time;};
 
     private:
         
         Eigen::Vector3d _com_initial_pose, _com_final_pose;
+        double _start_time, _end_time;
     };  
-    
+   
     class item_MpC
     {
         public:
@@ -389,7 +394,7 @@ protected:
     
     data_step_poly _poly_step;
     data_step_bezier _bezi_step;
-    data_com _com_info;
+    data_com_poly _poly_com;
     std::shared_ptr<item_MpC> _MpC_lat;
     
     
@@ -487,7 +492,7 @@ protected:
     
     double _initial_q1;
    
-    State _current_state = State::INIT;
+    State _current_state = State::IDLE;
     Event _event = Event::EMPTY;
     
     Phase _current_phase_left = Phase::LAND;
@@ -504,14 +509,15 @@ protected:
     
     Eigen::Vector3d lateral_com();
     
+    void planner(double time);
     void core(double time);
-    void commander(double time, double q1);
+    void commander(double time);
     
     bool ST_init(double time);
     bool ST_idle(double time);
-    bool ST_firstStep(double time);
-    bool ST_walk(double time);
-    bool ST_lastStep(double time);
+    bool ST_halfStep(double time);
+    bool ST_fullStep(double time);
+
     int _cycleCounter = 1;
     
     bool _initCycle = 1; //just needed to stop the code after the first cycle of walking
@@ -536,11 +542,9 @@ protected:
         switch (s)
         {
             case State::IDLE :  return os << "idle";
-            case State::INIT :  return os << "init";
-            case State::FIRSTSTEP :  return os << "first step";
-            case State::LASTSTEP :  return os << "last step";
             case State::WALK : return os << "walking";
-            case State::EXIT : return os << "exit";
+            case State::STARTING : return os << "start walking";
+            case State::STOPPING : return os << "stop walking";
             default : return os << "wrong state";
         }
     };
