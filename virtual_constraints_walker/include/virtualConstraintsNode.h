@@ -25,7 +25,6 @@
 #include <robot_interface.h>
 #include <robot_interface_ROS.h>
 
-#define PI 3.141592653589793238463
 # define grav 9.80665 
 
 
@@ -36,7 +35,7 @@ public:
     enum class Phase {FLIGHT = 0, LAND = 1};
     enum class Event { IMPACT = 0, START = 1, STOP = 2, EMPTY = 3 };
     enum class State {IDLE = 0, WALK = 1, STARTING = 2, STOPPING = 4 };
-    
+    enum class Step {FULL, HALF};
     
     class data_step_poly
     {
@@ -284,6 +283,8 @@ public:
     void update_com();
     void update_step();
     
+    
+    
     void run_walk();
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
@@ -292,7 +293,6 @@ public:
                                                     double t_start, 
                                                     double t_end,
                                                     double time,
-                                                    std::string side,
                                                     Eigen::Vector3d * vel = nullptr,
                                                     Eigen::Vector3d * acc = nullptr);
 
@@ -502,6 +502,7 @@ protected:
     Phase _current_phase_right = Phase::LAND;
     Phase _previous_phase_right = Phase::LAND;
     
+//     Step step_type;
     Eigen::Vector3d _pointsBezier_z;
     Eigen::Vector2d _pointsBezier_x;
     
@@ -514,9 +515,9 @@ protected:
     
     bool ST_init(double time);
     bool ST_idle(double time);
-    bool ST_halfStep(double time);
-    bool ST_fullStep(double time);
+    bool ST_walk(double time, Step step_type);
 
+    bool compute_step(Step step_type);
     int _cycleCounter = 1;
     
     bool _initCycle = 1; //just needed to stop the code after the first cycle of walking
