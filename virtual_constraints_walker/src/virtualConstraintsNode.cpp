@@ -1101,6 +1101,7 @@ void virtualConstraintsNode::zmp_window(Eigen::VectorXd zmp_t, Eigen::VectorXd z
 Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 {
         time = time - _start_walk;
+        
         double dt = 0.01; //TODO take it out from here
         
         double entered_forward = 0;
@@ -1108,14 +1109,17 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         
 //      //  this is needed to synchro pre impacts
         // if impact is sensed, shift window to next planned impact
+        
         if (_event == Event::IMPACT && _step_counter <= _initial_param.get_max_steps())  // jump in time, going to closer planned impact
         {
             entered_forward = 1;  
             std::cout << "current step n: " << _step_counter << std::endl;
-            std::cout << "entered impact at time: " << time << std::endl;
+            std::cout << "entered impact at time: " << time + _start_walk << std::endl;
             std::cout << "planned impacts: " << _planned_impacts.transpose() << std::endl;
             
             _shift_time = time - _planned_impacts(_step_counter) - dt; //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
+            
+            std::cout << "go to: " << _planned_impacts(_step_counter) << std::endl;
             
             _period_delay = 0;
 
@@ -1717,7 +1721,7 @@ bool virtualConstraintsNode::ST_init(double time)
     
     for (int i = 1; i <= _initial_param.get_max_steps(); i++)
     {
-        _planned_impacts(i-1) = _initial_param.get_start_time() +  _initial_param.get_duration_step() * i;
+        _planned_impacts(i-1) = _t_before_first_step +  _initial_param.get_duration_step() * i;
     }
     
     for (int i = 0; i < (_zmp_t).size(); i++)

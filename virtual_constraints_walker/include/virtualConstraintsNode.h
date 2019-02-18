@@ -508,8 +508,6 @@ protected:
     Eigen::Vector3d _initial_com_position, _final_com_position;
     Eigen::Vector3d _initial_sole_position, _final_sole_position;
     
-    Eigen::Vector3d lateral_com();
-    
     void planner(double time);
     void core(double time);
     void commander(double time);
