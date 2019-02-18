@@ -1271,8 +1271,8 @@ void virtualConstraintsNode::commander(double time)
     {
         ////do nothing just logging
         Eigen::Vector3d com_trajectory, foot_trajectory;
-        com_trajectory.setZero();
-        foot_trajectory.setZero();
+        com_trajectory = _current_pose_ROS.get_com();
+        foot_trajectory = _current_pose_ROS.get_sole(robot_interface::Side::Left);
         _logger->add("com_trajectory", com_trajectory);
         _logger->add("foot_trajectory", foot_trajectory);
         _logger->add("com_trajectory", com_trajectory);
@@ -1371,14 +1371,14 @@ bool virtualConstraintsNode::ST_halfStep(double time)
     _final_sole_position = _initial_sole_position;
     _final_com_position = _initial_com_position;
     
-    if (_current_side == robot_interface::Side::Left)
-    {
-        _final_sole_position[1] = _initial_step_y;
-    }
-    else if (_current_side == robot_interface::Side::Right)
-    {
-        _final_sole_position[1] = - _initial_step_y;
-    }
+//     if (_current_side == robot_interface::Side::Left)
+//     {
+//         _final_sole_position[1] = _initial_step_y;
+//     }
+//     else if (_current_side == robot_interface::Side::Right)
+//     {
+//         _final_sole_position[1] = - _initial_step_y;
+//     }
    
 
     Eigen::Vector3d delta_com;
