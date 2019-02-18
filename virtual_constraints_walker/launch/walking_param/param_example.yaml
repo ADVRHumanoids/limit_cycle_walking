@@ -18,3 +18,4 @@ mpc_R: 1
 lateral_step: 0.01
 threshold_delay: 0.0
 delay_impact_scenario: 1
+use_poly_com: false

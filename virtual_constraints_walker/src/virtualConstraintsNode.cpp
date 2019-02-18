@@ -61,7 +61,7 @@ bool virtualConstraintsNode::get_param_ros()
         double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time, lean_forward, slope_delay_impact, max_inclination, mpc_Q, mpc_R, lat_step, threshold_delay;
         std::vector<double> thresholds_impact_right(2), thresholds_impact_left(2);
         
-        bool real_impacts, walking_forward; 
+        bool real_impacts, walking_forward, use_poly_com; 
         
         std::string first_side;
 
@@ -86,6 +86,7 @@ bool virtualConstraintsNode::get_param_ros()
         double default_lat_step = 0;
         double default_threshold_delay = 0;
         int default_delay_impact_scenario = 0;
+        bool default_use_poly_com = 1;
         
         drop = nh_priv.param("initial_crouch", default_drop);
         max_steps = nh_priv.param("max_steps", default_max_steps);
@@ -107,6 +108,7 @@ bool virtualConstraintsNode::get_param_ros()
         lat_step = nh_priv.param("lateral_step", default_lat_step); 
         threshold_delay = nh_priv.param("threshold_delay", default_threshold_delay);
         delay_impact_scenario = nh_priv.param("delay_impact_scenario", default_delay_impact_scenario);
+        use_poly_com = nh_priv.param("use_poly_com", default_use_poly_com);
         
         _initial_param.set_crouch(drop);
         _initial_param.set_max_steps(max_steps);
@@ -127,6 +129,7 @@ bool virtualConstraintsNode::get_param_ros()
         _initial_param.set_lateral_step(lat_step);
         _initial_param.set_threshold_delay(threshold_delay);
         _initial_param.set_delay_impact_scenario(delay_impact_scenario);
+        _initial_param.set_use_poly_com(use_poly_com);
         
         if (first_side == "Left")
                 _initial_param.set_first_step_side(robot_interface::Side::Left);
@@ -1028,32 +1031,36 @@ void virtualConstraintsNode::commander(double time)
         //// send com sagittal
         Eigen::Vector3d com_trajectory;
 
-
-         if (_initial_param.get_walking_forward())
-        {
-            robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
-            Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
-            Eigen::Vector3d delta_com;
-            com_trajectory = _current_pose_ROS.get_com();
-            
-            if (_current_state == State::STARTING || _current_state == State::STOPPING)
+    if (_initial_param.get_use_poly_com())
+    {
+            if (_initial_param.get_walking_forward())
+                
             {
-                delta_com << - com_to_ankle_distance.z() * tan(_q1), 0, 0;
-                com_trajectory(0) = _poly_com.get_com_initial_pose().coeff(0) + delta_com(0);
+                com_trajectory = compute_swing_trajectory(_poly_com.get_com_initial_pose(), _poly_com.get_com_final_pose(), 0, _poly_com.get_starTime(), _poly_com.get_endTime(), time);
             }
-            else if (_current_state == State::WALK)
+    }
+    else
+    {
+            if (_initial_param.get_walking_forward())
             {
-                delta_com << - 2* com_to_ankle_distance.z() * tan(_q1), 0, 0;
-                com_trajectory(0) = _poly_com.get_com_initial_pose().coeff(0) + delta_com(0);
+                robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
+                Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
+                Eigen::Vector3d delta_com;
+                com_trajectory = _current_pose_ROS.get_com();
+                
+                if (_current_state == State::STARTING || _current_state == State::STOPPING)
+                {
+                    delta_com << - com_to_ankle_distance.z() * tan(_q1), 0, 0;
+                    com_trajectory(0) = _poly_com.get_com_initial_pose().coeff(0) + delta_com(0);
+                }
+                else if (_current_state == State::WALK)
+                {
+                    delta_com << - 2* com_to_ankle_distance.z() * tan(_q1), 0, 0;
+                    com_trajectory(0) = _poly_com.get_com_initial_pose().coeff(0) + delta_com(0);
+                }
             }
-        }
         
-        
-//         if (_initial_param.get_walking_forward())
-//         {
-//             com_trajectory = compute_swing_trajectory(_poly_com.get_com_initial_pose(), _poly_com.get_com_final_pose(), 0, _poly_com.get_starTime(), _poly_com.get_endTime(), time);
-//         }
-        
+    }
         com_trajectory(1) = lateral_com(time).coeff(0);   
         
         //// send foot
