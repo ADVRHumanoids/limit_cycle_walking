@@ -1106,16 +1106,22 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         double entered_forward = 0;
         double reset_lateral = 0;
         
-        // this is needed to synchro pre impacts
-//         if (_event == Event::IMPACT && _step_counter <= _initial_param.get_max_steps())  // jump in time, going to closer planned impact
-//         {
-//             entered_forward = 1;  
-//             _shift_time = time - _planned_impacts(_step_counter) - dt; //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
-//             
-//             _period_delay = 0;
-// 
-//                 
-//         }
+//      //  this is needed to synchro pre impacts
+        // if impact is sensed, shift window to next planned impact
+        if (_event == Event::IMPACT && _step_counter <= _initial_param.get_max_steps())  // jump in time, going to closer planned impact
+        {
+            entered_forward = 1;  
+            std::cout << "current step n: " << _step_counter << std::endl;
+            std::cout << "entered impact at time: " << time << std::endl;
+            std::cout << "planned impacts: " << _planned_impacts.transpose() << std::endl;
+            
+            _shift_time = time - _planned_impacts(_step_counter) - dt; //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
+            
+            _period_delay = 0;
+
+                
+        }
+       
 //         // -----------------------------------------------------------------------------------------------------------------------------
         
 //          _logger->add("shifted", entered_forward);
@@ -1304,11 +1310,11 @@ void virtualConstraintsNode::commander(double time)
         
         com_trajectory(1) = lateral_com(time).coeff(0);   
         
-        std::cout << "time now: " << time << std::endl;
+//         std::cout << "time now: " << time << std::endl;
 //         std::cout << "initial com send to commander " << _poly_com.get_com_initial_pose().transpose() << std::endl;
 //          std::cout << "final com send to commander " << _poly_com.get_com_final_pose().transpose() << std::endl;
-         std::cout << "start time " << _poly_com.get_starTime() << std::endl;
-         std::cout << "end time " << _poly_com.get_endTime() << std::endl;
+//          std::cout << "start time " << _poly_com.get_starTime() << std::endl;
+//          std::cout << "end time " << _poly_com.get_endTime() << std::endl;
 //         std::cout << "COMMANDED TRAJ COM " << com_trajectory.transpose() << std::endl;
         
        
@@ -1521,7 +1527,7 @@ void virtualConstraintsNode::core(double time)
                     break;
             }
             
-            _step_counter++;
+//             _step_counter++;
 //             _event = Event::EMPTY; //burn event
             break;
         
