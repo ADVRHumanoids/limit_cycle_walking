@@ -1,6 +1,10 @@
-%figure(1);
-plot(foot_trajectory');
+figure(1);
+plot(time, zmp');
+hold on; plot(time, zmp_ref', 'r--');
+plot(time, com_trajectory(2,:)')
+plot(time, foot_trajectory');
 
+plot(time, porcodio);
 %% zmp
 figure(2);
 plot(zmp');

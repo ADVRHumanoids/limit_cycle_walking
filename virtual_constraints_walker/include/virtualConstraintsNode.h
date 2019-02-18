@@ -417,6 +417,7 @@ protected:
     Eigen::VectorXd _zmp_window_t;
     Eigen::VectorXd _zmp_window_y;
     
+    double _t_before_first_step;
 //     Eigen::VectorXd u(1);
     Eigen::Matrix<double,1,1> _u;
     
