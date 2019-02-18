@@ -1132,126 +1132,126 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
          
         double window_start = time - _shift_time;
 //         
-//         _entered_delay = 0;
-//         bool entered_period_delay = 0;
-//         bool entered_right = 0;
-//         bool entered_left = 0;
-//         
-//         if (time > _planned_impacts(_step_counter) + _shift_time) // if it entered inside delay
-//         {
-//             
-//             _entered_delay = 1;
-//             _period_delay = _internal_time - _planned_impacts(_step_counter) + _shift_time; // HOW MUCH TIME IT IS STAYING HERE
-//             
-//             
-//             
-//             
-//             // // --------------------------------------------------------------
-//             // // ---------------SAVE THE FALL ---------------------------------
-//             // // --------------------------------------------------------------
-//             if (_period_delay >= _initial_param.get_threshold_delay())
+        _entered_delay = 0;
+        bool entered_period_delay = 0;
+        bool entered_right = 0;
+        bool entered_left = 0;
+        
+        if (time > _planned_impacts(_step_counter) + _shift_time) // if it entered inside delay
+        {
+            
+            _entered_delay = 1;
+            _period_delay = _internal_time - _planned_impacts(_step_counter) + _shift_time; // HOW MUCH TIME IT IS STAYING HERE
+            
+            
+            
+            
+            // // --------------------------------------------------------------
+            // // ---------------SAVE THE FALL ---------------------------------
+            // // --------------------------------------------------------------
+            if (_period_delay >= _initial_param.get_threshold_delay())
+            {
+                entered_period_delay = 1;
+//                 // if I want  the lateral stepping immediately
+                if (_current_side == robot_interface::Side::Right)
+                {
+                    entered_right = 1;
+                    _lateral_step = - _initial_param.get_lateral_step();
+                }
+                else if (_current_side == robot_interface::Side::Left)
+                {
+                    entered_left = 1;
+                    _lateral_step = _initial_param.get_lateral_step();
+                }                        
+            }
+
+            if (_event == Event::IMPACT)
+            {
+                Eigen::Vector3d reset_pose;
+                reset_pose = _poly_step.get_foot_final_pose();
+                
+                if (_current_side == robot_interface::Side::Left)
+                {
+                    reset_pose(1) = _initial_step_y;
+                }
+                else if (_current_side == robot_interface::Side::Right)
+                {
+                    reset_pose(1) = - _initial_step_y;
+                }
+                
+                _poly_step.set_foot_final_pose(reset_pose);
+                _lateral_step = 0;
+            }
+            
+            
+//                 std::cout << "UPDATING:" << std::endl;
+//                 std::cout << "final pose: " << _poly_step.get_foot_final_pose().transpose() << std::endl;
+
+                Eigen::Vector3d newpose = _poly_step.get_foot_final_pose();
+                newpose[1] += _lateral_step;
+                
+                if (newpose[1] > (_initial_step_y + _lateral_step))
+                {
+                    newpose[1] = _initial_step_y + _lateral_step;
+                }
+                
+                if (newpose[1] < (- _initial_step_y + _lateral_step))
+                {
+                    newpose[1] = -_initial_step_y + _lateral_step;
+                }
+                
+                _poly_step.set_foot_final_pose(newpose);
+                
+//                 std::cout << "NEW final pose: " << _poly_step.get_foot_final_pose().transpose() << std::endl;
+//                 std::cout << std::endl;
+            
+
+       
+            if (_initial_param.get_delay_impact_scenario() == 0 || _initial_param.get_delay_impact_scenario() == 1) // RAMP or STAY FIXED
+            {
+                if (_step_counter % 2 == 0)
+                {
+                            window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
+                            zmp_window(_zmp_t_fake_right, _zmp_y_fake_right, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+//                             _logger->add("window_tot", _zmp_window_y);
+                            if (_period_delay >= _initial_param.get_threshold_delay())
+                            {
+                                zmp_window(_zmp_t_fake_right_lat, _zmp_y_fake_right_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                            }
+                }
+                else
+                {
+                            window_start = time - (_planned_impacts(_step_counter) + _shift_time);
+                            zmp_window(_zmp_t_fake_left, _zmp_y_fake_left, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+//                             _logger->add("window_tot", _zmp_window_y);
+                            if (_period_delay >= _initial_param.get_threshold_delay())
+                            {
+                                zmp_window(_zmp_t_fake_left_lat, _zmp_y_fake_left_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                            }
+                }
+            }
+//             else if (_initial_param.get_delay_impact_scenario() == 2) // ??????????????
 //             {
-//                 entered_period_delay = 1;
-// //                 // if I want  the lateral stepping immediately
-//                 if (_current_side == robot_interface::Side::Right)
-//                 {
-//                     entered_right = 1;
-//                     _lateral_step = - _initial_param.get_lateral_step();
-//                 }
-//                 else if (_current_side == robot_interface::Side::Left)
-//                 {
-//                     entered_left = 1;
-//                     _lateral_step = _initial_param.get_lateral_step();
-//                 }                        
+//                 window_start = time - _period_delay;
+//                 zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
 //             }
-// 
-//             if (_event == Event::IMPACT)
+
+         // MOVE COM LATERALLY WHEN STEPS LATERALLY   
+//             if (_period_delay >= _initial_param.get_threshold_delay()) // this shift a little bit the zmp for the lateral step
 //             {
-//                 Eigen::Vector3d reset_pose;
-//                 reset_pose = _poly_step.get_foot_final_pose();
-//                 
-//                 if (_current_side == robot_interface::Side::Left)
-//                 {
-//                     reset_pose(1) = _initial_step_y;
-//                 }
-//                 else if (_current_side == robot_interface::Side::Right)
-//                 {
-//                     reset_pose(1) = - _initial_step_y;
-//                 }
-//                 
-//                 _poly_step.set_foot_final_pose(reset_pose);
-//                 _lateral_step = 0;
+//                     window_start = time - _period_delay;
+//                     zmp_window(_zmp_t_lat, _zmp_y_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);  
 //             }
-//             
-//             
-// //                 std::cout << "UPDATING:" << std::endl;
-// //                 std::cout << "final pose: " << _poly_step.get_foot_final_pose().transpose() << std::endl;
-// 
-//                 Eigen::Vector3d newpose = _poly_step.get_foot_final_pose();
-//                 newpose[1] += _lateral_step;
-//                 
-//                 if (newpose[1] > (_initial_step_y + _lateral_step))
-//                 {
-//                     newpose[1] = _initial_step_y + _lateral_step;
-//                 }
-//                 
-//                 if (newpose[1] < (- _initial_step_y + _lateral_step))
-//                 {
-//                     newpose[1] = -_initial_step_y + _lateral_step;
-//                 }
-//                 
-//                 _poly_step.set_foot_final_pose(newpose);
-//                 
-// //                 std::cout << "NEW final pose: " << _poly_step.get_foot_final_pose().transpose() << std::endl;
-// //                 std::cout << std::endl;
-//             
-// 
-//        
-//             if (_initial_param.get_delay_impact_scenario() == 0 || _initial_param.get_delay_impact_scenario() == 1) // RAMP or STAY FIXED
-//             {
-//                 if (_step_counter % 2 == 0)
-//                 {
-//                             window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
-//                             zmp_window(_zmp_t_fake_right, _zmp_y_fake_right, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-// //                             _logger->add("window_tot", _zmp_window_y);
-//                             if (_period_delay >= _initial_param.get_threshold_delay())
-//                             {
-//                                 zmp_window(_zmp_t_fake_right_lat, _zmp_y_fake_right_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-//                             }
-//                 }
-//                 else
-//                 {
-//                             window_start = time - (_planned_impacts(_step_counter) + _shift_time);
-//                             zmp_window(_zmp_t_fake_left, _zmp_y_fake_left, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-// //                             _logger->add("window_tot", _zmp_window_y);
-//                             if (_period_delay >= _initial_param.get_threshold_delay())
-//                             {
-//                                 zmp_window(_zmp_t_fake_left_lat, _zmp_y_fake_left_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-//                             }
-//                 }
-//             }
-// //             else if (_initial_param.get_delay_impact_scenario() == 2) // ??????????????
-// //             {
-// //                 window_start = time - _period_delay;
-// //                 zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-// //             }
-// 
-//          // MOVE COM LATERALLY WHEN STEPS LATERALLY   
-// //             if (_period_delay >= _initial_param.get_threshold_delay()) // this shift a little bit the zmp for the lateral step
-// //             {
-// //                     window_start = time - _period_delay;
-// //                     zmp_window(_zmp_t_lat, _zmp_y_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);  
-// //             }
-//             
+            
 //         _logger->add("zmp_ref", _zmp_window_y.coeff(0));
 //         _logger->add("window_tot", _zmp_window_y);
-//         }
-//         else // if it's not entered inside delay
-//         {
+        }
+        else // if it's not entered inside delay
+        {
                     zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
 //                     _logger->add("zmp_ref", _zmp_window_y.coeff(0));
 //                     _logger->add("window_tot", _zmp_window_y);
-//         }
+        }
             
 //         _logger->add("delayed", _entered_delay);
 //         _logger->add("period_delay", _period_delay);
@@ -1363,6 +1363,8 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("com", _com_y);
         _logger->add("u", _u);
         _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
+        
+        
         
 //         std::cout << "foot_trajectory " << foot_trajectory.transpose() << std::endl;
         send_com(com_trajectory);
