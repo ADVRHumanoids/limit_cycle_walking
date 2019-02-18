@@ -4,7 +4,6 @@ hold on; plot(time, zmp_ref', 'r--');
 plot(time, com_trajectory(2,:)')
 plot(time, foot_trajectory');
 
-plot(time, porcodio);
 %% zmp
 figure(2);
 plot(zmp');

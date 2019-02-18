@@ -551,7 +551,14 @@ void virtualConstraintsNode::exe(double time)
         
     _impact_cond = _internal_time - _reset_time;
 
-     
+//  // -------------for q1------------------------------------- 
+    double q1_temp = 0;    
+    if (_internal_time >= _start_walk + _t_before_first_step)
+    {
+        q1_temp = _steep_coeff*(_internal_time - _start_walk - _t_before_first_step) ; // internal q
+    }
+//  // ---------------------------------------------------------  
+
     if (_internal_time >= _start_walk && runOnlyOnce)
     {
         _event = Event::START;
@@ -566,10 +573,21 @@ void virtualConstraintsNode::exe(double time)
 
         if (impact_routine())
         {    
+            _q_min = sense_q1();
+            _reset_condition = q1_temp;
+            
             _reset_time = _internal_time;
         }
+
+//  // -------------for q1------------------------------------- 
+        _q1 = q1_temp - _reset_condition;
         
-//         std::cout << "com sensed now: " << _current_pose_ROS.get_com().transpose() << std::endl;
+        if (_q1 > _q_max) 
+        {
+            _q1 = _q_max;
+        }
+//  // ---------------------------------------------------------  
+
         core(_internal_time);
         commander(_internal_time);
 }
@@ -1009,30 +1027,32 @@ void virtualConstraintsNode::commander(double time)
     {
         //// send com sagittal
         Eigen::Vector3d com_trajectory;
-    
-//          if (_initial_param.get_walking_forward())
-//         {
-//             robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
-//             Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
-//             Eigen::Vector3d delta_com;
-//             
-//             if (_current_state == State::STARTING || _current_state == State::STOPPING)
-//             {
-//                 delta_com << - com_to_ankle_distance.z() * tan(q1), 0, 0;
-//                 com_trajectory(0) = _com_info.get_com_initial_pose().coeff(0) + delta_com(0);
-//             }
-//             else if (_current_state == State::WALK)
-//             {
-//                 delta_com << - 2* com_to_ankle_distance.z() * tan(q1), 0, 0;
-//                 com_trajectory(0) = _com_info.get_com_initial_pose().coeff(0) + delta_com(0);
-//             }
-//         }
-        
-        
-        if (_initial_param.get_walking_forward())
+
+
+         if (_initial_param.get_walking_forward())
         {
-            com_trajectory = compute_swing_trajectory(_poly_com.get_com_initial_pose(), _poly_com.get_com_final_pose(), 0, _poly_com.get_starTime(), _poly_com.get_endTime(), time);
+            robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
+            Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
+            Eigen::Vector3d delta_com;
+            com_trajectory = _current_pose_ROS.get_com();
+            
+            if (_current_state == State::STARTING || _current_state == State::STOPPING)
+            {
+                delta_com << - com_to_ankle_distance.z() * tan(_q1), 0, 0;
+                com_trajectory(0) = _poly_com.get_com_initial_pose().coeff(0) + delta_com(0);
+            }
+            else if (_current_state == State::WALK)
+            {
+                delta_com << - 2* com_to_ankle_distance.z() * tan(_q1), 0, 0;
+                com_trajectory(0) = _poly_com.get_com_initial_pose().coeff(0) + delta_com(0);
+            }
         }
+        
+        
+//         if (_initial_param.get_walking_forward())
+//         {
+//             com_trajectory = compute_swing_trajectory(_poly_com.get_com_initial_pose(), _poly_com.get_com_final_pose(), 0, _poly_com.get_starTime(), _poly_com.get_endTime(), time);
+//         }
         
         com_trajectory(1) = lateral_com(time).coeff(0);   
         

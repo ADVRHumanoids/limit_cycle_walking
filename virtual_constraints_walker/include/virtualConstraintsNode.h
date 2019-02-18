@@ -411,7 +411,7 @@ protected:
     double _q_initial;
     double _q_min;
     double _q_max;
-    
+    double _q1;
     bool _init_completed = 0;
     double _initial_step_y;
     Eigen::VectorXd _zmp_window_t;
