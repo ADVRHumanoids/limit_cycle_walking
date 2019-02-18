@@ -1276,11 +1276,10 @@ void virtualConstraintsNode::commander(double time)
         com_trajectory = _current_pose_ROS.get_com();
         foot_trajectory = _current_pose_ROS.get_sole(robot_interface::Side::Left);
         _logger->add("com_trajectory", com_trajectory);
-        _logger->add("foot_trajectory", foot_trajectory);
         _logger->add("com_trajectory", com_trajectory);
-        _logger->add("foot_trajectory", foot_trajectory);
+//         _logger->add("foot_trajectory", foot_trajectory);
 
-        _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
+//         _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
         
         _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
         _logger->add("ft_right", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
@@ -1334,6 +1333,7 @@ void virtualConstraintsNode::commander(double time)
        
         
         _logger->add("foot_trajectory", foot_trajectory);
+        
         _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
         
         _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
@@ -1519,7 +1519,7 @@ void virtualConstraintsNode::core(double time)
 
                 case State::IDLE :
                     _current_state = State::STARTING;
-                    planner(time);
+                    planner(time + 1);
                     break;
                     
                 default : std::cout << "Ignored starting event. Already WALKING" << std::endl;
