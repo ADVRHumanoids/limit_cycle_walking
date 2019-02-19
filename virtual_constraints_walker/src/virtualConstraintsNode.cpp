@@ -204,8 +204,6 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
         // send a goal to the action
         geometry_msgs::Pose cmd_initial_l_sole, cmd_initial_r_sole;
         
-        Eigen::Vector4d orientation_sole;
-        
         geometry_msgs::Pose q_l;
         geometry_msgs::Pose q_r;
         
@@ -595,26 +593,6 @@ void virtualConstraintsNode::exe(double time)
         commander(_internal_time);
 }
 
-void virtualConstraintsNode::send(std::string type, Eigen::Vector3d command)
-    {
-        geometry_msgs::PoseStamped cmd;
-        tf::pointEigenToMsg(command, cmd.pose.position);
-        
-        if (type == "right")
-        {
-            _sole_pubs[robot_interface::Side::Right].publish(cmd);
-        }
-        else if (type == "left")
-        {
-            _sole_pubs[robot_interface::Side::Left].publish(cmd);
-        }
-        else if (type == "com")
-        {
-            _com_pub.publish(cmd);  /*TODO make a map here, so there is only one publisher and you decide to whom*/
-        }
-        else std::cout << "you're trying to send the command to a non existent task" << std::endl;
-    }
-
 void virtualConstraintsNode::send_com(Eigen::Vector3d com_command)
     {
         geometry_msgs::PoseStamped cmd_com;
@@ -630,6 +608,15 @@ void virtualConstraintsNode::send_step(Eigen::Vector3d foot_command)
         _sole_pubs[_current_side].publish(cmd_sole);
     }
 
+void virtualConstraintsNode::send_step_tot(Eigen::Affine3d foot_command)
+    {
+        geometry_msgs::Pose cmd_sole;
+        tf::poseEigenToMsg(foot_command, cmd_sole);
+        _sole_pubs[_current_side].publish(cmd_sole);
+    } 
+    
+    
+           
 Eigen::Vector3d virtualConstraintsNode::compute_swing_trajectory(const Eigen::Vector3d& start, 
                                                                  const Eigen::Vector3d& end,
                                                                  double clearance,
@@ -1190,6 +1177,36 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 Eigen::Vector3d delta_step;
                 delta_step << (- 4* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q_max)), 0, 0; //_lateral_step
                 _final_sole_position += delta_step;
+                
+                break;
+        }
+        case Step::STEER :
+        {  
+                Eigen::Vector3d delta_com;
+                delta_com << (- _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q_max)), 0, 0; // _lateral_step
+                _final_com_position += delta_com;
+                    
+                Eigen::Vector3d delta_step;
+                delta_step << (- 2* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q_max)), 0, 0; //_lateral_step
+                _final_sole_position += delta_step;
+                
+                        
+                Eigen::Affine3d sole_o = _current_pose_ROS.get_sole_tot(robot_interface::Side::Left);
+        
+                Eigen::Quaterniond goal_orientation;
+                
+                goal_orientation.x() = 0;
+                goal_orientation.y() = 0;
+                goal_orientation.z() = 0;
+                goal_orientation.w() = 1;
+                
+                sole_o.linear() = goal_orientation.normalized().toRotationMatrix();
+                sole_o.translation() = _final_sole_position;
+                std::cout << "oriented step:  "  << std::endl; 
+                std::cout << "Orientation: " << sole_o.rotation() << std::endl;
+                std::cout << "Position: " << sole_o.translation().transpose() << std::endl;
+                std::cout << "Position2: " << _final_sole_position.transpose() << std::endl;
+                
                 
                 break;
         }

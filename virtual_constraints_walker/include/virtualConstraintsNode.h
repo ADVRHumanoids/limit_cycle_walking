@@ -35,7 +35,7 @@ public:
     enum class Phase {FLIGHT = 0, LAND = 1};
     enum class Event { IMPACT = 0, START = 1, STOP = 2, EMPTY = 3 };
     enum class State {IDLE = 0, WALK = 1, STARTING = 2, STOPPING = 4 };
-    enum class Step {FULL, HALF};
+    enum class Step {FULL, HALF, STEER};
     
     class data_step_poly
     {
@@ -279,6 +279,7 @@ public:
     void send(std::string type, Eigen::Vector3d command);
     void send_com(Eigen::Vector3d com_command);
     void send_step(Eigen::Vector3d foot_command);
+    void send_step_tot(Eigen::Affine3d foot_command);
     
     void update_com();
     void update_step();
