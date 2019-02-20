@@ -1,7 +1,7 @@
 figure(1);
 plot(time, zmp');
 hold on; plot(time, zmp_ref', 'r--');
-plot(time, com_trajectory(2,:)')
+plot(time, com_trajectory(2,:)'); hold on;
 plot(time, foot_trajectory');
 
 %% zmp

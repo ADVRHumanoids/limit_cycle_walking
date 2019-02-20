@@ -12,9 +12,9 @@ robot_interface_ROS::robot_interface_ROS()
         
 //      prepare subscribers node
         _subs.push_back(n.subscribe("/cartesian/solution", 10, &robot_interface_ROS::joints_state_callback, this)); /*subscribe to cartesian/solution topic*/
-        _subs.push_back(n.subscribe("/cartesian/com/state", 10, &robot_interface_ROS::com_state_callback, this)); /*subscribe to cartesian/solution topic*/
-        _subs.push_back(n.subscribe("/cartesian/l_sole/state", 10, &robot_interface_ROS::l_sole_state_callback, this)); /*subscribe to cartesian/solution topic*/
-        _subs.push_back(n.subscribe("/cartesian/r_sole/state", 10, &robot_interface_ROS::r_sole_state_callback, this)); /*subscribe to cartesian/solution topic*/
+        _subs.push_back(n.subscribe("/cartesian/com/state", 10, &robot_interface_ROS::com_state_callback, this)); 
+        _subs.push_back(n.subscribe("/cartesian/l_sole/state", 10, &robot_interface_ROS::l_sole_state_callback, this));
+        _subs.push_back(n.subscribe("/cartesian/r_sole/state", 10, &robot_interface_ROS::r_sole_state_callback, this));
 
         
         _subs.push_back(n.subscribe("/xbotcore/cogimon/ft/l_leg_ft", 10, &robot_interface_ROS::l_sole_ft_callback, this));

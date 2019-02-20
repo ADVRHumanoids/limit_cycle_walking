@@ -119,6 +119,34 @@ int main(int argc, char **argv)
     }
 }   
 
+//////////////////////////////////////////////////////
+
+// int main(int argc, char **argv)
+// {
+//     ros::init(argc, argv, "virtual_constraints");
+//     
+//     
+//     virtualConstraintsNode VC;
+//     
+//     /*synchronize this node to the cartesian interface*/
+//     ros::service::waitForService("cartesian/get_task_list"); 
+//     ros::Rate loop_rate(100); //TODO set it from the robot
+//     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
+//     
+//     double first_stance_step = 0.1;
+//     double _t_before_first_step = 0.5;
+//     double double_stance = 0;
+//     int max_steps = 10;
+//     double dt = 0.01;
+//     
+//     Eigen::VectorXd _zmp_t;
+//     Eigen::VectorXd _zmp_y;
+//     
+//     VC.generate_zmp_new(first_stance_step, _t_before_first_step, double_stance, max_steps, dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them);
+//     
+//     
+//     
+// }   
 
 
 
