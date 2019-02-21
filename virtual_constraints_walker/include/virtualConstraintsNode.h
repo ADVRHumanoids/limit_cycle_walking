@@ -309,6 +309,7 @@ protected:
     
 //     ros::NodeHandle n;
     double _start_walk;
+    double _end_walk;
     double _steep_coeff;
     
     double _reducer;
@@ -450,9 +451,11 @@ protected:
     } _initial_param;
     
     double _initial_q1;
+    double _new_event_time;
    
     State _current_state = State::IDLE;
     Event _event = Event::EMPTY;
+    Event _last_event = Event::EMPTY;
     
     Phase _current_phase_left = Phase::LAND;
     Phase _previous_phase_left = Phase::LAND;
@@ -478,7 +481,7 @@ protected:
     bool ST_walk(double time, Step step_type);
 
     bool compute_step(Step step_type);
-    int _cycleCounter = 1;
+    int _cycle_counter = 0;
     
     bool _initCycle = 1; //just needed to stop the code after the first cycle of walking
     

@@ -474,6 +474,7 @@ int virtualConstraintsNode::impact_routine()
             
             if (impact_detector())
             {
+                _last_event = _event;
                 _event = Event::IMPACT; // event impact detected for core()
                 _current_pose_ROS.sense();
                
@@ -554,22 +555,23 @@ void virtualConstraintsNode::exe(double time)
     double q1_temp = 0;    
     if (_internal_time >= _start_walk + _t_before_first_step)
     {
-        q1_temp = _steep_coeff*(_internal_time - _start_walk - _t_before_first_step) ; // internal q
+        q1_temp = _steep_coeff*(_internal_time - _start_walk - _t_before_first_step) ; // basically q = a*t
     }
 //  // ---------------------------------------------------------  
 
     if (_internal_time >= _start_walk && runOnlyOnce)
     {
+        _last_event = _event;
         _event = Event::START;
+        _cycle_counter = 1;
     };
     
-    if (_cycleCounter == 2 && runOnlyOnce)
+    if (_cycle_counter == 2 && runOnlyOnce)
     {
-//         _impact_cond = 0;
+        _last_event = _event;
         _event = Event::STOP;
     };
         
-
         if (impact_routine())
         {    
             _q_min = sense_q1();
@@ -891,7 +893,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 
                 
         }
-       
+
 //         // -----------------------------------------------------------------------------------------------------------------------------
         
 //          _logger->add("shifted", entered_forward);
@@ -902,10 +904,10 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         bool entered_period_delay = 0;
         bool entered_right = 0;
         bool entered_left = 0;
+
         
-        if (time > _planned_impacts(_step_counter) + _shift_time) // if it entered inside delay
+        if (_current_state != State::IDLE && time > _planned_impacts(_step_counter) + _shift_time) // if it entered inside delay
         {
-            
             _entered_delay = 1;
             _period_delay = _internal_time - _planned_impacts(_step_counter) + _shift_time; // HOW MUCH TIME IT IS STAYING HERE
             
@@ -1014,6 +1016,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 //                     _logger->add("zmp_ref", _zmp_window_y.coeff(0));
 //                     _logger->add("window_tot", _zmp_window_y);
         }
+
         
         _u = _MpC_lat->_K_fb * _com_y + _MpC_lat->_K_prev * _zmp_window_y;
         
@@ -1029,42 +1032,46 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 
 void virtualConstraintsNode::commander(double time)
 {
-    if (_current_state == State::IDLE)
-    {
-        ////do nothing just logging
-        Eigen::Vector3d com_trajectory, foot_trajectory;
-        com_trajectory = _current_pose_ROS.get_com();
-        foot_trajectory = _current_pose_ROS.get_sole(robot_interface::Side::Left);
-        
-        _logger->add("com_trajectory", com_trajectory);
-        _logger->add("foot_trajectory", foot_trajectory);
-
-        _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
-        
-        _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
-        _logger->add("ft_right", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
-
-        _logger->add("landed_left", static_cast<int>(_current_phase_left));
-        _logger->add("landed_right",  static_cast<int>(_current_phase_right));
-               
-        _logger->add("zmp_ref", _zmp_window_y.coeff(0));
-        _logger->add("window_tot", _zmp_window_y);
-        
-        _logger->add("com", _com_y);
-        _logger->add("u", _u);
-        _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
-    }
-    else
-    {
+//     if (_current_state == State::IDLE)
+//     {
+//         ////do nothing just logging
+//         Eigen::Vector3d com_trajectory, foot_trajectory;
+//         com_trajectory = _current_pose_ROS.get_com();
+//         foot_trajectory = _current_pose_ROS.get_sole(robot_interface::Side::Left);
+//         
+//         _logger->add("com_trajectory", com_trajectory);
+//         _logger->add("foot_trajectory", foot_trajectory);
+// 
+//         _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
+//         
+//         _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
+//         _logger->add("ft_right", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
+// 
+//         _logger->add("landed_left", static_cast<int>(_current_phase_left));
+//         _logger->add("landed_right",  static_cast<int>(_current_phase_right));
+//                
+//         _logger->add("zmp_ref", _zmp_window_y.coeff(0));
+//         _logger->add("window_tot", _zmp_window_y);
+//         
+//         _logger->add("com", _com_y);
+//         _logger->add("u", _u);
+//         _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
+//         
+//     }
+//     else
+//     {
         //// send com sagittal
         Eigen::Vector3d com_trajectory;
 
     if (_initial_param.get_use_poly_com())
     {
             if (_initial_param.get_walking_forward())
-                
             {
+                std::cout << "_poly_com.get_com_initial_position(): " << _poly_com.get_com_initial_position().transpose() << std::endl;
+                std::cout << "_poly_com.get_com_final_position(): " << _poly_com.get_com_final_position().transpose() << std::endl;
                 com_trajectory = compute_swing_trajectory(_poly_com.get_com_initial_position(), _poly_com.get_com_final_position(), 0, _poly_com.get_starTime(), _poly_com.get_endTime(), time);
+                std::cout << "com_trajectory_computed" << std::endl;
+                
             }
     }
     else
@@ -1086,11 +1093,18 @@ void virtualConstraintsNode::commander(double time)
                     delta_com << - 2* com_to_ankle_distance.z() * tan(_q1), 0, 0;
                     com_trajectory(0) = _poly_com.get_com_initial_position().coeff(0) + delta_com(0);
                 }
+                else if (_current_state == State::IDLE)
+                {
+                    delta_com << 0, 0, 0;
+                    com_trajectory(0) = _poly_com.get_com_initial_position().coeff(0) + delta_com(0);
+                    
+                }
             }
         
     }
+
         com_trajectory(1) = lateral_com(time).coeff(0);   
-        
+        std::cout << "com_lateral_trajectory_computed" << std::endl;
         //// send foot
         
 
@@ -1134,26 +1148,56 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("u", _u);
         _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
         
-        
+        std::cout << "foot_trajectory_computed" << std::endl;
         
 //         std::cout << "foot_trajectory " << foot_trajectory.transpose() << std::endl;
         send_com(com_trajectory);
         send_step(foot_trajectory);
-    }
+//     }
     
     //burn impact event
     if (_event == Event::IMPACT)
     {
         _event = Event::EMPTY;
         _step_counter++;
+        
+        if (_step_counter >= _initial_param.get_max_steps()-1)
+        {
+            _cycle_counter++;
+        }
     }
+    
+    std::cout << "_step_counter: " <<_step_counter << std::endl;  
+    std::cout << "_cycle_counter:  "<<_cycle_counter << std::endl;
+    std::cout << "_current_state: " << _current_state << std::endl;
+
 }
     
     
 
 bool virtualConstraintsNode::ST_idle(double time)
 {
+    _initial_com_position = _current_pose_ROS.get_com();
+    _initial_sole_pose = _current_pose_ROS.get_sole_tot(_current_side);
     
+    _final_sole_pose = _initial_sole_pose;
+    _final_com_position = _initial_com_position;
+    
+    std::cout << "_init_sole_pose: " <<_initial_sole_pose.translation() << std::endl;
+    std::cout << "_final_sole_pose: " <<_final_sole_pose.translation() << std::endl;
+    
+    _poly_step.set_foot_initial_pose(_initial_sole_pose);
+    _poly_step.set_foot_final_pose(_final_sole_pose);
+    // ---------------------------------------------
+    _poly_step.set_starTime(time);
+    _poly_step.set_endTime(time+1);
+    _poly_step.set_step_clearing(0);
+    // ---------------------------------------------
+    _poly_com.set_com_initial_position(_initial_com_position);
+    _poly_com.set_com_final_position(_final_com_position);
+    
+    _poly_com.set_starTime(time);
+    _poly_com.set_endTime(time+1);
     return 1;
 };
 
@@ -1254,9 +1298,9 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 sole_orientation.w() = 1;
                 
                 _final_sole_pose.linear() = sole_orientation.normalized().toRotationMatrix();
-                std::cout << "Half Step:" << std::endl;
-                std::cout << "Orientation: " << std::endl << _final_sole_pose.rotation() << std::endl;
-                std::cout << "Position: " << _final_sole_pose.translation().transpose() << std::endl;
+//                 std::cout << "Half Step:" << std::endl;
+//                 std::cout << "Orientation: " << std::endl << _final_sole_pose.rotation() << std::endl;
+//                 std::cout << "Position: " << _final_sole_pose.translation().transpose() << std::endl;
                 
                 break;
         }
@@ -1282,9 +1326,9 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 sole_orientation.w() = 1;
                 
                 _final_sole_pose.linear() = sole_orientation.normalized().toRotationMatrix();
-                std::cout << "Full Step:" << std::endl;
-                std::cout << "Orientation: " << std::endl << _final_sole_pose.rotation() << std::endl;
-                std::cout << "Position: " << _final_sole_pose.translation().transpose() << std::endl;
+//                 std::cout << "Full Step:" << std::endl;
+//                 std::cout << "Orientation: " << std::endl << _final_sole_pose.rotation() << std::endl;
+//                 std::cout << "Position: " << _final_sole_pose.translation().transpose() << std::endl;
                 
                 
                 break;
@@ -1328,12 +1372,13 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 sole_orientation.w() = 1;
                 
                 _final_sole_pose.linear() = sole_orientation.normalized().toRotationMatrix();
-                std::cout << "Full Step:" << std::endl;
-                std::cout << "Orientation: " << std::endl << _final_sole_pose.rotation() << std::endl;
-                std::cout << "Position: " << _final_sole_pose.translation().transpose() << std::endl;
+//                 std::cout << "Full Step:" << std::endl;
+//                 std::cout << "Orientation: " << std::endl << _final_sole_pose.rotation() << std::endl;
+//                 std::cout << "Position: " << _final_sole_pose.translation().transpose() << std::endl;
                 
                 break;
         }
+        
         default : throw std::runtime_error(std::string("wrong type of step. For now only FULL, HALF and STEER are implemented"));                
     }
 }
@@ -1365,8 +1410,11 @@ void virtualConstraintsNode::planner(double time)
 
 void virtualConstraintsNode::core(double time)
 {
-//     std::cout << "Entering core with event: " << _event << " during state: " << _current_state << std::endl;
-    
+    std::cout << "Entering core with event: " << _event << " during state: " << _current_state << std::endl;
+    if (_last_event != _event)
+    {
+        _new_event_time = time;
+    }
     
     switch (_event)
     {    
@@ -1389,7 +1437,6 @@ void virtualConstraintsNode::core(double time)
                     
                 case State::STOPPING :
                     _current_state = State::IDLE;
-                    planner(time);
                     break;
             }
             break;
@@ -1416,11 +1463,14 @@ void virtualConstraintsNode::core(double time)
                     break;
                    
                 case State::WALK :
+                    _end_walk = time;
                     _current_state = State::STOPPING;
+                    
                     planner(time);
                     break;
                     
                 case State::STARTING :
+                    _end_walk = time;
                     _current_state = State::STOPPING;
                     planner(time);
                     break;
@@ -1432,13 +1482,31 @@ void virtualConstraintsNode::core(double time)
             break;
             
         case Event::EMPTY :
+            
+            switch (_current_state)
+            {
+                case State::IDLE :
+                    planner(time);
+                    break;
+                default : break;
+            }
+            
             break;
              
         default : 
             throw std::runtime_error(std::string("Event not recognized"));
             break;
     }
-        
+    
+//     /////// command the robot!
+//     commander(_internal_time);
+//     
+// // //    burn impact event
+//     if (_event == Event::IMPACT)
+//     {
+//         _event = Event::EMPTY;
+//         _step_counter++;
+//     }
 }
 
 bool virtualConstraintsNode::ST_init(double time) 
@@ -1728,14 +1796,13 @@ void virtualConstraintsNode::add_step(std::vector<double>& y, int type)
             break;
         }
         
-        case 1 :
+        case 1 : //turn left
         {
-            double last_value = y.back();
+            double last_value = y.back(); // LEFT
             
             int current_sign = (last_value > 0) - (last_value < 0);
             
             y.push_back(last_value);
-//             y.push_back(- current_sign * fabs(last_value) - y_steer);
             y.push_back(last_value - current_sign*(distance) - y_steer);
             
             last_value = y.back();
@@ -1749,7 +1816,7 @@ void virtualConstraintsNode::add_step(std::vector<double>& y, int type)
             break;
         }
         
-        case 2 :
+        case 2 : //turn right
         {
             double last_value = y.back();
             
@@ -1757,14 +1824,12 @@ void virtualConstraintsNode::add_step(std::vector<double>& y, int type)
             int current_sign = (last_value > 0) - (last_value < 0);
             
             y.push_back(last_value);
-//             y.push_back(-current_sign * fabs(last_value) + y_steer);
             y.push_back(last_value - current_sign*(distance) + y_steer);
             
             last_value = y.back();
             current_sign = (last_value > 0) - (last_value < 0);
             
             y.push_back(last_value);
-//             y.push_back(-current_sign * (fabs(last_value) - distance));
             y.push_back(last_value - current_sign*(distance));
             
             break;
