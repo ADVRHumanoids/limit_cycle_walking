@@ -1335,7 +1335,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
         }
         case Step::STEER :
         {  
-                double R = 0.5; //radius of curvature
+//                 double R = 0.5; //radius of curvature
                 
 //                  // POSITION
 //              // com
@@ -1350,16 +1350,16 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 double  distance_step = (- 4* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q_max));
                 
                 
-                double theta_step = distance_step/R;
-                
-//                 std::cout << "R: " << R << std::endl;
-//                 std::cout << "distance: " << distance << std::endl;
-//                 std::cout << "angle: " << theta << std::endl;
+//                 double theta_step = distance_step/R;
+//                 Eigen::Vector3d delta_step;
+//                 delta_step << R * sin(theta_step), R * (1 - cos(theta_step)), 0; //_lateral_step
                 
                 Eigen::Vector3d delta_step;
-                delta_step << R * sin(theta_step), R * (1 - cos(theta_step)), 0; //_lateral_step
-
-//                 std::cout << "delta_step: " << delta_step.transpose() << std::endl;
+                double theta_step = M_PI/2;
+                
+                double distance_new = distance_step * cos(theta_step);
+                
+                delta_step << distance_new * cos(theta_step), distance_new * sin(theta_step), 0; //_lateral_step
                 _final_sole_pose.translation() += delta_step;
                 
 //                 // ORIENTATION
@@ -1368,7 +1368,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 
                 sole_orientation.x() = 0;
                 sole_orientation.y() = 0;
-                sole_orientation.z() = 0;
+                sole_orientation.z() = theta_step;
                 sole_orientation.w() = 1;
                 
                 _final_sole_pose.linear() = sole_orientation.normalized().toRotationMatrix();
@@ -1583,7 +1583,7 @@ bool virtualConstraintsNode::ST_init(double time)
     generate_zmp(first_stance_step_lat, _t_before_first_step, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t_lat, _zmp_y_lat); //TODO once filled, I shouldn't be able to modify them
 //     // -----------------------------------------------------
     // steer zmp
-//     generate_zmp(first_stance_step_lat, _t_before_first_step, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t_lat, _zmp_y_lat); //TODO once filled, I shouldn't be able to modify them
+    generate_zmp(first_stance_step, _t_before_first_step, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t_steer, _zmp_y_steer); //TODO once filled, I shouldn't be able to modify them
     
     if (_initial_param.get_delay_impact_scenario() == 0) // generate different ZMP with ramp to 0
     {
@@ -1642,7 +1642,7 @@ bool virtualConstraintsNode::ST_init(double time)
 //     // -----------------------------------------------------
     
     
-    // get impact position in time
+    // get impact position planned in time
     _planned_impacts.resize(_initial_param.get_max_steps(),1);
     
     for (int i = 1; i <= _initial_param.get_max_steps(); i++)
@@ -1713,40 +1713,76 @@ void virtualConstraintsNode::generate_zmp_new(double y_start, double t_start, do
             
         std::vector<double> y_try;
         
+        _angle_steer = 0;
         
         y_try.push_back(0);
         y_try.push_back(0);
-        y_try.push_back(y_start);
+        y_try.push_back(y_start); //initial step
         
-        std::cout << "vector should be ->" << std::endl << "0  0  0.1"<< std::endl;
+//         write_vec(y_try);
+   
+        add_step(y_try,0); //forward
         write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
         
         add_step(y_try,0); //forward
-        
-        std::cout << "vector should be ->" << std::endl << "0  0  0.1 0.1  -0.1"<< std::endl;
         write_vec(y_try);
-        
-        add_step(y_try,0); //forward
-        std::cout << "vector should be ->" << std::endl << "0  0  0.1  0.1  -0.1  -0.1  0.1"<< std::endl;
-        write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
         
         add_step(y_try,1); // steer_left
-        std::cout << "vector should be ->" << std::endl << "0  0  0.1  0.1  -0.1  -0.1  0.1  0.1  -0.15  -0.15  0.05"<< std::endl;
         write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
         
-        add_step(y_try,2); // steer_right
-        std::cout << "vector should be ->" << std::endl << "0  0  0.1  0.1  -0.1  -0.1  0.1  0.1  -0.15  -0.15  0.05  0.05  -0.2  -0.2  0"<< std::endl;
-        
-        y_try.push_back(0);
-        
-        
-        
-        
-        
+        add_step(y_try,0); //forward
         write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
+//         
+        add_step(y_try,0); //forward
+        write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
+//         
+        add_step(y_try,0); //forward
+        write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
+    
+        add_step(y_try,0); //forward
+        write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
         
+        
+        
+                add_step(y_try,0); //forward
+        write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
+    
+        add_step(y_try,0); //forward
+        write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
+        
+        
+                add_step(y_try,0); //forward
+        write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
+    
+        add_step(y_try,0); //forward
+        write_vec(y_try);
+        std::cout << "angle: " << _angle_steer << std::endl;
+        
+        
+        
+//         add_step(y_try,2); // steer_right
+//         write_vec(y_try);
+//         std::cout << "angle: " << _angle_steer << std::endl;
+            
+//         y_try.push_back(0);
+        
+        
+
         Eigen::VectorXd y_tot(y_try.size());
         y_tot = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(y_try.data(), y_try.size());
+        
+        zmp_y.resize(y_try.size());
+        zmp_y << y_tot;
         
 //         std::cout << "y_tot: " << y_tot.transpose() << std::endl;
         
@@ -1778,60 +1814,142 @@ void virtualConstraintsNode::write_vec(const std::vector<double>& vec) {
     }
     std::cout << std::endl;
 }
+
+// void virtualConstraintsNode::add_step(std::vector<double>& y, int type)
+// {  
+//     double y_steer = 0.05;
+//     double distance = fabs(y.back()) * 2;
+//     switch (type)
+//     {
+//         case 0 : // forward step
+//         {
+//             double last_value = y.back();
+//             
+//             int current_sign = (last_value > 0) - (last_value < 0);
+//             
+//             y.push_back(last_value);
+//             y.push_back(- current_sign * fabs(last_value));
+//             
+//             break;
+//         }
+//         
+//         case 1 : //turn left
+//         {
+//             double last_value = y.back(); // LEFT
+//             
+//             int current_sign = (last_value > 0) - (last_value < 0);
+//             
+//             y.push_back(last_value);
+//             y.push_back(last_value - current_sign*(distance) - y_steer);
+//             
+//             last_value = y.back();
+//             current_sign = (last_value > 0) - (last_value < 0);
+//             
+//             
+//             y.push_back(last_value);
+//             y.push_back(last_value - current_sign*(distance));
+// 
+//             
+//             break;
+//         }
+//         
+//         case 2 : //turn right
+//         {
+//             double last_value = y.back();
+//             
+//             std::cout << "last_value:" << last_value << std::endl;
+//             int current_sign = (last_value > 0) - (last_value < 0);
+//             
+//             y.push_back(last_value);
+//             y.push_back(last_value - current_sign*(distance) + y_steer);
+//             
+//             last_value = y.back();
+//             current_sign = (last_value > 0) - (last_value < 0);
+//             
+//             y.push_back(last_value);
+//             y.push_back(last_value - current_sign*(distance));
+//             
+//             break;
+//         }
+//     }
+// }
+
+
+
+
 void virtualConstraintsNode::add_step(std::vector<double>& y, int type)
 {  
-    double y_steer = 0.05;
-    double distance = fabs(y.back()) * 2;
     switch (type)
     {
-        case 0 :
+        case 0 : // forward step
         {
             double last_value = y.back();
+            _angle_steer += 0;
+            double new_value = last_value * sin(_angle_steer);
             
-            int current_sign = (last_value > 0) - (last_value < 0);
-            
+//          Same:
             y.push_back(last_value);
-            y.push_back(- current_sign * fabs(last_value));
+//          Opposite:
+            y.push_back(- (last_value + new_value));
             
             break;
+            
+            
         }
         
         case 1 : //turn left
         {
-            double last_value = y.back(); // LEFT
+            
+            double last_value = y.back();
+            _angle_steer += M_PI/8;
             
             int current_sign = (last_value > 0) - (last_value < 0);
-            
+
+            double delta_step;
+//             double distance_step = (- 4* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q_max));
+            double distance_step = 0.5;
+            double distance_new = distance_step * cos(_angle_steer);
+
+           double new_value = distance_new * sin(_angle_steer);
+           
+//          Same:
             y.push_back(last_value);
-            y.push_back(last_value - current_sign*(distance) - y_steer);
-            
-            last_value = y.back();
-            current_sign = (last_value > 0) - (last_value < 0);
-            
-            
-            y.push_back(last_value);
-            y.push_back(last_value - current_sign*(distance));
+//          Opposite:
+            y.push_back(-last_value - new_value);
 
             
+//          Same:
+            y.push_back(-last_value - new_value);
+//          Opposite:
+            y.push_back(last_value - new_value);
             break;
         }
         
         case 2 : //turn right
         {
+            
             double last_value = y.back();
+            _angle_steer -= M_PI/8;
             
-            std::cout << "last_value:" << last_value << std::endl;
             int current_sign = (last_value > 0) - (last_value < 0);
-            
+
+            double delta_step;
+//             double distance_step = (- 4* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q_max));
+            double distance_step = 0.5;
+            double distance_new = distance_step * cos(_angle_steer);
+
+           double new_value = distance_new * sin(_angle_steer);
+           
+//          Same:
             y.push_back(last_value);
-            y.push_back(last_value - current_sign*(distance) + y_steer);
+//          Opposite:
+            y.push_back(-last_value - new_value);
+
             
-            last_value = y.back();
-            current_sign = (last_value > 0) - (last_value < 0);
-            
-            y.push_back(last_value);
-            y.push_back(last_value - current_sign*(distance));
-            
+//          Same:
+            y.push_back(-last_value - new_value);
+//          Opposite:
+            y.push_back(last_value - new_value);
             break;
         }
     }

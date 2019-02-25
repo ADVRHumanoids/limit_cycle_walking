@@ -285,7 +285,7 @@ public:
     void generate_zmp(double y_start, double t_start, double double_stance, int num_steps, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
     
     void generate_zmp_new(double y_start, double t_start, double double_stance, int num_steps, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
-    void add_step(std::vector< double >& y, int type);
+    void add_step(std::vector<double>& y, int type);
     
     void lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, Eigen::VectorXd& X, Eigen::VectorXd& Y);
     void zmp_window(Eigen::VectorXd zmp_t, Eigen::VectorXd zmp_y, double window_start, double window_end, Eigen::VectorXd& zmp_window_t, Eigen::VectorXd& zmp_window_y);
@@ -343,6 +343,9 @@ protected:
 
     Eigen::VectorXd _zmp_t_lat;
     Eigen::VectorXd _zmp_y_lat;
+
+    Eigen::VectorXd _zmp_t_steer;
+    Eigen::VectorXd _zmp_y_steer;
     
     Eigen::VectorXd _zmp_t_fake_right, _zmp_t_fake_left;
     Eigen::VectorXd _zmp_y_fake_right, _zmp_y_fake_left;
@@ -385,6 +388,8 @@ protected:
     
     double _delay_time = 0;
     double _shift_time = 0;
+    
+    double _angle_steer;
     
     class param
     {
