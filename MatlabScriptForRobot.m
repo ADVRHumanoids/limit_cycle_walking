@@ -4,6 +4,8 @@ hold on; plot(time, zmp_ref', 'r--');
 plot(time, com_trajectory(2,:)'); hold on;
 plot(time, foot_trajectory');
 
+plot(time, flag_impact);
+
 %% zmp
 figure(2);
 plot(zmp');

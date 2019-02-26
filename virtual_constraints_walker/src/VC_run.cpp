@@ -124,8 +124,8 @@ int main(int argc, char **argv)
 // int main(int argc, char **argv)
 // {
 //     ros::init(argc, argv, "virtual_constraints");
-//     
-//     
+//     XBot::MatLogger::Ptr _logger;
+//     _logger = XBot::MatLogger::getLogger("/tmp/porcodio");
 //     virtualConstraintsNode VC;
 //     
 //     /*synchronize this node to the cartesian interface*/
@@ -142,7 +142,11 @@ int main(int argc, char **argv)
 //     Eigen::VectorXd _zmp_t;
 //     Eigen::VectorXd _zmp_y;
 //     
-//     VC.generate_zmp_new(first_stance_step, _t_before_first_step, double_stance, max_steps, dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them);      
+//     VC.generate_zmp_new(first_stance_step, _t_before_first_step, double_stance, max_steps, dt, _zmp_t, _zmp_y); //TODO once filled, I shouldn't be able to modify them);     
+//     
+//     _logger->add("zmp_y", _zmp_y);
+//     
+//     _logger->flush();
 // } 
 
 

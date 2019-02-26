@@ -333,6 +333,7 @@ protected:
     Eigen::Vector3d _foot_trajectory;
     
     bool  _flag = true;
+    bool _flag_impact = false;
     
     double _q1_step = 0;
     double _q1_offset;
@@ -386,6 +387,8 @@ protected:
     Eigen::VectorXd _planned_impacts;
     Eigen::Vector3d _com_y; 
     
+    double _time_fake_impact = 0;
+    double _time_real_impact = 0;
     double _delay_time = 0;
     double _shift_time = 0;
     
