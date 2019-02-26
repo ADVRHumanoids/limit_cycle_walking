@@ -908,7 +908,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         double window_start = time - _shift_time;
 //         
         _entered_delay = 0;
-        bool entered_period_delay = 0;
+        _entered_period_delay = 0;
         bool entered_right = 0;
         bool entered_left = 0;
 
@@ -926,7 +926,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
             // // --------------------------------------------------------------
             if (_period_delay >= _initial_param.get_threshold_delay())
             {
-                entered_period_delay = 1;
+                _entered_period_delay = 1;
 //                 // if I want  the lateral stepping immediately
                 if (_current_side == robot_interface::Side::Right)
                 {
@@ -1157,6 +1157,8 @@ void virtualConstraintsNode::commander(double time)
         
         _logger->add("flag_impact", _flag_impact);
         
+        _logger->add("entered_period_delay", _entered_period_delay);
+        
         
 //         std::cout << "foot_trajectory_computed" << std::endl;
         
@@ -1177,6 +1179,9 @@ void virtualConstraintsNode::commander(double time)
         }
     }
     
+    
+        std::cout << "lateral_step " << _lateral_step << std::endl;
+        std::cout << "final position "<< _poly_step.get_foot_final_position().transpose() << std::endl;
 //     std::cout << "_step_counter: " <<_step_counter << std::endl;  
 //     std::cout << "_cycle_counter:  "<<_cycle_counter << std::endl;
 //     std::cout << "_current_state: " << _current_state << std::endl;

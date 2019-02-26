@@ -7,7 +7,7 @@ indent_zmp: 0.02
 double_stance_duration: 0.0
 start_time: 1
 lean_forward: 0.02
-real_impacts: false
+real_impacts: true
 force_sensor_threshold_right: 40 60
 force_sensor_threshold_left: 40 60
 slope_delay_impact: 0
@@ -15,7 +15,7 @@ walking_forward: true
 max_inclination: 0.05
 mpc_Q: 100000
 mpc_R: 1
-lateral_step: 0.02
+lateral_step: 0.05
 threshold_delay: 0.1
 delay_impact_scenario: 1
 use_poly_com: false

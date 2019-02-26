@@ -301,7 +301,9 @@ public:
     double _entered_delay = 0;
     double _period_delay = 0;
     
-    double _lateral_step;
+    double _entered_period_delay = 0; // time after which it later step
+    
+    double _lateral_step = 0;
 //     double _lateral_step_left, _lateral_step_right;
     double _starting_time = 0;
     double _internal_time = 0;
