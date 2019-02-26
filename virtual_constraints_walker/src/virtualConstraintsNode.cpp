@@ -638,6 +638,7 @@ bool virtualConstraintsNode::impact_detector()
     }
     else
     {
+        _flag_impact =  real_impacts();
         fake_impacts();
 //         yet_another_impact();
     }

@@ -420,6 +420,7 @@ protected:
     Eigen::VectorXd _planned_impacts;
     Eigen::Vector3d _com_y; 
     
+    bool _flag_impact = false;
     double _delay_time = 0;
     double _shift_time = 0;
     

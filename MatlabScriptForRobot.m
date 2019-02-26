@@ -6,7 +6,9 @@ figure(2);
 plot(zmp');
 hold on; plot(zmp_ref', 'r--');
 plot(com_trajectory(2,:)')
+plot(foot_trajectory');
 
+plot(flag_impact');
 
 % plot(zmp_y(20:end)');
 
