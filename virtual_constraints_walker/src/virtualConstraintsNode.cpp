@@ -1231,7 +1231,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         bool entered_right = 0;
         bool entered_left = 0;
         
-        if (time > _planned_impacts(_step_counter) + _shift_time) // if it entered inside delay
+        if (time > _planned_impacts(_step_counter) + _shift_time && !_flag_impact) // if it entered inside delay && !_flag_impact
         {
             
             _entered_delay = 1;
