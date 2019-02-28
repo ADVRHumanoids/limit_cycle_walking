@@ -438,7 +438,7 @@ bool virtualConstraintsNode::fake_impacts()
         cond = _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2;
     }
     
-    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  && cond)
+    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3  && cond)
     {
         _time_fake_impact = _internal_time;
         return true;
@@ -1180,8 +1180,9 @@ void virtualConstraintsNode::commander(double time)
     }
     
     
-        std::cout << "lateral_step " << _lateral_step << std::endl;
-        std::cout << "final position "<< _poly_step.get_foot_final_position().transpose() << std::endl;
+//         std::cout << "lateral_step " << _lateral_step << std::endl;
+//         std::cout << "final position "<< _poly_step.get_foot_final_position().transpose() << std::endl;
+        
 //     std::cout << "_step_counter: " <<_step_counter << std::endl;  
 //     std::cout << "_cycle_counter:  "<<_cycle_counter << std::endl;
 //     std::cout << "_current_state: " << _current_state << std::endl;
