@@ -870,6 +870,7 @@ void virtualConstraintsNode::zmp_window(Eigen::VectorXd zmp_t, Eigen::VectorXd z
 
         zmp_window_y.setZero();
         zmp_window_y.segment(0, j-i) = (zmp_y).segment(i, j-i);
+        zmp_window_y[zmp_window_y.size()-1] = zmp_window_y[zmp_window_y.size()-2];
 
     }
     
@@ -980,25 +981,34 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
        
             if (_initial_param.get_delay_impact_scenario() == 0 || _initial_param.get_delay_impact_scenario() == 1) // RAMP or STAY FIXED
             {
-                if (_step_counter % 2 == 0)
+                if (_step_counter < _initial_param.get_max_steps()-1)
                 {
-                            window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
-                            zmp_window(_zmp_t_fake_right, _zmp_y_fake_right, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-//                             _logger->add("window_tot", _zmp_window_y);
-                            if (_period_delay >= _initial_param.get_threshold_delay())
-                            {
-                                zmp_window(_zmp_t_fake_right_lat, _zmp_y_fake_right_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-                            }
+                    if (_step_counter % 2 == 0)
+                    {
+                                window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
+                                zmp_window(_zmp_t_fake_right, _zmp_y_fake_right, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+    //                             _logger->add("window_tot", _zmp_window_y);
+                                if (_period_delay >= _initial_param.get_threshold_delay())
+                                {
+                                    zmp_window(_zmp_t_fake_right_lat, _zmp_y_fake_right_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                                }
+                    }
+                    else
+                    {
+                                window_start = time - (_planned_impacts(_step_counter) + _shift_time);
+                                zmp_window(_zmp_t_fake_left, _zmp_y_fake_left, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+    //                             _logger->add("window_tot", _zmp_window_y);
+                                if (_period_delay >= _initial_param.get_threshold_delay())
+                                {
+                                    zmp_window(_zmp_t_fake_left_lat, _zmp_y_fake_left_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                                }
+                    }
                 }
                 else
                 {
-                            window_start = time - (_planned_impacts(_step_counter) + _shift_time);
-                            zmp_window(_zmp_t_fake_left, _zmp_y_fake_left, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-//                             _logger->add("window_tot", _zmp_window_y);
-                            if (_period_delay >= _initial_param.get_threshold_delay())
-                            {
-                                zmp_window(_zmp_t_fake_left_lat, _zmp_y_fake_left_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-                            }
+                    window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
+                    zmp_window(_zmp_t_fake_center, _zmp_y_fake_center, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                    std::cout << "entered here" << std::endl;
                 }
             }
 //             else if (_initial_param.get_delay_impact_scenario() == 2) // ??????????????
@@ -1125,15 +1135,14 @@ void virtualConstraintsNode::commander(double time)
         }
         else
         {
-//             Eigen::Vector3d keep_position = _poly_step.get_foot_final_position();
+            Eigen::Affine3d keep_position = _poly_step.get_foot_final_pose();
             
-            
-//             keep_position(0) = _poly_step.get_foot_initial_position().coeff(0);
-// //             keep_position(1) = _poly_step.get_foot_initial_position().coeff(1) + _lateral_step;
-//             keep_position(2) = _poly_step.get_foot_initial_position().coeff(2);
-//              _poly_step.set_foot_final_position(keep_position);
-//              
-//             foot_trajectory = compute_swing_trajectory(_poly_step.get_foot_initial_position(), _poly_step.get_foot_final_position(), _poly_step.get_step_clearing(), _poly_step.get_starTime(), _poly_step.get_endTime(), time);
+            keep_position.translation()[0] = _poly_step.get_foot_initial_pose().translation()[0];
+//             keep_position(1) = _poly_step.get_foot_initial_position().coeff(1) + _lateral_step;
+            keep_position.translation()[2] = _poly_step.get_foot_initial_pose().translation()[2];
+             _poly_step.set_foot_final_pose(keep_position);
+                
+            foot_trajectory = compute_trajectory(_poly_step.get_foot_initial_pose(), _poly_step.get_foot_final_pose(), _poly_step.get_step_clearing(), _poly_step.get_starTime(), _poly_step.get_endTime(), time);
         }
        
         _logger->add("com_trajectory", com_trajectory);
@@ -1158,7 +1167,7 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("flag_impact", _flag_impact);
         
         _logger->add("entered_period_delay", _entered_period_delay);
-        
+
         
 //         std::cout << "foot_trajectory_computed" << std::endl;
         
@@ -1613,6 +1622,11 @@ bool virtualConstraintsNode::ST_init(double time)
         _zmp_t_fake_left = _zmp_t_fake_right;
         _zmp_y_fake_left = -_zmp_y_fake_right;
         
+        _zmp_y_fake_center = _zmp_y_fake_right;
+        _zmp_y_fake_center.resize(1,_zmp_t_fake_right.size());
+        _zmp_y_fake_center.setZero(); 
+        
+        
             for (int i = 0; i < (_zmp_y_fake_right).size(); i++)
         {
             _logger->add("zmp_y_fake_right", (_zmp_y_fake_right)(i));
@@ -1631,6 +1645,8 @@ bool virtualConstraintsNode::ST_init(double time)
         point_y_right << -first_stance_step, -first_stance_step;
         
         lSpline(point_t, point_y_right, dt, _zmp_t_fake_right, _zmp_y_fake_right);
+        
+        _zmp_y_fake_right[_zmp_y_fake_right.size()-1] = _zmp_y_fake_right[_zmp_y_fake_right.size()-2]; 
         _zmp_t_fake_left = _zmp_t_fake_right;
         _zmp_y_fake_left = -_zmp_y_fake_right;
         

@@ -353,6 +353,8 @@ protected:
     Eigen::VectorXd _zmp_t_fake_right, _zmp_t_fake_left;
     Eigen::VectorXd _zmp_y_fake_right, _zmp_y_fake_left;
     
+    Eigen::VectorXd _zmp_t_fake_center, _zmp_y_fake_center;
+    
     Eigen::VectorXd _zmp_y_fake_left_lat, _zmp_y_fake_right_lat;
     Eigen::VectorXd _zmp_t_fake_left_lat, _zmp_t_fake_right_lat;
     

@@ -26,7 +26,7 @@ plot(zmp_y_fake_left');
 plot(zmp_sloped(:,1)');
 plot(1 + foot_trajectory(3,:)');
 
-%% window moving 
+%% window moving _zmp_y_fake_right[
 for i = 1:size(window_tot,2)
     plot(window_tot(:,i)')
     ylim([-.1,.1])
