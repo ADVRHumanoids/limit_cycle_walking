@@ -436,6 +436,9 @@ bool virtualConstraintsNode::fake_impacts()
     else
     {
         cond = _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2;
+        if (_step_counter > _initial_param.get_max_steps()-1)
+            cond = 0;
+            
     }
     
     if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3  && cond)
@@ -1078,7 +1081,8 @@ void virtualConstraintsNode::commander(double time)
 //     else
 //     {
         //// send com sagittal
-        Eigen::Vector3d com_trajectory;
+    Eigen::Vector3d com_trajectory;
+    com_trajectory = _poly_com.get_com_initial_position();
 
     if (_initial_param.get_use_poly_com())
     {
