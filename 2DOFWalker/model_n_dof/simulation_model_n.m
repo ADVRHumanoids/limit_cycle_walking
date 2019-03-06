@@ -15,7 +15,7 @@ initial_step = 0.3;
 step_lenght = 0.3;
 angle_impact = pi/17;
 %========================plot settings=====================================
-plot_phasePort = 1; 
+plot_phasePort = 0; 
 plot_q = 0; %q, q_dot, q_ddot
 plot_check_model = 0; %mechanical energy and kineticEnergy_dot = -q_dot * G
 plot_CoM = 1;
@@ -69,10 +69,10 @@ h = zeros(n_link-1,1);
 % set(fig10,'Position',[1341         446         560         420]);
 % plot_error = plot(0,0); hold on;
 % plot_error1 = plot(0,0); hold on;
-% writerObj = VideoWriter('walker1.avi');
+
+% writerObj = VideoWriter('walker2link.avi');
 % writerObj.FrameRate = 60;
 % open(writerObj);
-
 
 
 j = 0;
@@ -107,8 +107,8 @@ offset_leg = pi;
 offset_waist = 0;
 %===============
 %===============
- while 1
-%  for j = 1:250
+%  while 1
+ for j = 1:1000
 
 j = j + 1;
 time = (j-1)*dt;
@@ -208,7 +208,7 @@ end
 %==========
 
 update_plot
-
+% F(i) = getframe(gcf);
 % frame = getframe;
 % writeVideo(writerObj,frame);
 % v_record = [v_record, v];
@@ -219,7 +219,6 @@ update_plot
 %==========
  end
  
- 
- 
- 
-%  close(writerObj);
+
+% close the writer object
+% close(writerObj);

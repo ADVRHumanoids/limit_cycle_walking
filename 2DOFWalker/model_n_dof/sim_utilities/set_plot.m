@@ -3,7 +3,7 @@ fig1 = figure(1);
 % set(fig1,'Position',[ 6   552   560   420]);  %[2400, 400,560,420]
 
 for i = 1:n_link
-Link(i) = plot(0,0,'LineWidth',2); grid on; hold on;
+Link(i) = plot(0,0,'LineWidth',2); hold on;
 end
 
 lim_x_min = -1;
@@ -19,9 +19,15 @@ LineTerrain = plot(xLineTerrainLim,yLineTerrainLim);
 handleQuiver = quiver(0,0);
 
 
-p1plot = plot(0,0,'o');
-p2plot = plot(0,0,'o');
+normalLine = plot(0,0,'k--','LineWidth',2);
+set(normalLine,'xdata',[Links(1,1,1),Links(1,1,1)],'ydata', [0, 0.5]);
 
+anglePlot = plot(0,0,'k','LineWidth',1);
+% p1plot = plot(0,0,'o');
+% p2plot = plot(0,0,'o');
+txt1 = '\theta_1';
+t1 = text(0,0,'');
+t1.FontSize = 10;
 %===========================================
 for i = 1:n_link
 set(Link(i),'xdata',Links(i,1,:),'ydata',Links(i,2,:));
@@ -41,8 +47,9 @@ if plot_CoM
     for i = 1:n_link
     set(plot_CoM(i),'xdata',kinematics.linksCoMPosition(1,:,i),'ydata', kinematics.linksCoMPosition(2,:,i));
     end
-    set(plot_total_CoM1,'xdata',kinematics.CoM_position(1),'ydata', kinematics.CoM_position(2)); %2 plot to make cross inside circle
-    set(plot_total_CoM2,'xdata',kinematics.CoM_position(1),'ydata', kinematics.CoM_position(2));
+
+    set(plot_total_CoM1,'xdata',Links(2,1,1),'ydata', Links(2,2,1)); %2 plot to make cross inside circle
+    set(plot_total_CoM2,'xdata',Links(2,1,1),'ydata', Links(2,2,1));
 end
 %===================================================
 if plot_q

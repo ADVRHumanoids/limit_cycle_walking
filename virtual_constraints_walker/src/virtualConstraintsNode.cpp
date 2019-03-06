@@ -803,7 +803,8 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
         idx += (temp_vec.size()-1);
         
     }
-
+    
+    
     for (int i = 0; i < times_vec.size(); i++)
     {
         _logger->add("comy_traj_planned", times_vec(i));
@@ -886,8 +887,8 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         double entered_forward = 0;
         double reset_lateral = 0;
         
-//      //  this is needed to synchro impacts
-        // if impact is sensed, shift window to next planned impact
+     //  this is needed to synchro impacts
+// //         if impact is sensed, shift window to next planned impact
         
         if (_event == Event::IMPACT && _step_counter <= _initial_param.get_max_steps())  // jump in time, going to closer planned impact
         {

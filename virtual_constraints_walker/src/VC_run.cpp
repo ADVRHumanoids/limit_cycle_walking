@@ -152,11 +152,113 @@ int main(int argc, char **argv)
 
 
 
+/////////////////////// for paper ///////////////////////////
 
 
 
-
-
+// int main(int argc, char **argv)
+// {
+// 
+//     ros::init(argc, argv, "virtual_constraints");
+//     XBot::MatLogger::Ptr _logger;
+//     _logger = XBot::MatLogger::getLogger("/tmp/porcodio");
+//     virtualConstraintsNode VC;
+//     
+//     Eigen::VectorXd zmp_t;
+//     Eigen::VectorXd zmp_y;
+//     
+//     Eigen::VectorXd zmp_window_t;
+//     Eigen::VectorXd zmp_window_y;
+//     
+//     Eigen::VectorXd point_t;
+//     Eigen::VectorXd point_y;
+//     double t_start = 1;
+//     double _step_duration = 0.5;
+//     int num_steps = 10;
+//     double dt = 0.01;
+//     double double_stance = 0;
+//     double t_end = t_start + _step_duration*num_steps;
+//     double y_start = -0.0832;
+//     
+//     Eigen::VectorXd y, times;
+// 
+//     y.resize(num_steps*2,1);
+//     times.resize(num_steps*2,1);
+// 
+//     int myswitch = 1;
+//     int i = 0;
+//     int j = 0;
+//     for (i = 0; i<num_steps; i++)
+//     {
+//     times(j) = t_start + _step_duration* i + double_stance*(i+1);    
+//     times(j+1) = t_start + _step_duration* (i+1) + double_stance*(i+1);
+// 
+//     y(j) = myswitch * y_start;
+//     y(j+1) = myswitch * y_start;
+//     myswitch = -1 * myswitch;
+//     j = j+2;
+//     }
+// 
+// 
+//     Eigen::VectorXd y_tot(y.size() + 4);
+//     Eigen::VectorXd times_tot(times.size() + 4);
+// 
+//     y_tot << 0, 0, y, 0, 0;
+//     times_tot << 0, t_start, times, t_end, t_end + _step_duration;
+//         
+// 
+//     VC.lSpline(times_tot, y_tot, dt, zmp_t, zmp_y);
+//     
+// 
+//     
+//     _logger->add("zmp_t", zmp_t);
+//     _logger->add("zmp_y", zmp_y);
+//     
+//     std::cout << "OK" << std::endl;
+//     
+//     double window_length = 0.5;
+//     double Ts = 0.01;
+//     double window_start = 0;
+//     double window_end = window_start + window_length;
+//     
+//     for (int k = 0; k<800; k++)
+//     {
+//        
+//         window_start += dt;
+//         window_end += dt;
+//         
+//         int window_size = ceil((window_end - window_start))/Ts + 1;
+//         
+//     
+//         int i = 0;
+//         while (i < zmp_t.size() && zmp_t(i) < window_start)
+//         {
+//             i++;
+//         }
+// //         
+//         int j = 0;
+//         while (j < zmp_t.size() && zmp_t(j) < window_end)
+//         {
+//             j++;
+//         }
+//         
+//         zmp_window_y.resize(window_size,1);
+//         zmp_window_y.setZero();
+//         zmp_window_y.segment(0, j-i) = (zmp_y).segment(i, j-i);
+//         
+//         
+// 
+//         
+//     _logger->add("zmp_window_y", zmp_window_y);
+// 
+//     _logger->add("zmp_ref", zmp_window_y.coeff(0));
+//         
+//     }
+//     
+//     
+//     
+//     _logger->flush();
+// }
 
 
 
