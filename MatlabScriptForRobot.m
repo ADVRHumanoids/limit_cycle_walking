@@ -14,6 +14,7 @@ plot(com_trajectory(2,:)')
 plot(foot_trajectory');
 
 
+
 % plot(zmp_y(20:end)');
 
 % plot(shifted');

@@ -442,7 +442,7 @@ bool virtualConstraintsNode::fake_impacts()
             
     }
     
-    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  && cond)
+    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3  && cond)
     {
         _time_fake_impact = _internal_time;
         return true;
@@ -1012,7 +1012,6 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
                 {
                     window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
                     zmp_window(_zmp_t_fake_center, _zmp_y_fake_center, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-                    std::cout << "entered here" << std::endl;
                 }
             }
 //             else if (_initial_param.get_delay_impact_scenario() == 2) // ??????????????
@@ -1376,7 +1375,7 @@ void virtualConstraintsNode::planner(double time)
 
 void virtualConstraintsNode::core(double time)
 {
-    std::cout << "Entering core with event: " << _event << " during state: " << _current_state << std::endl;
+//     std::cout << "Entering core with event: " << _event << " during state: " << _current_state << std::endl;
     if (_last_event != _event)
     {
         _new_event_time = time;
