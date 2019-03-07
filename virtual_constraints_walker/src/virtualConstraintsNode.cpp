@@ -179,7 +179,8 @@ Eigen::Affine3d virtualConstraintsNode::r_sole_orientation_goal()
         sole_o.linear() = goal_orientation.normalized().toRotationMatrix();
         return sole_o;
     }
-    
+
+
 int virtualConstraintsNode::straighten_up_action() /*if I just setted a publisher it would be harder to define when the action was completed*/
     {
         actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac_com("cartesian/com/reach", true); /*without /goal!!*/
@@ -441,7 +442,7 @@ bool virtualConstraintsNode::fake_impacts()
             
     }
     
-    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3  && cond)
+    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  && cond)
     {
         _time_fake_impact = _internal_time;
         return true;
@@ -877,7 +878,7 @@ void virtualConstraintsNode::zmp_window(Eigen::VectorXd zmp_t, Eigen::VectorXd z
         zmp_window_y[zmp_window_y.size()-1] = zmp_window_y[zmp_window_y.size()-2];
 
     }
-    
+
 Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 {
         time = time - _start_walk;
@@ -962,8 +963,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
                 _poly_step.set_foot_final_position(reset_pose);
                 _lateral_step = 0;
             }
-            
-            
+
 
                 Eigen::Vector3d newpose = _poly_step.get_foot_final_position();
                 newpose[1] += _lateral_step;
@@ -1053,34 +1053,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 
 void virtualConstraintsNode::commander(double time)
 {
-//     if (_current_state == State::IDLE)
-//     {
-//         ////do nothing just logging
-//         Eigen::Vector3d com_trajectory, foot_trajectory;
-//         com_trajectory = _current_pose_ROS.get_com();
-//         foot_trajectory = _current_pose_ROS.get_sole(robot_interface::Side::Left);
-//         
-//         _logger->add("com_trajectory", com_trajectory);
-//         _logger->add("foot_trajectory", foot_trajectory);
-// 
-//         _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
-//         
-//         _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
-//         _logger->add("ft_right", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
-// 
-//         _logger->add("landed_left", static_cast<int>(_current_phase_left));
-//         _logger->add("landed_right",  static_cast<int>(_current_phase_right));
-//                
-//         _logger->add("zmp_ref", _zmp_window_y.coeff(0));
-//         _logger->add("window_tot", _zmp_window_y);
-//         
-//         _logger->add("com", _com_y);
-//         _logger->add("u", _u);
-//         _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
-//         
-//     }
-//     else
-//     {
+
         //// send com sagittal
     Eigen::Vector3d com_trajectory;
     com_trajectory = _poly_com.get_com_initial_position();
@@ -1172,7 +1145,7 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("flag_impact", _flag_impact);
         
         _logger->add("entered_period_delay", _entered_period_delay);
-
+        _logger->add("sense_q1", sense_q1());
         
 //         std::cout << "foot_trajectory_computed" << std::endl;
         
@@ -1203,7 +1176,6 @@ void virtualConstraintsNode::commander(double time)
 
 }
     
-    
 
 bool virtualConstraintsNode::ST_idle(double time)
 {
@@ -1230,42 +1202,6 @@ bool virtualConstraintsNode::ST_idle(double time)
     _poly_com.set_endTime(time+1);
     return 1;
 };
-
-// bool virtualConstraintsNode::ST_walk(double time, Step step_type)
-// {
-//     _initial_com_position = _current_pose_ROS.get_com();
-//     _initial_sole_position = _current_pose_ROS.get_sole(_current_side);
-//     
-//     _final_sole_position = _initial_sole_position;
-//     _final_com_position = _initial_com_position;
-//     
-//     if (_current_side == robot_interface::Side::Left)
-//     {
-//         _final_sole_position[1] = _initial_step_y;
-//     }
-//     else if (_current_side == robot_interface::Side::Right)
-//     {
-//         _final_sole_position[1] = - _initial_step_y;
-//     }
-//    
-//     compute_step(step_type);
-// 
-//     _poly_step.set_foot_initial_position(_initial_sole_position);
-//     _poly_step.set_foot_final_position(_final_sole_position);
-//     // ---------------------------------------------
-//     _poly_step.set_starTime(time);
-//     _poly_step.set_endTime(time + _initial_param.get_duration_step());
-//     _poly_step.set_step_clearing(_initial_param.get_clearance_step());
-//     // ---------------------------------------------
-//     _poly_com.set_com_initial_pose(_initial_com_position);
-//     _poly_com.set_com_final_pose(_final_com_position);
-//     
-//     _poly_com.set_starTime(time);
-//     _poly_com.set_endTime(time + _initial_param.get_duration_step());
-//     
-//     return 1;
-// };
-
 
 bool virtualConstraintsNode::ST_walk(double time, Step step_type)
 {
@@ -1722,16 +1658,6 @@ bool virtualConstraintsNode::ST_init(double time)
     return 1;
                 
 };
-
-
-
-
-
-
-
-
-
-
 
 
 
