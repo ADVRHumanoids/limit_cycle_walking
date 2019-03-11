@@ -442,7 +442,7 @@ bool virtualConstraintsNode::fake_impacts()
             
     }
     
-    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3  && cond)
+    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  && cond)
     {
         _time_fake_impact = _internal_time;
         return true;
@@ -875,7 +875,7 @@ void virtualConstraintsNode::zmp_window(Eigen::VectorXd zmp_t, Eigen::VectorXd z
 
         zmp_window_y.setZero();
         zmp_window_y.segment(0, j-i) = (zmp_y).segment(i, j-i);
-        zmp_window_y[zmp_window_y.size()-1] = zmp_window_y[zmp_window_y.size()-2];
+        zmp_window_y[zmp_window_y.size()-1] = zmp_window_y[zmp_window_y.size()-2]; //ADDED
 
     }
 
@@ -985,7 +985,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
        
             if (_initial_param.get_delay_impact_scenario() == 0 || _initial_param.get_delay_impact_scenario() == 1) // RAMP or STAY FIXED
             {
-                if (_step_counter < _initial_param.get_max_steps()-1)
+                if (_step_counter < _initial_param.get_max_steps()-1) //ADDED
                 {
                     if (_step_counter % 2 == 0)
                     {
@@ -1211,7 +1211,7 @@ bool virtualConstraintsNode::ST_walk(double time, Step step_type)
     
     _final_com_position = _initial_com_position;
     
-    if (_current_side == robot_interface::Side::Left)
+    if (_current_side == robot_interface::Side::Left) // ADDED
     {
         _final_sole_pose.translation()[1] = _initial_step_y;
     }
