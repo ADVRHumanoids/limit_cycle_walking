@@ -35,125 +35,77 @@ public:
      
     enum class Phase {FLIGHT = 0, LAND = 1};
     enum class Event { IMPACT = 0, START = 1, STOP = 2, EMPTY = 3 };
-    enum class State { INIT = 0, IDLE = 1, FIRSTSTEP = 2, WALK = 3, LASTSTEP = 4, EXIT = 5};
+    enum class State {IDLE = 0, WALK = 1, STARTING = 2, STOPPING = 4 };
+    enum class Step {FULL, HALF, STEER};
     
     
     class data_step_poly
     {
     public:
         
-        void set_data_step(Eigen::Vector3d step_initial_pose, 
-                           Eigen::Vector3d step_final_pose,
-                           Eigen::Vector3d com_initial_pose,
-                           Eigen::Vector3d com_final_pose,
-                           double step_clearing,
-                           double com_clearing,
-                           double start_time, 
-                           double end_time)
-        {
-            _step_initial_pose =  step_initial_pose;
-            _step_final_pose = step_final_pose;
-            _com_initial_pose = com_initial_pose;
-            _com_final_pose = com_final_pose;
-            _step_clearing = step_clearing;
-            _com_clearing = com_clearing;
-            _start_time = start_time;
-            _end_time = end_time;        
-        }
-    
-        void log(XBot::MatLogger::Ptr logger) { logger->add("step_initial_pose_Poly", _step_initial_pose);
-                                                logger->add("step_final_pose_Poly", _step_final_pose);
-                                                logger->add("com_initial_pose_Poly", _com_initial_pose);
-                                                logger->add("com_final_pose_Poly", _com_final_pose);
+        void log(XBot::MatLogger::Ptr logger) { logger->add("step_initial_position_Poly", _step_initial_position);
+                                                logger->add("step_final_position_Poly", _step_final_position);
+                                                logger->add("com_initial_pose_Poly", _com_initial_position);
+                                                logger->add("com_final_pose_Poly", _com_final_position);
                                                 logger->add("step_clearing_Poly", _step_clearing);
                                                 logger->add("com_clearing_Poly", _com_clearing);
                                                 logger->add("start_time_Poly", _start_time);
                                                 logger->add("end_time_Poly", _end_time);}
         
-        const Eigen::Vector3d get_foot_initial_pose() const {return _step_initial_pose;};
-        const Eigen::Vector3d get_foot_final_pose() const {return _step_final_pose;};
-        const Eigen::Vector3d get_com_initial_pose() const {return _com_initial_pose;};
-        const Eigen::Vector3d get_com_final_pose() const {return _com_final_pose;};
+        const Eigen::Affine3d get_foot_initial_pose() const {return _step_initial_pose;}
+        const Eigen::Vector3d get_foot_initial_position() const {return _step_initial_position;};
+        const Eigen::Affine3d get_foot_final_pose() const {return _step_final_pose;};
+        const Eigen::Vector3d get_foot_final_position() const {return _step_final_position;};
+        
+        const Eigen::Vector3d get_com_initial_position() const {return _com_initial_position;};
+        const Eigen::Vector3d get_com_final_position() const {return _com_final_position;};
         const double get_step_clearing() const {return _step_clearing;};
         const double get_com_clearing() const {return _com_clearing;};
         const double get_starTime() const {return _start_time;};
         const double get_endTime() const {return _end_time;};
         
-        void set_foot_initial_pose(Eigen::Vector3d step_initial_pose) {_step_initial_pose =  step_initial_pose;};
-        void set_foot_final_pose(Eigen::Vector3d step_final_pose) {_step_final_pose = step_final_pose;};
-        void set_com_initial_pose(Eigen::Vector3d com_initial_pose) {_com_initial_pose = com_initial_pose;};
-        void set_com_final_pose(Eigen::Vector3d com_final_pose) {_com_final_pose = com_final_pose;};
+        void set_foot_initial_pose(Eigen::Affine3d step_initial_pose) {_step_initial_pose =  step_initial_pose;};
+        void set_foot_initial_position(Eigen::Vector3d step_initial_position) {_step_initial_position =  step_initial_position;};
+        void set_foot_final_pose(Eigen::Affine3d step_final_pose) {_step_final_pose = step_final_pose;};
+        void set_foot_final_position(Eigen::Vector3d step_final_position) {_step_final_position = step_final_position;};
+        
+        void set_com_initial_position(Eigen::Vector3d com_initial_pose) {_com_initial_position = com_initial_pose;};
+        void set_com_final_position(Eigen::Vector3d com_final_pose) {_com_final_position = com_final_pose;};
         void set_step_clearing(double step_clearing) {_step_clearing = step_clearing;};
         void set_com_clearing(double com_clearing) {_com_clearing = com_clearing;};
         void set_starTime(double start_time) {_start_time = start_time;};
         void set_endTime(double end_time) {_end_time = end_time;};
     private:
         
-        Eigen::Vector3d _step_initial_pose, _step_final_pose;
-        Eigen::Vector3d _com_initial_pose, _com_final_pose;
+        Eigen::Vector3d _step_initial_position, _step_final_position;
+        Eigen::Affine3d _step_initial_pose, _step_final_pose;
+        
+        Eigen::Vector3d _com_initial_position, _com_final_position;
         double _step_clearing, _com_clearing;
         double _start_time, _end_time;
     };  
     
-    class data_step_bezier
+    class data_com_poly
     {
     public:
         
-        void set_data_step(Eigen::Vector3d step_initial_pose, 
-                           Eigen::Vector3d step_final_pose,
-                           double step_clearing)
-        {
-            _step_initial_pose =  step_initial_pose;
-            _step_final_pose = step_final_pose;
-            _step_clearing = step_clearing;   
-        }
-    
-        void log(XBot::MatLogger::Ptr logger) { logger->add("step_initial_pose_Bezier", _step_initial_pose);
-                                                logger->add("step_final_pose_Bezier", _step_final_pose);  
-                                                logger->add("step_clearing_Bezier", _step_clearing);
-                                                logger->add("points_bezier", _points_bezier_x);
-                                                logger->add("points_bezier", _points_bezier_z);
-        }
+        void log(XBot::MatLogger::Ptr logger) { logger->add("com_initial_pose", _com_initial_position);}
+        const Eigen::Vector3d get_com_initial_position() const {return _com_initial_position;};
+        const Eigen::Vector3d get_com_final_position() const {return _com_final_position;};
+        const double get_starTime() const {return _start_time;};
+        const double get_endTime() const {return _end_time;};
         
-        const Eigen::Vector3d get_foot_initial_pose() const {return _step_initial_pose;};
-        const Eigen::Vector3d get_foot_final_pose() const {return _step_final_pose;};
-        const double get_step_clearing() const {return _step_clearing;};
-        const Eigen::Vector2d get_points_bezier_x() const {return _points_bezier_x;};
-        const Eigen::Vector3d get_points_bezier_z() const {return _points_bezier_z;};
-        
-        void set_foot_initial_pose(Eigen::Vector3d step_initial_pose) {_step_initial_pose =  step_initial_pose;};
-        void set_foot_final_pose(Eigen::Vector3d step_final_pose) {_step_final_pose = step_final_pose;};
-        void set_step_clearing(double step_clearing) {_step_clearing = step_clearing;};
-        Eigen::Vector2d set_points_bezier_x(Eigen::Vector2d points_bezier_x) {_points_bezier_x = points_bezier_x;}; // TODO It should be possible to add a desired number of points
-        Eigen::Vector3d set_points_bezier_z(Eigen::Vector3d points_bezier_z) {_points_bezier_z = points_bezier_z;};
-        
-    private:
-        
-        Eigen::Vector3d _step_initial_pose, _step_final_pose;
-        
-        Eigen::Vector2d _points_bezier_x;
-        Eigen::Vector3d _points_bezier_z;
-
-        double _step_clearing;
-    };  
-    
-    
-    
-    class data_com
-    {
-    public:
-        
-        void log(XBot::MatLogger::Ptr logger) { logger->add("com_initial_pose", _com_initial_pose);}
-        const Eigen::Vector3d get_com_initial_pose() const {return _com_initial_pose;};
-        const Eigen::Vector3d get_com_final_pose() const {return _com_final_pose;};
-        
-        void set_com_initial_pose(Eigen::Vector3d com_initial_pose) {_com_initial_pose = com_initial_pose;};
-        void set_com_final_pose(Eigen::Vector3d com_final_pose) {_com_final_pose = com_final_pose;};
+        void set_com_initial_position(Eigen::Vector3d com_initial_pose) {_com_initial_position = com_initial_pose;};
+        void set_com_final_position(Eigen::Vector3d com_final_pose) {_com_final_position = com_final_pose;};
+        void set_starTime(double start_time) {_start_time = start_time;};
+        void set_endTime(double end_time) {_end_time = end_time;};
 
     private:
         
-        Eigen::Vector3d _com_initial_pose, _com_final_pose;
+        Eigen::Vector3d _com_initial_position, _com_final_position;
+        double _start_time, _end_time;
     };  
+    
     
     class item_MpC
     {
@@ -275,19 +227,28 @@ public:
     void send(std::string type, Eigen::Vector3d command);
     void send_com(Eigen::Vector3d com_command);
     void send_step(Eigen::Vector3d foot_command);
+    void send_step(Eigen::Affine3d foot_command);
     
     void update_com();
     void update_step();
     
+    
+    
     void run_walk();
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    Eigen::Affine3d compute_trajectory(Eigen::Affine3d T_i, Eigen::Affine3d T_f,
+                                            double clearance,
+                                            double start_time, double end_time, 
+                                            double time
+                                            );
+    
     Eigen::Vector3d compute_swing_trajectory(const Eigen::Vector3d& start, 
                                                     const Eigen::Vector3d& end, 
                                                     double clearance,
                                                     double t_start, 
                                                     double t_end,
                                                     double time,
-                                                    std::string side,
                                                     Eigen::Vector3d * vel = nullptr,
                                                     Eigen::Vector3d * acc = nullptr);
 
@@ -324,12 +285,16 @@ public:
     void initialize_cmd_fake_q1();
     void cmd_fake_q1();
     
-    void generate_zmp(double y_start, double t_start, double double_stance, int num_points, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
+    void generate_zmp(double y_start, double t_start, double double_stance, int num_steps, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
+    
+    void generate_zmp_new(double y_start, double t_start, double double_stance, int num_steps, double dt, Eigen::VectorXd& zmp_t, Eigen::VectorXd& zmp_y);
+    void add_step(std::vector<double>& y, int type);
+    
     void lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, Eigen::VectorXd& X, Eigen::VectorXd& Y);
     void zmp_window(Eigen::VectorXd zmp_t, Eigen::VectorXd zmp_y, double window_start, double window_end, Eigen::VectorXd& zmp_window_t, Eigen::VectorXd& zmp_window_y);
     
     
-    
+    void write_vec(const std::vector<double>& vec);
     void initializeMpc();
     double _q1_fake;
     double _reset_condition = 0;
@@ -339,7 +304,9 @@ public:
     double _entered_delay = 0;
     double _period_delay = 0;
     
-    double _lateral_step;
+    double _entered_period_delay = 0; // time after which it later step
+    
+    double _lateral_step = 0;
 //     double _lateral_step_left, _lateral_step_right;
     double _starting_time = 0;
     double _internal_time = 0;
@@ -347,6 +314,7 @@ protected:
     
 //     ros::NodeHandle n;
     double _start_walk;
+    double _end_walk;
     double _steep_coeff;
     
     double _reducer;
@@ -370,6 +338,7 @@ protected:
     Eigen::Vector3d _foot_trajectory;
     
     bool  _flag = true;
+    bool _flag_impact = false;
     
     double _q1_step = 0;
     double _q1_offset;
@@ -380,16 +349,20 @@ protected:
 
     Eigen::VectorXd _zmp_t_lat;
     Eigen::VectorXd _zmp_y_lat;
+
+    Eigen::VectorXd _zmp_t_steer;
+    Eigen::VectorXd _zmp_y_steer;
     
     Eigen::VectorXd _zmp_t_fake_right, _zmp_t_fake_left;
     Eigen::VectorXd _zmp_y_fake_right, _zmp_y_fake_left;
+    
+    Eigen::VectorXd _zmp_t_fake_center, _zmp_y_fake_center;
     
     Eigen::VectorXd _zmp_y_fake_left_lat, _zmp_y_fake_right_lat;
     Eigen::VectorXd _zmp_t_fake_left_lat, _zmp_t_fake_right_lat;
     
     data_step_poly _poly_step;
-    data_step_bezier _bezi_step;
-    data_com _com_info;
+    data_com_poly _poly_com;
     std::shared_ptr<item_MpC> _MpC_lat;
     
     
@@ -406,12 +379,13 @@ protected:
     double _q_initial;
     double _q_min;
     double _q_max;
-    
+    double _q1;
     bool _init_completed = 0;
     double _initial_step_y;
     Eigen::VectorXd _zmp_window_t;
     Eigen::VectorXd _zmp_window_y;
     
+    double _t_before_first_step;
 //     Eigen::VectorXd u(1);
     Eigen::Matrix<double,1,1> _u;
     
@@ -420,9 +394,12 @@ protected:
     Eigen::VectorXd _planned_impacts;
     Eigen::Vector3d _com_y; 
     
-    bool _flag_impact = false;
+    double _time_fake_impact = 0;
+    double _time_real_impact = 0;
     double _delay_time = 0;
     double _shift_time = 0;
+    
+    double _angle_steer;
     
     class param
     {
@@ -448,6 +425,7 @@ protected:
         double get_lateral_step() {return _lat_step;};
         double get_threshold_delay() {return _threshold_delay;};
         int get_delay_impact_scenario() {return _delay_impact_scenario;};
+        bool get_use_poly_com() {return _use_poly_com;};
         
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
@@ -469,6 +447,7 @@ protected:
         void set_lateral_step(double lat_step) {_lat_step = lat_step;};
         void set_threshold_delay(double threshold_delay) {_threshold_delay = threshold_delay;};
         void set_delay_impact_scenario(double delay_impact_scenario) {_delay_impact_scenario = delay_impact_scenario;};
+        void set_use_poly_com(double use_poly_com) {_use_poly_com = use_poly_com;};
     private:
         
         double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
@@ -477,7 +456,7 @@ protected:
         
         robot_interface::Side _first_step_side;
         
-        bool _real_impacts, _walking_forward;
+        bool _real_impacts, _walking_forward, _use_poly_com;
         
         std::vector<double> _threshold_impact_right;
         std::vector<double> _threshold_impact_left;
@@ -487,9 +466,11 @@ protected:
     } _initial_param;
     
     double _initial_q1;
+    double _new_event_time;
    
-    State _current_state = State::INIT;
+    State _current_state = State::IDLE;
     Event _event = Event::EMPTY;
+    Event _last_event = Event::EMPTY;
     
     Phase _current_phase_left = Phase::LAND;
     Phase _previous_phase_left = Phase::LAND;
@@ -497,23 +478,25 @@ protected:
     Phase _current_phase_right = Phase::LAND;
     Phase _previous_phase_right = Phase::LAND;
     
+//     Step step_type;
     Eigen::Vector3d _pointsBezier_z;
     Eigen::Vector2d _pointsBezier_x;
     
     Eigen::Vector3d _initial_com_position, _final_com_position;
-    Eigen::Vector3d _initial_sole_position, _final_sole_position;
+//     Eigen::Vector3d _initial_sole_position, _final_sole_position;
     
-    Eigen::Vector3d lateral_com();
+    Eigen::Affine3d _initial_sole_pose, _final_sole_pose;
     
+    void planner(double time);
     void core(double time);
-    void commander(double time, double q1);
+    void commander(double time);
     
     bool ST_init(double time);
     bool ST_idle(double time);
-    bool ST_firstStep(double time);
-    bool ST_walk(double time);
-    bool ST_lastStep(double time);
-    int _cycleCounter = 1;
+    bool ST_walk(double time, Step step_type);
+
+    bool compute_step(Step step_type);
+    int _cycle_counter = 0;
     
     bool _initCycle = 1; //just needed to stop the code after the first cycle of walking
     
@@ -537,11 +520,9 @@ protected:
         switch (s)
         {
             case State::IDLE :  return os << "idle";
-            case State::INIT :  return os << "init";
-            case State::FIRSTSTEP :  return os << "first step";
-            case State::LASTSTEP :  return os << "last step";
             case State::WALK : return os << "walking";
-            case State::EXIT : return os << "exit";
+            case State::STARTING : return os << "start walking";
+            case State::STOPPING : return os << "stop walking";
             default : return os << "wrong state";
         }
     };
@@ -561,19 +542,3 @@ protected:
 
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        

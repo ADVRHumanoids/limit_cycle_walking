@@ -1005,7 +1005,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         return _com_y;    
 }
 
-void virtualConstraintsNode::commander(double time, double q1)
+void virtualConstraintsNode::commander(double time)
 {
   
         //// send com sagittal
@@ -1147,82 +1147,15 @@ bool virtualConstraintsNode::ST_idle(double time)
     return 1;
 };
 
-
-
-bool virtualConstraintsNode::ST_idle(double time)
-{
-    return 1;
-};
-
-bool virtualConstraintsNode::ST_firstStep(double time)
-{
-    
-    // step from starting position to step
-
-    _initial_com_position = _current_pose_ROS.get_com();
-    _initial_sole_position = _current_pose_ROS.get_sole(_current_side);
-    _final_sole_position = _initial_sole_position;
-    
-    
-    if (_current_side == robot_interface::Side::Left)
-    {
-        _final_sole_position[1] = _initial_step_y;
-    }
-    else if (_current_side == robot_interface::Side::Right)
-    {
-        _final_sole_position[1] = - _initial_step_y;
-    }
-   
-    
-    Eigen::Vector3d delta_step;
-    delta_step << (- 2* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q_max)), 0, 0; // _lateral_step
-    _final_sole_position += delta_step;
-
-//     // -bezier curve trajectory---------------------
-//     _bezi_step.set_foot_initial_pose(_initial_sole_position);
-//     _bezi_step.set_foot_final_pose(_final_sole_position);
-//     // -polynomial curve trajectory-----------------
-    _poly_step.set_foot_initial_pose(_initial_sole_position);
-    _poly_step.set_foot_final_pose(_final_sole_position);
-    _poly_step.set_starTime(_initial_param.get_start_time());
-    _poly_step.set_endTime(_initial_param.get_start_time() + _initial_param.get_duration_step());
-    _poly_step.set_step_clearing(_initial_param.get_clearance_step());
-    // ---------------------------------------------
-    _com_info.set_com_initial_pose(_initial_com_position);
-    _com_info.set_com_final_pose(_final_com_position);
-    
-//     _lateral_step = 0; // burn lateral step if it was loaded
-    
-//     std::cout << "Updated step: " << std::endl;
-//     std::cout << "From step --> " << _bezi_step.get_foot_initial_pose().transpose() << std::endl;
-//     std::cout << "To step --> " << _bezi_step.get_foot_final_pose().transpose() << std::endl;
-    
-    
-    
-    return 1;
-};
-
-
-
-//         if (_saving_step == 1)
-//         {
-//             if (_current_side == robot_interface::Side::Right)
-//             {
-//                 foot_trajectory(1) = _poly_step.get_foot_initial_pose().coeff(1) + 0.3;
-//             }
-//             else
-//             {
-//                  foot_trajectory(1) = _poly_step.get_foot_initial_pose().coeff(1) - 0.3;
-//             }
-//         }
         
-        
-bool virtualConstraintsNode::ST_walk(double time)
+bool virtualConstraintsNode::ST_walk(double time, Step step_type)
 {
     
     _initial_com_position = _current_pose_ROS.get_com();
-    _initial_sole_position = _current_pose_ROS.get_sole(_current_side);
-    _final_sole_position = _initial_sole_position;
+    _initial_sole_pose = _current_pose_ROS.get_sole_tot(_current_side);
+    
+    _final_sole_pose = _initial_sole_pose;
+    
     _final_com_position = _initial_com_position;
     
     compute_step(step_type);
