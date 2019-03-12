@@ -402,6 +402,8 @@ protected:
     
     double _angle_steer;
     
+    double _entered_main;
+    
     class param
     {
     public:
@@ -490,7 +492,7 @@ protected:
     void core(double time);
     void commander(double time);
     
-    bool ST_init(double time);
+    bool initialize(double time);
     bool ST_idle(double time);
     bool ST_walk(double time, Step step_type);
 
@@ -499,7 +501,7 @@ protected:
     
     bool _initCycle = 1; //just needed to stop the code after the first cycle of walking
     
-    
+    bool _first_time = 0;
     
         friend std::ostream& operator<<(std::ostream& os, Event s)
     {
