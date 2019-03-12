@@ -1,5 +1,12 @@
-%figure(1);
-%plot(foot_trajectory');
+figure(1);
+plot(time, zmp');
+hold on; plot(time, zmp_ref', 'r--');
+plot(time, com_trajectory(2,:)'); hold on;
+plot(time, foot_trajectory');
+
+plot(time, entered_forward)
+plot(time, entered_delay)
+plot(time, flag_impact);
 
 %% zmp
 figure(2);
@@ -8,7 +15,7 @@ hold on; plot(zmp_ref', 'r--');
 plot(com_trajectory(2,:)')
 plot(foot_trajectory');
 
-plot(flag_impact');
+
 
 % plot(zmp_y(20:end)');
 
@@ -22,7 +29,7 @@ plot(zmp_y_fake_left');
 plot(zmp_sloped(:,1)');
 plot(1 + foot_trajectory(3,:)');
 
-%% window moving 
+%% window moving
 for i = 1:size(window_tot,2)
     plot(window_tot(:,i)')
     ylim([-.1,.1])

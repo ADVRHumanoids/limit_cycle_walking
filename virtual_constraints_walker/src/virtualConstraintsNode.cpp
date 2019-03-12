@@ -451,10 +451,9 @@ bool virtualConstraintsNode::fake_impacts()
     }
     else
     {
-        cond = _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2;
+        cond = _internal_time > (_initial_param.get_start_time() + 0.2)  && _impact_cond > 0.2;
         if (_step_counter > _initial_param.get_max_steps()-1)
-            cond = 0;
-            
+            cond = 0; 
     }
     
     if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  && cond)
@@ -474,9 +473,8 @@ bool virtualConstraintsNode::impact_detector()
     }
     else
     {
-        _flag_impact =  real_impacts();
+//         _flag_impact =  real_impacts();
         fake_impacts();
-//         yet_another_impact();
     }
 }
 
@@ -485,9 +483,6 @@ int virtualConstraintsNode::impact_routine()
             
             if (impact_detector())
             {
-                
-                
-                
                 _last_event = _event;
                 _event = Event::IMPACT; // event impact detected for core()
                 _current_pose_ROS.sense();
@@ -542,24 +537,24 @@ void virtualConstraintsNode::first_q1()
     
 void virtualConstraintsNode::exe(double time)
 {   
+  
     if (_init_completed == 0)
         ST_init(time);
     
     
     _internal_time = time - _starting_time;
         
-        
     _impact_cond = _internal_time - _reset_time;
 
 //  // -------------for q1------------------------------------- 
     double q1_temp = 0;    
-    if (_internal_time >= _start_walk + _t_before_first_step)
+    if (_internal_time >= _initial_param.get_start_time() + _t_before_first_step)
     {
-        q1_temp = _steep_coeff*(_internal_time - _start_walk - _t_before_first_step) ; // basically q = a*t
+        q1_temp = _steep_coeff*(_internal_time - _initial_param.get_start_time() - _t_before_first_step); // basically q = a*t
     }
 //  // ---------------------------------------------------------  
 
-    if (_internal_time >= _start_walk && runOnlyOnce)
+    if (_internal_time >= _initial_param.get_start_time() && runOnlyOnce)
     {
         _last_event = _event;
         _event = Event::START;
@@ -892,7 +887,7 @@ void virtualConstraintsNode::zmp_window(Eigen::VectorXd zmp_t, Eigen::VectorXd z
 
         zmp_window_y.setZero();
         zmp_window_y.segment(0, j-i) = (zmp_y).segment(i, j-i);
-//         zmp_window_y[zmp_window_y.size()-1] = zmp_window_y[zmp_window_y.size()-2]; //ADDED
+        zmp_window_y[zmp_window_y.size()-1] = zmp_window_y[zmp_window_y.size()-2]; //ADDED
 
     }
     
@@ -900,14 +895,13 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 {
     
         double dt = 0.01; //TODO take it out from here
-        double entered_forward = 0;
-        double reset_lateral = 0;
+        _entered_forward = 0;
         
         if (_event == Event::IMPACT && _step_counter <= _initial_param.get_max_steps())  // jump in time, going to closer planned impact
         {
 
-            entered_forward = 1;  
-            _shift_time = time - _planned_impacts(_step_counter) - dt; //_planned_impacts(ceil((time - _start_walk)/_initial_param.get_duration_step()))
+            _entered_forward = 1;  
+            _shift_time = time - _planned_impacts(_step_counter) - dt; //_planned_impacts(ceil((time - _initial_param.get_start_time())/_initial_param.get_duration_step()))
             
             _period_delay = 0;
 
@@ -919,9 +913,6 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         
         
         _entered_delay = 0;
-        bool entered_period_delay = 0;
-        bool entered_right = 0;
-        bool entered_left = 0;
         
         if (_current_state != State::IDLE && time > _planned_impacts(_step_counter) + _shift_time)
         {
@@ -930,54 +921,18 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
             _period_delay = _internal_time - _planned_impacts(_step_counter) + _shift_time; // HOW MUCH TIME IT IS STAYING HERE
             
             
-            
-            
-           
-
-            if (_event == Event::IMPACT)
-            {
-                Eigen::Vector3d reset_pose;
-                reset_pose = _poly_step.get_foot_final_position();
-                
-                if (_current_side == robot_interface::Side::Left)
-                {
-                    reset_pose(1) = _initial_step_y;
-                }
-                else if (_current_side == robot_interface::Side::Right)
-                {
-                    reset_pose(1) = - _initial_step_y;
-                }
-                
-                _poly_step.set_foot_final_position(reset_pose);
-                _lateral_step = 0;
-            }
-            
-            
-
        
-            if (_initial_param.get_delay_impact_scenario() == 0 || _initial_param.get_delay_impact_scenario() == 1) // RAMP or STAY FIXED
-            {
                 if (_step_counter < _initial_param.get_max_steps()-1) //ADDED
                 {
                     if (_step_counter % 2 == 0)
                     {
                                 window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
                                 zmp_window(_zmp_t_fake_right, _zmp_y_fake_right, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-    //                             _logger->add("window_tot", _zmp_window_y);
-                                if (_period_delay >= _initial_param.get_threshold_delay())
-                                {
-                                    zmp_window(_zmp_t_fake_right_lat, _zmp_y_fake_right_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-                                }
                     }
                     else
                     {
                                 window_start = time - (_planned_impacts(_step_counter) + _shift_time);
                                 zmp_window(_zmp_t_fake_left, _zmp_y_fake_left, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-    //                             _logger->add("window_tot", _zmp_window_y);
-                                if (_period_delay >= _initial_param.get_threshold_delay())
-                                {
-                                    zmp_window(_zmp_t_fake_left_lat, _zmp_y_fake_left_lat, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-                                }
                     }
                 }
                 else
@@ -985,22 +940,15 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
                     window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
                     zmp_window(_zmp_t_fake_center, _zmp_y_fake_center, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
                 }
-            }
-
         }
         else // if it's not entered inside delay
         {
-                    zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+            zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
         }
         
         _u = _MpC_lat->_K_fb * _com_y + _MpC_lat->_K_prev * _zmp_window_y;
-        
         _MpC_lat->_integrator->integrate(_com_y, _u, dt, _com_y);
         
-        _logger->add("com", _com_y);
-        _logger->add("u", _u);
-        _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
-//         _logger->add("zmp_ref", _zmp_window_y.coeff(0));
         
         return _com_y;    
 }
@@ -1018,11 +966,8 @@ void virtualConstraintsNode::commander(double time)
     {
             if (_initial_param.get_walking_forward())
             {
-//                 std::cout << "_poly_com.get_com_initial_position(): " << _poly_com.get_com_initial_position().transpose() << std::endl;
-//                 std::cout << "_poly_com.get_com_final_position(): " << _poly_com.get_com_final_position().transpose() << std::endl;
                 com_trajectory = compute_swing_trajectory(_poly_com.get_com_initial_position(), _poly_com.get_com_final_position(), 0, _poly_com.get_starTime(), _poly_com.get_endTime(), time);
-//                 std::cout << "com_trajectory_computed" << std::endl;
-                
+
             }
     }
     else
@@ -1067,7 +1012,6 @@ void virtualConstraintsNode::commander(double time)
             Eigen::Affine3d keep_position = _poly_step.get_foot_final_pose();
             
             keep_position.translation()[0] = _poly_step.get_foot_initial_pose().translation()[0];
-//             keep_position(1) = _poly_step.get_foot_initial_position().coeff(1) + _lateral_step;
             keep_position.translation()[2] = _poly_step.get_foot_initial_pose().translation()[2];
              _poly_step.set_foot_final_pose(keep_position);
                 
@@ -1076,7 +1020,6 @@ void virtualConstraintsNode::commander(double time)
        
         _logger->add("com_trajectory", com_trajectory);
         _logger->add("foot_trajectory", foot_trajectory.translation());
-//         _logger->add("foot_trajectory", foot_trajectory);
         
         _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
         
@@ -1093,14 +1036,14 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("u", _u);
         _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
         
-        _logger->add("flag_impact", _flag_impact);
+//         _logger->add("flag_impact", _flag_impact);
         
         _logger->add("entered_period_delay", _entered_period_delay);
         _logger->add("sense_q1", sense_q1());
+        _logger->add("period_delay", _period_delay);
+        _logger->add("entered_forward", _entered_forward);
+        _logger->add("entered_delay", _entered_delay);
         
-//         std::cout << "foot_trajectory_computed" << std::endl;
-        
-//         std::cout << "foot_trajectory " << foot_trajectory.transpose() << std::endl;
         send_com(com_trajectory);
         send_step(foot_trajectory);
 //     }
@@ -1116,9 +1059,6 @@ void virtualConstraintsNode::commander(double time)
             _cycle_counter++;
         }
     }
-    
-
-
 }
     
 bool virtualConstraintsNode::ST_idle(double time)
@@ -1129,21 +1069,18 @@ bool virtualConstraintsNode::ST_idle(double time)
     _final_sole_pose = _initial_sole_pose;
     _final_com_position = _initial_com_position;
     
-//     std::cout << "_init_sole_pose: " <<_initial_sole_pose.translation() << std::endl;
-//     std::cout << "_final_sole_pose: " <<_final_sole_pose.translation() << std::endl;
-    
     _poly_step.set_foot_initial_pose(_initial_sole_pose);
     _poly_step.set_foot_final_pose(_final_sole_pose);
     // ---------------------------------------------
     _poly_step.set_starTime(time);
-    _poly_step.set_endTime(time+1);
+    _poly_step.set_endTime(time+0.1);
     _poly_step.set_step_clearing(0);
     // ---------------------------------------------
     _poly_com.set_com_initial_position(_initial_com_position);
     _poly_com.set_com_final_position(_final_com_position);
     
     _poly_com.set_starTime(time);
-    _poly_com.set_endTime(time+1);
+    _poly_com.set_endTime(time+0.1);
     return 1;
 };
 
@@ -1312,6 +1249,7 @@ void virtualConstraintsNode::planner(double time)
 void virtualConstraintsNode::core(double time)
 {
 //     std::cout << "Entering core with event: " << _event << " during state: " << _current_state << std::endl;
+    
     if (_last_event != _event)
     {
         _new_event_time = time;
@@ -1348,10 +1286,10 @@ void virtualConstraintsNode::core(double time)
 
                 case State::IDLE :
                     _current_state = State::STARTING;
-                    planner(time + _t_before_first_step);
+                    planner(time); //_t_before_first_step
                     break;
                     
-                default : std::cout << "Ignored starting event. Already WALKING" << std::endl;
+                default : /*std::cout << "Ignored starting event. Already WALKING" << std::endl; */
                     break;
             }
             break;
@@ -1360,7 +1298,7 @@ void virtualConstraintsNode::core(double time)
             switch (_current_state)
             {
                 case State::IDLE :
-                    std::cout << "Ignored stopping event. Already in IDLE" << std::endl;
+                    /* std::cout << "Ignored stopping event. Already in IDLE" << std::endl; */
                     break;
                    
                 case State::WALK :
@@ -1377,7 +1315,7 @@ void virtualConstraintsNode::core(double time)
                     break;
                     
                 case State::STOPPING :
-                    std::cout << "Ignored stopping event. Already STOPPING" << std::endl;
+                    /* std::cout << "Ignored stopping event. Already STOPPING" << std::endl; */
                     break;
             }
             break;
@@ -1398,16 +1336,6 @@ void virtualConstraintsNode::core(double time)
             throw std::runtime_error(std::string("Event not recognized"));
             break;
     }
-    
-//     /////// command the robot!
-//     commander(_internal_time);
-//     
-// // //    burn impact event
-//     if (_event == Event::IMPACT)
-//     {
-//         _event = Event::EMPTY;
-//         _step_counter++;
-//     }
 }
 
 
@@ -1439,9 +1367,8 @@ bool virtualConstraintsNode::ST_init(double time)
     double Ts = 0.01; //window resolution
     double T = 5; //window length for MpC
     double dt = 0.01; //rate of ros
-    _t_before_first_step = 0.5; // preparation time in the first step for the com to swing laterally before stepping 
+    _t_before_first_step = 0; // preparation time in the first step for the com to swing laterally before stepping 
     
-    _start_walk = _initial_param.get_start_time(); //TODO _start_walk and _initial_param.get_start_time are the same thing
     _q_min = sense_q1(); // min angle of inclination
     _q_max = _initial_param.get_max_inclination(); // max angle of inclination
 
@@ -1449,7 +1376,7 @@ bool virtualConstraintsNode::ST_init(double time)
 
     _steep_coeff = _q_max/_step_duration;
 
-    std::cout << "Start walk time: " << _start_walk <<  std::endl;
+    std::cout << "Start walk time: " << _initial_param.get_start_time() <<  std::endl;
     std::cout << "Max angle of inclination: " << _q_max <<  std::endl;
     std::cout << "Step duration: " << _step_duration <<  std::endl;
     std::cout << "Double stance: " <<  _initial_param.get_double_stance() << std::endl;
@@ -1480,13 +1407,9 @@ bool virtualConstraintsNode::ST_init(double time)
 
     // generate zmp given start walk and first stance step
     generate_zmp(first_stance_step, _t_before_first_step, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t, _zmp_y);
-//     // -----------------------------------------------------
-    // generate zmp when lateral step is needed
-    double first_stance_step_lat = _current_pose_ROS.get_sole(_other_side).coeff(1) - sign_first_stance_step * (_initial_param.get_indent_zmp() - _initial_param.get_lateral_step());;
-    generate_zmp(first_stance_step_lat, _t_before_first_step, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t_lat, _zmp_y_lat); //TODO once filled, I shouldn't be able to modify them
-//     // -----------------------------------------------------
     // steer zmp
-//     generate_zmp(first_stance_step, _t_before_first_step, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t_steer, _zmp_y_steer); //TODO once filled, I shouldn't be able to modify them
+    
+    //     generate_zmp(first_stance_step, _t_before_first_step, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t_steer, _zmp_y_steer); //TODO once filled, I shouldn't be able to modify them
     
     if (_initial_param.get_delay_impact_scenario() == 0) // generate different ZMP with ramp to 0
     {
@@ -1527,23 +1450,8 @@ bool virtualConstraintsNode::ST_init(double time)
         _zmp_y_fake_right[_zmp_y_fake_right.size()-1] = _zmp_y_fake_right[_zmp_y_fake_right.size()-2]; 
         _zmp_t_fake_left = _zmp_t_fake_right;
         _zmp_y_fake_left = -_zmp_y_fake_right;
+       
         
-            for (int i = 0; i < (_zmp_y_fake_right).size(); i++)
-        {
-            _logger->add("zmp_y_fake_right", (_zmp_y_fake_right)(i));
-        }
-            for (int i = 0; i < (_zmp_y_fake_left).size(); i++)
-        {
-            _logger->add("zmp_y_fake_left", (_zmp_y_fake_left)(i));
-        }
-        
-//         if lateral step
-
-        point_t << 0, 10; //TODO horizon for the delay
-        point_y_right << -first_stance_step - _initial_param.get_lateral_step(), -first_stance_step - _initial_param.get_lateral_step();
-        lSpline(point_t, point_y_right, dt, _zmp_t_fake_right_lat, _zmp_y_fake_right_lat);
-        _zmp_t_fake_left_lat = _zmp_t_fake_right_lat;
-        _zmp_y_fake_left_lat  = -_zmp_y_fake_right_lat;
     }
     else if (_initial_param.get_delay_impact_scenario() == 2)  // keep ZMP generated the same
     {

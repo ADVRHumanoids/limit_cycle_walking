@@ -301,7 +301,8 @@ public:
     double _impact_cond = 0;
     double _reset_time = 0;
     
-    double _entered_delay = 0;
+    bool _entered_forward = 0;
+    bool _entered_delay = 0;
     double _period_delay = 0;
     
     double _entered_period_delay = 0; // time after which it later step
