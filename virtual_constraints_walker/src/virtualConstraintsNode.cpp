@@ -56,7 +56,7 @@ virtualConstraintsNode::virtualConstraintsNode()
 bool virtualConstraintsNode::get_param_ros()
     {
         ros::NodeHandle nh_priv("~");
-        int max_steps, delay_impact_scenario;
+        int max_steps;
         double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time, lean_forward, slope_delay_impact, max_inclination, mpc_Q, mpc_R, lat_step, threshold_delay;
         std::vector<double> thresholds_impact_right(2), thresholds_impact_left(2);
         
@@ -84,7 +84,6 @@ bool virtualConstraintsNode::get_param_ros()
         double default_mpc_R = 1;
         double default_lat_step = 0;
         double default_threshold_delay = 0;
-        int default_delay_impact_scenario = 0;
         bool default_use_poly_com = 1;
         
         drop = nh_priv.param("initial_crouch", default_drop);
@@ -106,7 +105,6 @@ bool virtualConstraintsNode::get_param_ros()
         mpc_R = nh_priv.param("mpc_R", default_mpc_R); 
         lat_step = nh_priv.param("lateral_step", default_lat_step); 
         threshold_delay = nh_priv.param("threshold_delay", default_threshold_delay);
-        delay_impact_scenario = nh_priv.param("delay_impact_scenario", default_delay_impact_scenario);
         use_poly_com = nh_priv.param("use_poly_com", default_use_poly_com);
         
         _initial_param.set_crouch(drop);
@@ -127,7 +125,6 @@ bool virtualConstraintsNode::get_param_ros()
         _initial_param.set_MPC_R(mpc_R);
         _initial_param.set_lateral_step(lat_step);
         _initial_param.set_threshold_delay(threshold_delay);
-        _initial_param.set_delay_impact_scenario(delay_impact_scenario);
         _initial_param.set_use_poly_com(use_poly_com);
         
         if (first_side == "Left")
@@ -1383,21 +1380,7 @@ bool virtualConstraintsNode::ST_init(double time)
     std::cout << "Steepness: " << _steep_coeff <<  std::endl;
     std::cout << "Real impacts: " << _initial_param.get_switch_real_impact() <<  std::endl;
     
-    switch (_initial_param.get_delay_impact_scenario())
-    {
-        case 0 :
-            std::cout << "delay adjustment: RAMP TO 0" << std::endl;
-            break;
-        case 1 :
-            std::cout << "delay adjustment: KEEP CONSTANT ZMP" << std::endl;
-            break;
-        case 2 :
-            std::cout << "delay adjustment: DON'T UPDATE, STOP WINDOW (does not work well in theory)" << std::endl;
-            break;
-        default : 
-            std::cout << "delay adjustment: WRONG scenario" << std::endl;
-            break;
-    }
+
     _com_y << _initial_com_position(1), 0, 0; //com trajectory used by mpc: pos, vel, acc
 
     int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0);
@@ -1407,38 +1390,13 @@ bool virtualConstraintsNode::ST_init(double time)
 
     // generate zmp given start walk and first stance step
     generate_zmp(first_stance_step, _t_before_first_step, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t, _zmp_y);
+    
     // steer zmp
     
     //     generate_zmp(first_stance_step, _t_before_first_step, _initial_param.get_double_stance(), _initial_param.get_max_steps(), dt, _zmp_t_steer, _zmp_y_steer); //TODO once filled, I shouldn't be able to modify them
     
-    if (_initial_param.get_delay_impact_scenario() == 0) // generate different ZMP with ramp to 0
-    {
-        Eigen::VectorXd point_t(3);
-        Eigen::VectorXd point_y_right(3), point_y_left(3);
-        
-        point_t << 0, _initial_param.get_slope_delay_impact(), 10;
-        point_y_right << first_stance_step, 0, 0;
-        
-        lSpline(point_t, point_y_right, dt, _zmp_t_fake_right, _zmp_y_fake_right);
-        _zmp_t_fake_left = _zmp_t_fake_right;
-        _zmp_y_fake_left = -_zmp_y_fake_right;
-        
-        _zmp_y_fake_center = _zmp_y_fake_right;
-        _zmp_y_fake_center.resize(1,_zmp_t_fake_right.size());
-        _zmp_y_fake_center.setZero(); 
-        
-        
-            for (int i = 0; i < (_zmp_y_fake_right).size(); i++)
-        {
-            _logger->add("zmp_y_fake_right", (_zmp_y_fake_right)(i));
-        }
-            for (int i = 0; i < (_zmp_y_fake_left).size(); i++)
-        {
-            _logger->add("zmp_y_fake_left", (_zmp_y_fake_left)(i));
-        }
-    }
-    else if (_initial_param.get_delay_impact_scenario() == 1)  // generate different ZMP keeping the ZMP constant
-    {  
+
+    // generate different ZMP keeping the ZMP constant
         Eigen::VectorXd point_t(2);
         Eigen::VectorXd point_y_right(2), point_y_left(2);
         
@@ -1450,14 +1408,6 @@ bool virtualConstraintsNode::ST_init(double time)
         _zmp_y_fake_right[_zmp_y_fake_right.size()-1] = _zmp_y_fake_right[_zmp_y_fake_right.size()-2]; 
         _zmp_t_fake_left = _zmp_t_fake_right;
         _zmp_y_fake_left = -_zmp_y_fake_right;
-       
-        
-    }
-    else if (_initial_param.get_delay_impact_scenario() == 2)  // keep ZMP generated the same
-    {
-        // do nothing
-    }
-//     // -----------------------------------------------------
     
     
     // get impact position planned in time

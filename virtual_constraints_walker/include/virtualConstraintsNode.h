@@ -425,7 +425,6 @@ protected:
         double get_MPC_R() {return _mpc_R;};
         double get_lateral_step() {return _lat_step;};
         double get_threshold_delay() {return _threshold_delay;};
-        int get_delay_impact_scenario() {return _delay_impact_scenario;};
         bool get_use_poly_com() {return _use_poly_com;};
         
         void set_crouch(double crouch) {_crouch = crouch;};
@@ -447,7 +446,6 @@ protected:
         void set_MPC_R(double mpc_R) {_mpc_R = mpc_R;};
         void set_lateral_step(double lat_step) {_lat_step = lat_step;};
         void set_threshold_delay(double threshold_delay) {_threshold_delay = threshold_delay;};
-        void set_delay_impact_scenario(double delay_impact_scenario) {_delay_impact_scenario = delay_impact_scenario;};
         void set_use_poly_com(double use_poly_com) {_use_poly_com = use_poly_com;};
     private:
         
