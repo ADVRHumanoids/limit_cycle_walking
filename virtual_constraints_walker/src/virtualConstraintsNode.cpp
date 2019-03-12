@@ -1421,7 +1421,10 @@ bool virtualConstraintsNode::initialize(double time)
         _zmp_t_fake_left = _zmp_t_fake_right;
         _zmp_y_fake_left = -_zmp_y_fake_right;
     
-    
+        _zmp_y_fake_center = _zmp_y_fake_right;
+//         _zmp_y_fake_center.resize(1,_zmp_t_fake_right.size());
+        _zmp_y_fake_center.setZero();
+        
     // get impact position planned in time
     _planned_impacts.resize(_initial_param.get_max_steps(),1);
     
