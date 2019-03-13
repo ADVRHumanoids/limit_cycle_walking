@@ -920,10 +920,14 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         
         _entered_delay = 0;
         
-        if (_step_counter <= _initial_param.get_max_steps()-1)
+        
+        if (_step_counter <= _initial_param.get_max_steps())
         {
             if (_current_state != State::IDLE && time > _planned_impacts(_step_counter) + _shift_time)
             {
+                
+                std::cout << _step_counter << std::endl;
+                std::cout << _planned_impacts.transpose() << std::endl;
                 
                 _entered_delay = 1;
                 _period_delay = time - _planned_impacts(_step_counter) + _shift_time; // HOW MUCH TIME IT IS STAYING HERE
@@ -948,9 +952,9 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
             }
         }
         
-        if (_step_counter > _initial_param.get_max_steps()-1)
+        if (_step_counter >= _initial_param.get_max_steps())
         {
-            zmp_window(_zmp_t_fake_center, _zmp_y_fake_center, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+            zmp_window(_zmp_t, _zmp_y_fake_center, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
         }
 
 
@@ -1050,6 +1054,7 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("period_delay", _period_delay);
         _logger->add("entered_forward", _entered_forward);
         _logger->add("entered_delay", _entered_delay);
+       
         
         send_com(com_trajectory);
         send_step(foot_trajectory);
@@ -1063,7 +1068,6 @@ void virtualConstraintsNode::commander(double time)
         
         if (_step_counter >= _initial_param.get_max_steps()-1)
         {
-            std::cout << "entered_cycle" << std::endl;
             _cycle_counter++;
         }
     }
@@ -1422,7 +1426,6 @@ bool virtualConstraintsNode::initialize(double time)
         _zmp_y_fake_left = -_zmp_y_fake_right;
     
         _zmp_y_fake_center = _zmp_y_fake_right;
-//         _zmp_y_fake_center.resize(1,_zmp_t_fake_right.size());
         _zmp_y_fake_center.setZero();
         
     // get impact position planned in time
@@ -1475,3 +1478,60 @@ bool virtualConstraintsNode::initialize(double time)
     return 1;
                 
 }
+
+
+
+
+
+
+
+
+
+// if (_initial_param.get_delay_impact_scenario() == 0) // generate different ZMP with ramp to 0
+//     {
+//         Eigen::VectorXd point_t(3);
+//         Eigen::VectorXd point_y_right(3), point_y_left(3);
+//         
+//         point_t << 0, _initial_param.get_slope_delay_impact(), 10;
+//         point_y_right << first_stance_step, 0, 0;
+//         
+//         lSpline(point_t, point_y_right, dt, _zmp_t_fake_right, _zmp_y_fake_right);
+//         _zmp_t_fake_left = _zmp_t_fake_right;
+//         _zmp_y_fake_left = -_zmp_y_fake_right;
+//         
+//         _zmp_y_fake_center = _zmp_y_fake_right;
+//         _zmp_y_fake_center.resize(1,_zmp_t_fake_right.size());
+//         _zmp_y_fake_center.setZero(); 
+//         
+//         
+//             for (int i = 0; i < (_zmp_y_fake_right).size(); i++)
+//         {
+//             _logger->add("zmp_y_fake_right", (_zmp_y_fake_right)(i));
+//         }
+//             for (int i = 0; i < (_zmp_y_fake_left).size(); i++)
+//         {
+//             _logger->add("zmp_y_fake_left", (_zmp_y_fake_left)(i));
+//         }
+//     }
+//     else if (_initial_param.get_delay_impact_scenario() == 1)  // generate different ZMP keeping the ZMP constant
+//     {  
+//         Eigen::VectorXd point_t(2);
+//         Eigen::VectorXd point_y_right(2), point_y_left(2);
+//         
+//         point_t << 0, 10; //TODO horizon for the delay
+//         point_y_right << -first_stance_step, -first_stance_step;
+//         
+//         lSpline(point_t, point_y_right, dt, _zmp_t_fake_right, _zmp_y_fake_right);
+//         
+//         _zmp_y_fake_right[_zmp_y_fake_right.size()-1] = _zmp_y_fake_right[_zmp_y_fake_right.size()-2]; 
+//         _zmp_t_fake_left = _zmp_t_fake_right;
+//         _zmp_y_fake_left = -_zmp_y_fake_right;
+//         
+//             for (int i = 0; i < (_zmp_y_fake_right).size(); i++)
+//         {
+//             _logger->add("zmp_y_fake_right", (_zmp_y_fake_right)(i));
+//         }
+//             for (int i = 0; i < (_zmp_y_fake_left).size(); i++)
+//         {
+//             _logger->add("zmp_y_fake_left", (_zmp_y_fake_left)(i));
+//         }
