@@ -926,23 +926,27 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
             if (_current_state != State::IDLE && time > _planned_impacts(_step_counter) + _shift_time)
             {
                 
-                std::cout << _step_counter << std::endl;
-                std::cout << _planned_impacts.transpose() << std::endl;
-                
                 _entered_delay = 1;
                 _period_delay = time - _planned_impacts(_step_counter) + _shift_time; // HOW MUCH TIME IT IS STAYING HERE
                 
                 
-        
-                if (_step_counter % 2 == 0)
+                if (_step_counter >= _initial_param.get_max_steps()-1)
                 {
-                            window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
-                            zmp_window(_zmp_t_fake_right, _zmp_y_fake_right, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                    if (_step_counter % 2 == 0)
+                    {
+                                window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
+                                zmp_window(_zmp_t_fake_right, _zmp_y_fake_right, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                    }
+                    else
+                    {
+                                window_start = time - (_planned_impacts(_step_counter) + _shift_time);
+                                zmp_window(_zmp_t_fake_left, _zmp_y_fake_left, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                    }
                 }
-                else
+                else 
                 {
-                            window_start = time - (_planned_impacts(_step_counter) + _shift_time);
-                            zmp_window(_zmp_t_fake_left, _zmp_y_fake_left, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+                    window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
+                    zmp_window(_zmp_t, _zmp_y_fake_center, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
                 }
 
             }
@@ -952,10 +956,8 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
             }
         }
         
-        if (_step_counter >= _initial_param.get_max_steps())
-        {
-            zmp_window(_zmp_t, _zmp_y_fake_center, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-        }
+        
+       
 
 
         _u = _MpC_lat->_K_fb * _com_y + _MpC_lat->_K_prev * _zmp_window_y;
