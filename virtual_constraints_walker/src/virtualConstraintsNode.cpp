@@ -927,7 +927,6 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         {
             if (_current_state != State::IDLE && time > _planned_impacts(_step_counter) + _shift_time)
             {
-                std::cout << "porcodio" << std::endl;
                 _entered_delay = 1;
                 _period_delay = time - _planned_impacts(_step_counter) + _shift_time; // HOW MUCH TIME IT IS STAYING HERE
                 
@@ -1420,9 +1419,16 @@ bool virtualConstraintsNode::initialize(double time)
     
 
     // generate different ZMP keeping the ZMP constant
+
+    // ramp down
+//         Eigen::VectorXd point_t(3);
+//         Eigen::VectorXd point_y_right(3), point_y_left(3);
+//         point_t << 0, _initial_param.get_slope_delay_impact(), 10;
+//         point_y_right << first_stance_step, 0, 0;
+        
+    // constant zmp  
         Eigen::VectorXd point_t(2);
         Eigen::VectorXd point_y_right(2), point_y_left(2);
-        
         point_t << 0, 10; //TODO horizon for the delay
         point_y_right << -first_stance_step, -first_stance_step;
         
