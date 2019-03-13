@@ -456,7 +456,7 @@ bool virtualConstraintsNode::fake_impacts()
             cond = 0; 
     }
     
-    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-4  && cond)
+    if (fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3  && cond) //1e-4
     {
         _time_fake_impact = _internal_time;
         return true;
