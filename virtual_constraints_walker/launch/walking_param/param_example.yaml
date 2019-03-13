@@ -16,4 +16,4 @@ mpc_Q: 100000
 mpc_R: 1
 lateral_step: 0.02
 threshold_delay: 0.01
-delay_impact_scenario: 1
+manage_delay: true

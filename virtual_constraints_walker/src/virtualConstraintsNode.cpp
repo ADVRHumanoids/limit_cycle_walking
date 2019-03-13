@@ -60,7 +60,7 @@ bool virtualConstraintsNode::get_param_ros()
         double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time, lean_forward, slope_delay_impact, max_inclination, mpc_Q, mpc_R, lat_step, threshold_delay;
         std::vector<double> thresholds_impact_right(2), thresholds_impact_left(2);
         
-        bool real_impacts, walking_forward, use_poly_com; 
+        bool real_impacts, walking_forward, use_poly_com, manage_delay; 
         
         std::string first_side;
 
@@ -85,6 +85,7 @@ bool virtualConstraintsNode::get_param_ros()
         double default_lat_step = 0;
         double default_threshold_delay = 0;
         bool default_use_poly_com = 1;
+        bool default_manage_delay = 1;
         
         drop = nh_priv.param("initial_crouch", default_drop);
         max_steps = nh_priv.param("max_steps", default_max_steps);
@@ -106,6 +107,7 @@ bool virtualConstraintsNode::get_param_ros()
         lat_step = nh_priv.param("lateral_step", default_lat_step); 
         threshold_delay = nh_priv.param("threshold_delay", default_threshold_delay);
         use_poly_com = nh_priv.param("use_poly_com", default_use_poly_com);
+        manage_delay = nh_priv.param("manage_delay", manage_delay);
         
         _initial_param.set_crouch(drop);
         _initial_param.set_max_steps(max_steps);
@@ -126,6 +128,7 @@ bool virtualConstraintsNode::get_param_ros()
         _initial_param.set_lateral_step(lat_step);
         _initial_param.set_threshold_delay(threshold_delay);
         _initial_param.set_use_poly_com(use_poly_com);
+        _initial_param.set_manage_delay(manage_delay);
         
         if (first_side == "Left")
                 _initial_param.set_first_step_side(robot_interface::Side::Left);
@@ -920,17 +923,16 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         
         _entered_delay = 0;
         
-        
-        if (_step_counter <= _initial_param.get_max_steps())
+        if (_initial_param.get_manage_delay())
         {
             if (_current_state != State::IDLE && time > _planned_impacts(_step_counter) + _shift_time)
             {
-                
+                std::cout << "porcodio" << std::endl;
                 _entered_delay = 1;
                 _period_delay = time - _planned_impacts(_step_counter) + _shift_time; // HOW MUCH TIME IT IS STAYING HERE
                 
                 
-                if (_step_counter >= _initial_param.get_max_steps()-1)
+                if (_step_counter < _initial_param.get_max_steps()-1)
                 {
                     if (_step_counter % 2 == 0)
                     {
@@ -955,10 +957,13 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
                 zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
             }
         }
-        
-        
-       
+        else
+        {
+            zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
+        }
 
+        
+        
 
         _u = _MpC_lat->_K_fb * _com_y + _MpC_lat->_K_prev * _zmp_window_y;
         _MpC_lat->_integrator->integrate(_com_y, _u, dt, _com_y);

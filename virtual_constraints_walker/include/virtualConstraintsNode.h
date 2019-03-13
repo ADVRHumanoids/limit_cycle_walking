@@ -428,6 +428,7 @@ protected:
         double get_lateral_step() {return _lat_step;};
         double get_threshold_delay() {return _threshold_delay;};
         bool get_use_poly_com() {return _use_poly_com;};
+        bool get_manage_delay(){return _manage_delay;};
         
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
@@ -448,7 +449,8 @@ protected:
         void set_MPC_R(double mpc_R) {_mpc_R = mpc_R;};
         void set_lateral_step(double lat_step) {_lat_step = lat_step;};
         void set_threshold_delay(double threshold_delay) {_threshold_delay = threshold_delay;};
-        void set_use_poly_com(double use_poly_com) {_use_poly_com = use_poly_com;};
+        void set_use_poly_com(bool use_poly_com) {_use_poly_com = use_poly_com;};
+        void set_manage_delay(bool manage_delay) {_manage_delay = manage_delay;};
     private:
         
         double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
@@ -457,7 +459,7 @@ protected:
         
         robot_interface::Side _first_step_side;
         
-        bool _real_impacts, _walking_forward, _use_poly_com;
+        bool _real_impacts, _walking_forward, _use_poly_com, _manage_delay;
         
         std::vector<double> _threshold_impact_right;
         std::vector<double> _threshold_impact_left;
