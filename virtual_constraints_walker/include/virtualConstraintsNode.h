@@ -11,6 +11,7 @@
 #include "cartesian_interface/CartesianInterface.h"
 #include <sensor_msgs/JointState.h>
 #include "std_msgs/Float64.h"
+#include "std_msgs/Bool.h"
 
 #include <OpenMpC/solver/UnconstrainedMpc.h>
 
@@ -188,6 +189,7 @@ public:
     Eigen::Affine3d l_sole_orientation_goal();
     Eigen::Affine3d r_sole_orientation_goal();
     
+    void cmd_switch_callback(const std_msgs::Bool msg_rcv);
     void q1_callback(const std_msgs::Float64 msg_rcv); //this is called by ros
     
     void set_q1(double cmd_q1);
@@ -293,6 +295,7 @@ public:
     void lSpline(Eigen::VectorXd x, Eigen::VectorXd y, double dt, Eigen::VectorXd& X, Eigen::VectorXd& Y);
     void zmp_window(Eigen::VectorXd zmp_t, Eigen::VectorXd zmp_y, double window_start, double window_end, Eigen::VectorXd& zmp_window_t, Eigen::VectorXd& zmp_window_y);
     
+    double calc_zmp_x(double delta_com);
     
     void write_vec(const std::vector<double>& vec);
     void initializeMpc();
@@ -323,6 +326,8 @@ protected:
     ros::Publisher _com_pub;     
 
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
+    
+    ros::Subscriber _cmd_switch_sub;
     ros::Subscriber _q1_sub;
     
     ros::Publisher _q1_pub;
@@ -344,6 +349,7 @@ protected:
     double _q1_step = 0;
     double _q1_offset;
     bool _check_received = false;
+    bool _cmd_switch = 0;
     
     Eigen::VectorXd _zmp_t;
     Eigen::VectorXd _zmp_y;
@@ -420,13 +426,10 @@ protected:
         std::vector<double> get_threshold_impact_right() {return _threshold_impact_right;};
         std::vector<double> get_threshold_impact_left() {return _threshold_impact_left;};
         bool get_switch_real_impact() {return _real_impacts;};
-        double get_slope_delay_impact() {return _slope_delay_impact;};
         bool get_walking_forward() {return _walking_forward;};
         double get_max_inclination() {return _max_inclination;};
         double get_MPC_Q() {return _mpc_Q;};
         double get_MPC_R() {return _mpc_R;};
-        double get_lateral_step() {return _lat_step;};
-        double get_threshold_delay() {return _threshold_delay;};
         bool get_use_poly_com() {return _use_poly_com;};
         bool get_manage_delay(){return _manage_delay;};
         
@@ -442,19 +445,16 @@ protected:
         void set_threshold_impact_right(std::vector<double> threshold_impact_right) {_threshold_impact_right = threshold_impact_right;};
         void set_threshold_impact_left(std::vector<double> threshold_impact_left) {_threshold_impact_left = threshold_impact_left;};
         void set_switch_real_impact(bool real_impacts) {_real_impacts = real_impacts;};
-        void set_slope_delay_impact(double slope_delay_impact) {_slope_delay_impact = slope_delay_impact;};
         void set_walking_forward(bool walking_forward) {_walking_forward = walking_forward;};
         void set_max_inclination(double max_inclination) {_max_inclination = max_inclination;};
         void set_MPC_Q(double mpc_Q) {_mpc_Q = mpc_Q;};
         void set_MPC_R(double mpc_R) {_mpc_R = mpc_R;};
-        void set_lateral_step(double lat_step) {_lat_step = lat_step;};
-        void set_threshold_delay(double threshold_delay) {_threshold_delay = threshold_delay;};
         void set_use_poly_com(bool use_poly_com) {_use_poly_com = use_poly_com;};
         void set_manage_delay(bool manage_delay) {_manage_delay = manage_delay;};
     private:
         
         double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
-        double _slope_delay_impact, _max_inclination, _mpc_Q, _mpc_R, _lat_step, _threshold_delay;
+        double _max_inclination, _mpc_Q, _mpc_R;
         
         
         robot_interface::Side _first_step_side;

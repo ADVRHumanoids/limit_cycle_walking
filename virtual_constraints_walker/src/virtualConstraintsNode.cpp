@@ -37,7 +37,9 @@ virtualConstraintsNode::virtualConstraintsNode()
         _q1_state = sense_q1();
         
         _terrain_heigth =  _current_pose_ROS.get_sole(_current_side).coeff(2);
-        
+
+        //      prepare subscriber node for commands
+        _cmd_switch_sub = n.subscribe("/VCWalk_switch", 10, &virtualConstraintsNode::cmd_switch_callback, this); /*subscribe to /q1 topic*/
         
 //      prepare subscriber node
         _q1_sub = n.subscribe("/q1", 10, &virtualConstraintsNode::q1_callback, this); /*subscribe to /q1 topic*/
@@ -57,7 +59,7 @@ bool virtualConstraintsNode::get_param_ros()
     {
         ros::NodeHandle nh_priv("~");
         int max_steps;
-        double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time, lean_forward, slope_delay_impact, max_inclination, mpc_Q, mpc_R, lat_step, threshold_delay;
+        double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time, lean_forward, max_inclination, mpc_Q, mpc_R;
         std::vector<double> thresholds_impact_right(2), thresholds_impact_left(2);
         
         bool real_impacts, walking_forward, use_poly_com, manage_delay; 
@@ -77,14 +79,11 @@ bool virtualConstraintsNode::get_param_ros()
         std::vector<double> default_thresholds_impact_right = {50, 100};
         std::vector<double> default_thresholds_impact_left = {50, 100};
         bool default_real_impacts = 0;
-        double default_slope_delay_impact;
         bool default_walking_forward = 0;
         double default_max_inclination = 0.1;
         double default_mpc_Q = 1000000;
         double default_mpc_R = 1;
-        double default_lat_step = 0;
-        double default_threshold_delay = 0;
-        bool default_use_poly_com = 1;
+        bool default_use_poly_com = 0;
         bool default_manage_delay = 1;
         
         drop = nh_priv.param("initial_crouch", default_drop);
@@ -99,13 +98,10 @@ bool virtualConstraintsNode::get_param_ros()
         thresholds_impact_right = nh_priv.param("force_sensor_threshold_right", default_thresholds_impact_right);
         thresholds_impact_left = nh_priv.param("force_sensor_threshold_left", default_thresholds_impact_left);
         real_impacts = nh_priv.param("real_impacts", default_real_impacts);
-        slope_delay_impact = nh_priv.param("slope_delay_impact", default_slope_delay_impact); // 0 is max Steepness
         walking_forward = nh_priv.param("walking_forward", default_walking_forward); 
         max_inclination = nh_priv.param("max_inclination", default_max_inclination); 
         mpc_Q = nh_priv.param("mpc_Q", default_mpc_Q); 
-        mpc_R = nh_priv.param("mpc_R", default_mpc_R); 
-        lat_step = nh_priv.param("lateral_step", default_lat_step); 
-        threshold_delay = nh_priv.param("threshold_delay", default_threshold_delay);
+        mpc_R = nh_priv.param("mpc_R", default_mpc_R);
         use_poly_com = nh_priv.param("use_poly_com", default_use_poly_com);
         manage_delay = nh_priv.param("manage_delay", manage_delay);
         
@@ -120,13 +116,10 @@ bool virtualConstraintsNode::get_param_ros()
         _initial_param.set_threshold_impact_right(thresholds_impact_right);
         _initial_param.set_threshold_impact_left(thresholds_impact_left);
         _initial_param.set_switch_real_impact(real_impacts);
-        _initial_param.set_slope_delay_impact(slope_delay_impact);
         _initial_param.set_walking_forward(walking_forward);
         _initial_param.set_max_inclination(max_inclination);
         _initial_param.set_MPC_Q(mpc_Q);
         _initial_param.set_MPC_R(mpc_R);
-        _initial_param.set_lateral_step(lat_step);
-        _initial_param.set_threshold_delay(threshold_delay);
         _initial_param.set_use_poly_com(use_poly_com);
         _initial_param.set_manage_delay(manage_delay);
         
@@ -247,6 +240,11 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
         //exit
         return 0;
 }
+
+void virtualConstraintsNode::cmd_switch_callback(const std_msgs::Bool msg_rcv) //this is called by ros
+    {
+       _cmd_switch = msg_rcv.data;
+    }
     
 void virtualConstraintsNode::q1_callback(const std_msgs::Float64 msg_rcv) //this is called by ros
     {
@@ -617,6 +615,11 @@ void virtualConstraintsNode::send(std::string type, Eigen::Vector3d command)
         else std::cout << "you're trying to send the command to a non existent task" << std::endl;
     }
 
+// void virtualConstraintsNode::receiver()
+//     {
+//             
+//     }
+    
 void virtualConstraintsNode::send_com(Eigen::Vector3d com_command)
     {
         geometry_msgs::PoseStamped cmd_com;
@@ -975,6 +978,7 @@ void virtualConstraintsNode::commander(double time)
   
         //// send com sagittal
         Eigen::Vector3d com_trajectory;
+        Eigen::Vector3d delta_com;
         com_trajectory = _poly_com.get_com_initial_position();
 
             
@@ -991,7 +995,7 @@ void virtualConstraintsNode::commander(double time)
             {
                 robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
                 Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
-                Eigen::Vector3d delta_com;
+                
                 com_trajectory = _current_pose_ROS.get_com();
                 
                 if (_current_state == State::STARTING || _current_state == State::STOPPING)
@@ -1013,6 +1017,9 @@ void virtualConstraintsNode::commander(double time)
             }
         
     }
+    
+        _logger->add("zmp_x", calc_zmp_x(delta_com.coeff(0)));
+        
         /// send com lateral
         com_trajectory(1) = lateral_com(time).coeff(0);
         
@@ -1054,9 +1061,9 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
         
 //         _logger->add("flag_impact", _flag_impact);
-        
+        _logger->add("q1_cmd", _q1);
         _logger->add("entered_period_delay", _entered_period_delay);
-        _logger->add("sense_q1", sense_q1());
+        _logger->add("q1_sensed", sense_q1());
         _logger->add("period_delay", _period_delay);
         _logger->add("entered_forward", _entered_forward);
         _logger->add("entered_delay", _entered_delay);
@@ -1490,7 +1497,19 @@ bool virtualConstraintsNode::initialize(double time)
 
 
 
-
+double virtualConstraintsNode::calc_zmp_x(double delta_com)
+{
+    _current_pose_ROS.sense();
+    double com_x = _current_pose_ROS.get_com().coeff(0);
+    
+    double dt = 0.01;
+    double h = _initial_height; //TODO current or initial?
+    double w = sqrt(9.8/h);
+    
+    double zmp_x = com_x + pow(_steep_coeff, 2) / (delta_com * pow(w, 2));
+    
+    return zmp_x;
+}
 
 
 

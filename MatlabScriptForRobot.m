@@ -8,6 +8,10 @@ plot(time, entered_forward)
 plot(time, entered_delay)
 plot(time, flag_impact);
 
+
+%% zmp x
+plot(com_trajectory(1,:)');
+plot(zmp_x)
 %% zmp
 figure(2);
 plot(zmp');
