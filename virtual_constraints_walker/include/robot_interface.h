@@ -11,7 +11,7 @@ class robot_interface
     {
     public:
         
-        enum class Side { Left = 0, Right = 1, Double = -1}; /*Side that is SWINGING*/    
+        enum class Side { Left = 0, Right = 1, Double = -1}; /*Side that is SWINGING*/     /*think a way to put here the values of step_y*/
         typedef std::shared_ptr<robot_interface> Ptr;
 
         Eigen::Vector3d get_com() {return _com_state.translation();};

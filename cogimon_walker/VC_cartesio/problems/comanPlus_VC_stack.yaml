@@ -8,7 +8,7 @@ stack:
     - ["WaistOrient"]
     - ["Postural"]
     
-constraints: ["JointLimits", "VelocityLimits"]
+constraints: ["JointLimits"] #VelocityLimits
 
 
 ################################################

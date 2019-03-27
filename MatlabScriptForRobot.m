@@ -10,8 +10,38 @@ plot(time, flag_impact);
 
 
 %% zmp x
-plot(com_trajectory(1,:)');
-plot(zmp_x)
+plot(time, com_pos(1,:)'); hold on;
+plot(time, com_trajectory(1,:)); hold on;
+% plot(time, q1_cmd); hold on;
+plot(time, delta_com'); hold on;
+plot(time, initial_com);
+plot(time, zmp_x);
+
+
+plot(vel_q1); hold on;
+plot(steepness); hold on;
+plot(time, q1_cmd); hold on;
+plot(time, q1_sensed); hold on;
+
+plot(alpha);
+plot(switched);
+plot(time, current_spatial_zmp_y); hold on;
+plot(time, current_spatial_zmp_y_cmd); hold on;
+
+%% zmp x OFFLINE
+
+plot(q1);hold on;
+plot(zmp_x_offline);
+plot(com_trajectory(1,:)); hold on;
+com_x_offline = [-0.0876 * ones(98,1); com_x_offline];
+plot(com_x_offline);
+plot(com_pos(1,:));
+
+for i = 1:20
+    plot([1:1200],com_max(i,:) * ones(1,1200),'--');
+end
+
+
 %% zmp
 figure(2);
 plot(zmp');
@@ -78,3 +108,26 @@ plot(reset_lateral); hold on;
 plot(event);hold on;
 % plot(entered_left);
 % plot(entered_right);
+
+%% com trajectory (realized by opensot) and steps
+
+plot(time, q1_cmd);hold on;
+plot(time, foot_trajectory'); hold on;
+plot(time, com_trajectory');hold on;
+plot(time, q1_sensed);hold on;
+
+plot(time, com_pos(1,:)');hold on;
+plot(time, foot_pos_left);hold on;
+plot(time, foot_pos_right);hold on;
+plot(time, left_foot_to_com(1,:)); hold on;
+plot(time, right_foot_to_com(1,:)); hold on;
+
+plot(time, com_trajectory(1,:)); hold on;
+plot(time, foot_trajectory(1,:)); hold on;
+
+plot(time, initial_pose_foot(1,:)); hold on;
+plot(time, final_pose_foot(1,:)); hold on;
+
+plot(time, foot_pos_left(1,:)); hold on;
+plot(time, foot_pos_right(1,:)); hold on;
+

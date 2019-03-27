@@ -13,6 +13,9 @@
 #include "std_msgs/Float64.h"
 #include "std_msgs/Bool.h"
 
+#include <std_srvs/SetBool.h>
+#include <std_srvs/Trigger.h>
+
 #include <OpenMpC/solver/UnconstrainedMpc.h>
 
 #include <XBotInterface/MatLogger.hpp>
@@ -151,12 +154,6 @@ public:
             
             _K_fb = lqr.getStateFeedbackGain();
             _K_prev = lqr.getOutputFeedforwardGainPreview("zmp");
-                 
-//             std::cout << "_K_fb: " << _K_fb << std::endl;
-//             std::cout << "_K_prev: " << _K_prev << std::endl;
-//             
-//             std::cout << "K_fb_size: " << _K_fb.size() << std::endl;
-//             std::cout << "K_prev_size: " << _K_prev.size() << std::endl;
 
         };
         
@@ -274,6 +271,10 @@ public:
     
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+//     bool cmd_switch(std_srvs::TriggerRequest& req, std_srvs::TriggerResponse& res);
+    bool cmd_switch(std_srvs::SetBoolRequest& req, std_srvs::SetBoolResponse& res);
+    
+    
     
     
     double getPt( double n1, double n2, double perc);
@@ -297,13 +298,26 @@ public:
     
     double calc_zmp_x(double delta_com);
     
+    Eigen::VectorXd zmp_generator(Eigen::VectorXd preview_window, virtualConstraintsNode::State current_state);
+    
     void write_vec(const std::vector<double>& vec);
     void initializeMpc();
+    
+    Eigen::VectorXd initialize_spatial_zmp();
+    void add_zmp_y_chunk(Eigen::VectorXd& spatial_zmp_y, double length_step, double dx, robot_interface::Side zmp_side);
+    void spatial_zmp(double& current_spatial_zmp_y, double& current_spatial_zmp_y_cmd);
+    void zmp_x_offline(int s_max);
+    
+Eigen::VectorXd generate_time_zmp(double t_now, double com_pos, double dx, double T_preview, double com_x_sensed, double com_y_sensed, Eigen::VectorXd zmp_spatial_x, Eigen::VectorXd zmp_spatial_y);
+    
+    Eigen::VectorXd _spatial_zmp_y;
+    
     double _q1_fake;
     double _reset_condition = 0;
     double _impact_cond = 0;
     double _reset_time = 0;
     
+    double _q1_sensed_old, _q1_sensed;
     bool _entered_forward = 0;
     bool _entered_delay = 0;
     double _period_delay = 0;
@@ -314,6 +328,9 @@ public:
 //     double _lateral_step_left, _lateral_step_right;
     double _starting_time = 0;
     double _internal_time = 0;
+    
+    
+    double _current_spatial_zmp_y, _current_spatial_zmp_y_cmd;
 protected:
     
 //     ros::NodeHandle n;
@@ -326,6 +343,8 @@ protected:
     ros::Publisher _com_pub;     
 
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
+    
+    ros::ServiceServer _switch_srv;
     
     ros::Subscriber _cmd_switch_sub;
     ros::Subscriber _q1_sub;
@@ -350,6 +369,8 @@ protected:
     double _q1_offset;
     bool _check_received = false;
     bool _cmd_switch = 0;
+    
+    double _vel_q1;
     
     Eigen::VectorXd _zmp_t;
     Eigen::VectorXd _zmp_y;
@@ -379,25 +400,31 @@ protected:
     XBot::MatLogger::Ptr _logger;
     
     double _terrain_heigth;
-    
+    double _first_stance_step;
     int _step_counter;
 //     ros::NodeHandle n;
     
-    double _q_initial;
-    double _q_min;
-    double _q_max;
+    double _q1_initial;
+    double _q1_min;
+    double _q1_max;
     double _q1;
+    double _q1_old;
     bool _init_completed = 0;
     double _initial_step_y;
     Eigen::VectorXd _zmp_window_t;
     Eigen::VectorXd _zmp_window_y;
+    
+    int _switched = 1;
+    int _switched_cmd = 1;
+    
+    double _initial_sole_y_right, _initial_sole_y_left;
     
     double _t_before_first_step;
 //     Eigen::VectorXd u(1);
     Eigen::Matrix<double,1,1> _u;
     
     double _step_duration;
-    bool _saving_step;
+    
     Eigen::VectorXd _planned_impacts;
     Eigen::Vector3d _com_y; 
     
@@ -499,6 +526,9 @@ protected:
     bool ST_walk(double time, Step step_type);
 
     bool compute_step(Step step_type);
+    
+    
+    
     int _cycle_counter = 0;
     
     bool _initCycle = 1; //just needed to stop the code after the first cycle of walking
