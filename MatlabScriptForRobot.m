@@ -23,10 +23,11 @@ plot(steepness); hold on;
 plot(time, q1_cmd); hold on;
 plot(time, q1_sensed); hold on;
 
-plot(alpha);
-plot(switched);
-plot(time, current_spatial_zmp_y); hold on;
-plot(time, current_spatial_zmp_y_cmd); hold on;
+plot(alpha_sensed);
+plot(alpha_cmd);
+% plot(switched);
+plot(current_spatial_zmp_y); hold on;
+plot(current_spatial_zmp_y_cmd); hold on;
 
 %% zmp x OFFLINE
 
@@ -38,7 +39,7 @@ plot(com_x_offline);
 plot(com_pos(1,:));
 
 for i = 1:20
-    plot([1:1200],com_max(i,:) * ones(1,1200),'--');
+    plot([1:1200],com_max(i,:) * ones(1,1200),'--'); hold on;
 end
 
 

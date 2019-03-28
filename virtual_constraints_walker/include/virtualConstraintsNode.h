@@ -218,6 +218,8 @@ public:
     bool impact_detector();
     int impact_routine(); 
     
+    void tilt_x_meas();
+    
     void fakeCOM();
     void exe(double time);  // TODO put everything but this on the protected side
     
@@ -305,9 +307,9 @@ public:
     
     Eigen::VectorXd initialize_spatial_zmp();
     void add_zmp_y_chunk(Eigen::VectorXd& spatial_zmp_y, double length_step, double dx, robot_interface::Side zmp_side);
-    void spatial_zmp(double& current_spatial_zmp_y, double& current_spatial_zmp_y_cmd);
+    void spatial_zmp(double& current_spatial_zmp_y, double& current_spatial_zmp_y_cmd, virtualConstraintsNode::Step type_step);
     void zmp_x_offline(int s_max);
-    
+    void zmp_x_online(int s_max);
 Eigen::VectorXd generate_time_zmp(double t_now, double com_pos, double dx, double T_preview, double com_x_sensed, double com_y_sensed, Eigen::VectorXd zmp_spatial_x, Eigen::VectorXd zmp_spatial_y);
     
     Eigen::VectorXd _spatial_zmp_y;
@@ -328,7 +330,7 @@ Eigen::VectorXd generate_time_zmp(double t_now, double com_pos, double dx, doubl
 //     double _lateral_step_left, _lateral_step_right;
     double _starting_time = 0;
     double _internal_time = 0;
-    
+    double q1_temp = 0;
     
     double _current_spatial_zmp_y, _current_spatial_zmp_y_cmd;
 protected:
@@ -372,6 +374,8 @@ protected:
     
     double _vel_q1;
     
+    Eigen::VectorXd _com_max;
+    
     Eigen::VectorXd _zmp_t;
     Eigen::VectorXd _zmp_y;
 
@@ -404,13 +408,13 @@ protected:
     int _step_counter;
 //     ros::NodeHandle n;
     
-    double _q1_initial;
-    double _q1_min;
-    double _q1_max;
-    double _q1;
-    double _q1_old;
+    double _q1_initial = 0;
+    double _q1_min = 0;
+    double _q1_max = 0;
+    double _q1 = 0;
+    double _q1_old = 0;
     bool _init_completed = 0;
-    double _initial_step_y;
+    double _initial_step_y = 0;
     Eigen::VectorXd _zmp_window_t;
     Eigen::VectorXd _zmp_window_y;
     
@@ -527,7 +531,7 @@ protected:
 
     bool compute_step(Step step_type);
     
-    
+    Step _step_type;
     
     int _cycle_counter = 0;
     
