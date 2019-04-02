@@ -40,7 +40,7 @@ public:
     enum class Phase {FLIGHT = 0, LAND = 1};
     enum class Event { IMPACT = 0, START = 1, STOP = 2, EMPTY = 3 };
     enum class State {IDLE = 0, WALK = 1, STARTING = 2, STOPPING = 4 };
-    enum class Step {FULL, HALF, STEER};
+    enum class Step {FULL, HALF, STEER, VOID};
     
     
     class data_step_poly
@@ -408,19 +408,24 @@ protected:
     int _step_counter;
 //     ros::NodeHandle n;
     
-    double _q1_initial = 0;
-    double _q1_min = 0;
-    double _q1_max = 0;
+    double _nominal_full_step;
+    double _nominal_half_step;
+    
+    double _q1_initial;
+    double _q1_min;
+    double _q1_max;
     double _q1 = 0;
     double _q1_old = 0;
     bool _init_completed = 0;
-    double _initial_step_y = 0;
+    double _initial_step_y;
     Eigen::VectorXd _zmp_window_t;
     Eigen::VectorXd _zmp_window_y;
     
     int _switched = 1;
+    int _switched_prev = 1;
     int _switched_cmd = 1;
     
+    double _loop_n = 0;
     double _initial_sole_y_right, _initial_sole_y_left;
     
     double _t_before_first_step;
@@ -438,7 +443,8 @@ protected:
     double _shift_time = 0;
     
     double _angle_steer;
-    
+    bool _invert_step = 0;
+    double _old_invert_step = 0;
     double _entered_main;
     
     class param
@@ -531,7 +537,7 @@ protected:
 
     bool compute_step(Step step_type);
     
-    Step _step_type;
+    Step _step_type = Step::VOID;
     
     int _cycle_counter = 0;
     
@@ -574,6 +580,17 @@ protected:
         }
     };
 
+    friend std::ostream& operator<<(std::ostream& os, Step s)
+    {
+        switch (s)
+        {
+            case Step::HALF :  return os << "half";
+            case Step::FULL :  return os << "full";
+            case Step::VOID :  return os << "void";
+            default : return os << "wrong step type";
+        }
+    };
+    
 };
 
 

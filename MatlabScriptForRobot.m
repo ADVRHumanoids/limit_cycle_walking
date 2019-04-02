@@ -29,6 +29,54 @@ plot(alpha_cmd);
 plot(current_spatial_zmp_y); hold on;
 plot(current_spatial_zmp_y_cmd); hold on;
 
+%% zmp previewed
+hold on; plot(zmp_ref', 'r--');
+plot(current_spatial_zmp_y); hold on;
+plot(space);
+for i = 148:200
+    plot(spatial_window_preview(:,i)')
+    ylim([-.1,.1])
+    drawnow;
+    pause(0.2)
+end
+
+
+plot(spatial_window_preview(:,148)'); hold on;
+plot(spatial_window_preview(:,149)'); hold on;
+plot(spatial_window_preview(:,150)'); hold on;
+plot(spatial_window_preview(:,151)'); hold on;
+plot(spatial_window_preview(:,152)'); hold on;
+plot(spatial_window_preview(:,153)'); hold on;
+
+plot(alpha_sensed);hold on;
+plot(side_value); hold on; %% if alpha is >0 and <1
+plot(space);hold on; %%which is dependent on alpha
+
+plot(switched_prev); hold on; %% when the zmp_y preview switch. it is dependent on space (space <= max_space)
+
+plot(max_space);hold on;
+plot(length_step);hold on;
+plot(spatial_window_preview(1,:)')
+plot(foot_position);
+
+plot(q1_min);hold on;
+plot(q1_max);
+% spatial window preview based on current position
+
+for i = 1:size(spatial_window_preview,2)
+plot(spatial_window_preview(:,i)')
+ylim([-.1,.1])
+% txt3 = ['distance = ' num2str(distance(i))];
+txt1 = ['alpha = ' num2str(alpha_sensed(i))];
+txt2 = ['side = ' num2str(side_value(i))];
+text(10,0.09,txt1);
+text(200,0.09,txt2);
+% text(100,0.09,txt3);
+drawnow;
+    pause(0.01)
+% pause;
+end
+
 %% zmp x OFFLINE
 
 plot(q1);hold on;
