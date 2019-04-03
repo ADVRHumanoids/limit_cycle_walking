@@ -40,7 +40,6 @@ for i = 148:200
     pause(0.2)
 end
 
-
 plot(spatial_window_preview(:,148)'); hold on;
 plot(spatial_window_preview(:,149)'); hold on;
 plot(spatial_window_preview(:,150)'); hold on;
@@ -61,17 +60,15 @@ plot(foot_position);
 
 plot(q1_min);hold on;
 plot(q1_max);
-% spatial window preview based on current position
 
+% lateral spatial zmp window preview based on current position
 for i = 1:size(spatial_window_preview,2)
 plot(spatial_window_preview(:,i)')
 ylim([-.1,.1])
-% txt3 = ['distance = ' num2str(distance(i))];
 txt1 = ['alpha = ' num2str(alpha_sensed(i))];
 txt2 = ['side = ' num2str(side_value(i))];
 text(10,0.09,txt1);
-text(200,0.09,txt2);
-% text(100,0.09,txt3);
+% text(200,0.09,txt2);
 drawnow;
     pause(0.01)
 % pause;
@@ -180,3 +177,12 @@ plot(time, final_pose_foot(1,:)); hold on;
 plot(time, foot_pos_left(1,:)); hold on;
 plot(time, foot_pos_right(1,:)); hold on;
 
+%% com velocity
+plot(old_com_pos(1,:)'); hold on;
+plot(com_pos(1,:)'); hold on;
+plot(com_vel(1,:)'); hold on;
+
+
+plot(previous_com_trajectory(1,:)');
+plot(com_trajectory(1,:));
+plot(com_vel_cmd(1,:)');

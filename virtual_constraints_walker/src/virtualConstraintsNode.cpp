@@ -340,7 +340,7 @@ double virtualConstraintsNode::sense_qlat()
 
 double virtualConstraintsNode::sense_q1()
     {   
-//         _current_pose_ROS.sense();
+//         _current_pose_ROS.sense(); // TODO put back?
         double q1, q2;
         Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com;
         
@@ -1019,16 +1019,17 @@ void virtualConstraintsNode::commander(double time)
 {
   
         //// send com sagittal
-        Eigen::Vector3d com_trajectory;
+//         Eigen::Vector3d com_trajectory;
         Eigen::Vector3d delta_com;
-        com_trajectory = _poly_com.get_com_initial_position();
+        _previous_com_trajectory = _com_trajectory;
+        _com_trajectory = _poly_com.get_com_initial_position();
 
         
     if (_initial_param.get_use_poly_com())
     {
             if (_initial_param.get_walking_forward())
             {
-                com_trajectory = compute_swing_trajectory(_poly_com.get_com_initial_position(), _poly_com.get_com_final_position(), 0, _poly_com.get_starTime(), _poly_com.get_endTime(), time);
+                _com_trajectory = compute_swing_trajectory(_poly_com.get_com_initial_position(), _poly_com.get_com_final_position(), 0, _poly_com.get_starTime(), _poly_com.get_endTime(), time);
             }
     }
     else
@@ -1038,34 +1039,34 @@ void virtualConstraintsNode::commander(double time)
                 robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
                 Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
                 
-                com_trajectory = _current_pose_ROS.get_com();
+                _com_trajectory = _current_pose_ROS.get_com();
                 
                 if (_current_state == State::STARTING || _current_state == State::STOPPING)
                 {
                     delta_com << - com_to_ankle_distance.z() * tan(_q1), 0, 0;
-                    com_trajectory(0) = _poly_com.get_com_initial_position().coeff(0) + delta_com(0);    
+                    _com_trajectory(0) = _poly_com.get_com_initial_position().coeff(0) + delta_com(0);    
                 }
                 else if (_current_state == State::WALK)
                 {
                     delta_com << - 2* com_to_ankle_distance.z() * tan(_q1), 0, 0;
-                    com_trajectory(0) = _poly_com.get_com_initial_position().coeff(0) + delta_com(0);
+                    _com_trajectory(0) = _poly_com.get_com_initial_position().coeff(0) + delta_com(0);
                 }
                 else if (_current_state == State::IDLE)
                 {
                     delta_com << 0, 0, 0;
-                    com_trajectory(0) = _poly_com.get_com_initial_position().coeff(0) + delta_com(0);
+                    _com_trajectory(0) = _poly_com.get_com_initial_position().coeff(0) + delta_com(0);
                     
                 }
             }
         
     }
 
-        
-        spatial_zmp(_current_spatial_zmp_y, _current_spatial_zmp_y_cmd, _step_type);
+        double length_preview_window = 2;
+        spatial_zmp(_current_spatial_zmp_y, _spatial_window_preview, length_preview_window, _step_type);
         
         
         /// send com lateral
-        com_trajectory(1) = lateral_com(time).coeff(0);
+        _com_trajectory(1) = lateral_com(time).coeff(0);
         
         /// send foot
         Eigen::Affine3d foot_trajectory;
@@ -1086,6 +1087,12 @@ void virtualConstraintsNode::commander(double time)
             foot_trajectory = compute_trajectory(_poly_step.get_foot_initial_pose(), _poly_step.get_foot_final_pose(), _poly_step.get_step_clearing(), _poly_step.get_starTime(), _poly_step.get_endTime(), time);
         }
 
+//         _logger->add("old_com_pos", _old_com_pos);
+        _logger->add("com_vel", sense_com_velocity());
+        
+//         _logger->add("previous_com_trajectory", _previous_com_trajectory);
+        _logger->add("com_vel_cmd", get_com_velocity());
+        
         _logger->add("initial_pose_foot", _poly_step.get_foot_initial_pose().translation());
         _logger->add("final_pose_foot", _poly_step.get_foot_final_pose().translation());
         
@@ -1093,10 +1100,10 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("foot_pos_right", _current_pose_ROS.get_sole(robot_interface::Side::Right));
         _logger->add("foot_pos_left", _current_pose_ROS.get_sole(robot_interface::Side::Left));
         
-        _logger->add("com_trajectory", com_trajectory);
+        _logger->add("com_trajectory", _com_trajectory);
         _logger->add("foot_trajectory", foot_trajectory.translation());
         
-        _logger->add("time", _internal_time); // TODO wrong dimension wrt to logger foot and com
+        _logger->add("time", _internal_time);
         
         _logger->add("ft_left", _current_pose_ROS.get_ft_sole(robot_interface::Side::Left));
         _logger->add("ft_right", _current_pose_ROS.get_ft_sole(robot_interface::Side::Right));
@@ -1136,7 +1143,7 @@ void virtualConstraintsNode::commander(double time)
     
 //         tilt_x_meas();
         
-        send_com(com_trajectory);
+        send_com(_com_trajectory);
         send_step(foot_trajectory);
 //     }
     
@@ -1622,7 +1629,7 @@ double virtualConstraintsNode::calc_zmp_x(double delta_com)
     return zmp_x;
 }
 
-void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, double& current_spatial_zmp_y_cmd, Step type_step)
+void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::VectorXd &spatial_window_preview, double length_preview_window, Step type_step)
 {
     /**
      * @brief spatial ZMP_y computed at each control cycle
@@ -1672,7 +1679,7 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, double& 
     
     double dt = 0.01;
     double dx = _steep_coeff * dt; // v * dt
-    double W_prev = 2; // length of preview
+    double W_prev = length_preview_window; // length of preview
     
     
     
@@ -1686,7 +1693,8 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, double& 
     
     _switched_prev = 1;
     int size_window = floor(W_prev/dx);
-    Eigen::VectorXd spatial_window_preview(size_window);
+    
+    spatial_window_preview.resize(size_window);
     double first_max_space;
     double n_steps_future;
     int size_step;
@@ -1695,8 +1703,8 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, double& 
     
     if (type_step == Step::FULL)
     {
-//         length_step = - 4* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max);
-        length_step = _nominal_full_step;
+        length_step = - 4* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max);
+//         length_step = _nominal_full_step;
         
         first_max_space = fabs(length_step) + foot_position;
         size_step = floor(fabs(length_step)/dx);
@@ -1714,11 +1722,10 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, double& 
     }
     else if (type_step == Step::HALF)
     {
-//         length_step = - 2* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max);
-//         double lenght_full_step = - 2* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max);
+        length_step = - 2* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max);
         
-        length_step = _nominal_half_step;
-        double lenght_full_step = 2 * _nominal_half_step;
+//         length_step = _nominal_half_step;
+        double lenght_full_step = 2 * length_step;
         
         first_max_space = fabs(length_step) + foot_position;
         size_step = floor(fabs(length_step)/dx);
@@ -1743,9 +1750,6 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, double& 
     
 
     int j = 0;
-    
-//     std::cout << "length_step: " << fabs(length_step) << std::endl;
-    
     double space = alpha * fabs(length_step) + foot_position;
     
     
@@ -1799,18 +1803,48 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, double& 
     }
     
     
-    _loop_n++;
-//     _logger->add("distance", fabs(alpha_old - alpha));
     _logger->add("length_step", fabs(length_step));
     _logger->add("side_value", side_value);
     _logger->add("switched_prev", _switched_prev);
     _logger->add("spatial_window_preview", spatial_window_preview);
     _logger->add("space", space);
-    _logger->add("loop_n", _loop_n);
     _logger->add("max_space", first_max_space);
     _logger->add("foot_position", foot_position);
 }
 
+// Eigen::VectorXd virtualConstraintsNode::generate_time_zmp(Eigen::VectorXd spatial_zmp)
+// {
+//     double dt = 0.01;
+//     
+//     Eigen::Vector3d com_x_vel = get_com_velocity();
+//     temporal_zmp = spatial_zmp
+// }
+
+
+Eigen::Vector3d virtualConstraintsNode::get_com_velocity()
+{
+    double dt = 0.01;
+    
+    Eigen::Vector3d com_x_vel = (_com_trajectory - _previous_com_trajectory)/dt;
+    
+    return com_x_vel;
+    
+}
+
+Eigen::Vector3d virtualConstraintsNode::sense_com_velocity()
+{
+    double dt = 0.01;
+    
+    
+    Eigen::Vector3d com_pos = _current_pose_ROS.get_com();
+    
+    Eigen::Vector3d com_x_vel = (com_pos - _old_com_pos)/dt;
+    
+    _old_com_pos = _current_pose_ROS.get_com();
+    
+    return com_x_vel;
+    
+}
 
 // Eigen::VectorXd virtualConstraintsNode::generate_time_zmp(double t_now, double com_pos, double dx, double T_preview, double com_x_sensed, double com_y_sensed, Eigen::VectorXd zmp_spatial_x, Eigen::VectorXd zmp_spatial_y)
 // {
@@ -1877,6 +1911,12 @@ Eigen::VectorXd virtualConstraintsNode::initialize_spatial_zmp()
     
     Eigen::VectorXd spatial_zmp_y(5*chunk_length);
     spatial_zmp_y.setZero();
+    
+    add_zmp_y_chunk(spatial_zmp_y, 0.2, 0.01, robot_interface::Side::Left);
+    add_zmp_y_chunk(spatial_zmp_y, 0.2, 0.01,robot_interface::Side::Right);
+    add_zmp_y_chunk(spatial_zmp_y, 0.2, 0.01, robot_interface::Side::Left);
+    add_zmp_y_chunk(spatial_zmp_y, 0.2, 0.01, robot_interface::Side::Right);
+    add_zmp_y_chunk(spatial_zmp_y, 0.2, 0.01, robot_interface::Side::Left);
     
     return spatial_zmp_y;
     

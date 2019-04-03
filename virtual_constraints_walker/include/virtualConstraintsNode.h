@@ -307,11 +307,13 @@ public:
     
     Eigen::VectorXd initialize_spatial_zmp();
     void add_zmp_y_chunk(Eigen::VectorXd& spatial_zmp_y, double length_step, double dx, robot_interface::Side zmp_side);
-    void spatial_zmp(double& current_spatial_zmp_y, double& current_spatial_zmp_y_cmd, virtualConstraintsNode::Step type_step);
+    void spatial_zmp(double& current_spatial_zmp_y, Eigen::VectorXd &spatial_window_preview, double length_preview_window, Step type_step);
     void zmp_x_offline(int s_max);
     void zmp_x_online(int s_max);
-Eigen::VectorXd generate_time_zmp(double t_now, double com_pos, double dx, double T_preview, double com_x_sensed, double com_y_sensed, Eigen::VectorXd zmp_spatial_x, Eigen::VectorXd zmp_spatial_y);
+    Eigen::VectorXd generate_time_zmp(double t_now, double com_pos, double dx, double T_preview, double com_x_sensed, double com_y_sensed, Eigen::VectorXd zmp_spatial_x, Eigen::VectorXd zmp_spatial_y);
     
+    Eigen::Vector3d get_com_velocity();
+    Eigen::Vector3d sense_com_velocity();
     Eigen::VectorXd _spatial_zmp_y;
     
     double _q1_fake;
@@ -353,7 +355,7 @@ protected:
     
     ros::Publisher _q1_pub;
     
-    robot_interface _initial_pose, _previous_initial_pose;
+    robot_interface _initial_pose;
     robot_interface_ROS _current_pose_ROS;
     
     double _q1_cmd;
@@ -363,6 +365,9 @@ protected:
     int _joint_number = 10; /*ankle_pitch_angle*/
 
     Eigen::Vector3d _foot_trajectory;
+    
+    
+    Eigen::Vector3d _old_com_pos;
     
     bool  _flag = true;
     bool _flag_impact = false;
@@ -392,6 +397,10 @@ protected:
     
     Eigen::VectorXd _zmp_y_fake_left_lat, _zmp_y_fake_right_lat;
     Eigen::VectorXd _zmp_t_fake_left_lat, _zmp_t_fake_right_lat;
+    
+    Eigen::VectorXd _spatial_window_preview;
+    
+    Eigen::Vector3d _com_trajectory, _previous_com_trajectory;
     
     data_step_poly _poly_step;
     data_com_poly _poly_com;
