@@ -136,7 +136,7 @@ public:
             
             int N = _window_length/0.01; //same as the integration time 
             
-            OpenMpC::UnconstrainedMpc lqr(_integrator, _Ts, N+1);
+            OpenMpC::UnconstrainedMpc lqr(_integrator, _Ts, N); //+1
             
 //             Eigen::MatrixXd Q(1,1);
 //             Eigen::MatrixXd R(1,1);

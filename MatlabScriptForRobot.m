@@ -8,7 +8,7 @@ plot(time, entered_forward)
 plot(time, entered_delay)
 plot(time, flag_impact);
 
-
+                
 %% zmp x
 plot(time, com_pos(1,:)'); hold on;
 plot(time, com_trajectory(1,:)); hold on;
@@ -186,3 +186,5 @@ plot(com_vel(1,:)'); hold on;
 plot(previous_com_trajectory(1,:)');
 plot(com_trajectory(1,:));
 plot(com_vel_cmd(1,:)');
+
+plot(steepness);
