@@ -134,7 +134,7 @@ public:
 //             
 //             T = 5; //length window in sec
             
-            int N = _window_length/0.01; //same as the integration time 
+            int N = floor(_window_length/0.01); //same as the integration time 
             
             OpenMpC::UnconstrainedMpc lqr(_integrator, _Ts, N); //+1
             
@@ -307,13 +307,17 @@ public:
     
     Eigen::VectorXd initialize_spatial_zmp();
     void add_zmp_y_chunk(Eigen::VectorXd& spatial_zmp_y, double length_step, double dx, robot_interface::Side zmp_side);
-    void spatial_zmp(double& current_spatial_zmp_y, Eigen::VectorXd &spatial_window_preview, double length_preview_window, Step type_step);
+    void spatial_zmp(double& current_spatial_zmp_y, Eigen::VectorXd& spatial_window_preview, double length_preview_window, double dx, virtualConstraintsNode::Step type_step);
     void zmp_x_offline(int s_max);
     void zmp_x_online(int s_max);
     Eigen::VectorXd generate_time_zmp(double t_now, double com_pos, double dx, double T_preview, double com_x_sensed, double com_y_sensed, Eigen::VectorXd zmp_spatial_x, Eigen::VectorXd zmp_spatial_y);
     
     Eigen::Vector3d get_com_velocity();
     Eigen::Vector3d sense_com_velocity();
+    
+    Eigen::Vector3d sense_foot_velocity();
+    Eigen::Vector3d get_foot_velocity();
+    
     Eigen::VectorXd _spatial_zmp_y;
     
     double _q1_fake;
@@ -364,10 +368,11 @@ protected:
     double _initial_height;
     int _joint_number = 10; /*ankle_pitch_angle*/
 
-    Eigen::Vector3d _foot_trajectory;
+    Eigen::Affine3d _foot_trajectory;
+    Eigen::Affine3d _previous_foot_trajectory;
     
-    
-    Eigen::Vector3d _old_com_pos;
+    Eigen::Vector3d _previous_com_pos;
+    Eigen::Vector3d _previous_foot_pos;
     
     bool  _flag = true;
     bool _flag_impact = false;
