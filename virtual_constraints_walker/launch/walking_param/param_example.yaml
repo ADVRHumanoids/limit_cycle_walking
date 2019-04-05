@@ -16,5 +16,5 @@ mpc_Q: 100000
 mpc_R: 1
 lateral_step: 0.02
 threshold_delay: 0.01
-manage_delay: true
+duration_preview_window: 5
 use_poly_com: false

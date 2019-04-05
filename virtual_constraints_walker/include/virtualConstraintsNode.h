@@ -134,7 +134,7 @@ public:
 //             
 //             T = 5; //length window in sec
             
-            int N = floor(_window_length/0.01); //same as the integration time 
+            int N = round(_window_length/0.01); //same as the integration time 
             
             OpenMpC::UnconstrainedMpc lqr(_integrator, _Ts, N); //+1
             
@@ -482,7 +482,7 @@ protected:
         double get_MPC_Q() {return _mpc_Q;};
         double get_MPC_R() {return _mpc_R;};
         bool get_use_poly_com() {return _use_poly_com;};
-        bool get_manage_delay(){return _manage_delay;};
+        double get_duration_preview_window() {return _duration_preview_window;};
         
         void set_crouch(double crouch) {_crouch = crouch;};
         void set_clearance_step(double clearance_step) {_clearance_step = clearance_step;};
@@ -501,16 +501,17 @@ protected:
         void set_MPC_Q(double mpc_Q) {_mpc_Q = mpc_Q;};
         void set_MPC_R(double mpc_R) {_mpc_R = mpc_R;};
         void set_use_poly_com(bool use_poly_com) {_use_poly_com = use_poly_com;};
-        void set_manage_delay(bool manage_delay) {_manage_delay = manage_delay;};
+        void set_duration_preview_window(double duration_preview_window) {_duration_preview_window = duration_preview_window;};
+        
     private:
         
-        double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time;
+        double _crouch, _lean_forward, _clearance_step, _duration_step, _indentation_zmp, _double_stance, _start_time, _duration_preview_window;
         double _max_inclination, _mpc_Q, _mpc_R;
         
         
         robot_interface::Side _first_step_side;
         
-        bool _real_impacts, _walking_forward, _use_poly_com, _manage_delay;
+        bool _real_impacts, _walking_forward, _use_poly_com;
         
         std::vector<double> _threshold_impact_right;
         std::vector<double> _threshold_impact_left;

@@ -65,7 +65,7 @@ bool virtualConstraintsNode::get_param_ros()
     {
         ros::NodeHandle nh_priv("~");
         int max_steps;
-        double clearance_heigth, duration, drop, indentation_zmp, double_stance, start_time, lean_forward, max_inclination, mpc_Q, mpc_R;
+        double clearance_heigth, duration_step, drop, indentation_zmp, duration_double_stance, start_time, lean_forward, max_inclination, mpc_Q, mpc_R, duration_preview_window;
         std::vector<double> thresholds_impact_right(2), thresholds_impact_left(2);
         
         bool real_impacts, walking_forward, use_poly_com, manage_delay; 
@@ -75,11 +75,11 @@ bool virtualConstraintsNode::get_param_ros()
         /*default parameters*/
         double default_drop = -0.12;
         double default_clearance_heigth = 0.1;
-        double default_duration = 2;
+        double default_duration_step = 2;
         std::string default_first_side = "Left";
         int default_max_steps = 10;
         double default_indentation_zmp = 0;
-        double default_double_stance = 0;
+        double default_duration_double_stance = 0;
         double default_start_time = 1;
         double default_lean_forward = 0;
         std::vector<double> default_thresholds_impact_right = {50, 100};
@@ -91,14 +91,15 @@ bool virtualConstraintsNode::get_param_ros()
         double default_mpc_R = 1;
         bool default_use_poly_com = 0;
         bool default_manage_delay = 1;
+        double default_duration_preview_window = 5; //sec
         
         drop = nh_priv.param("initial_crouch", default_drop);
         max_steps = nh_priv.param("max_steps", default_max_steps);
-        duration = nh_priv.param("duration_step", default_duration);
+        duration_step = nh_priv.param("duration_step", default_duration_step);
         clearance_heigth = nh_priv.param("clearance_step", default_clearance_heigth);
         first_side = nh_priv.param("first_step_side", default_first_side);
         indentation_zmp = nh_priv.param("indent_zmp", default_indentation_zmp);
-        double_stance = nh_priv.param("double_stance_duration", default_double_stance);
+        duration_double_stance = nh_priv.param("double_stance_duration", default_duration_double_stance);
         start_time = nh_priv.param("start_time", default_start_time);
         lean_forward = nh_priv.param("lean_forward", default_lean_forward);
         thresholds_impact_right = nh_priv.param("force_sensor_threshold_right", default_thresholds_impact_right);
@@ -109,14 +110,14 @@ bool virtualConstraintsNode::get_param_ros()
         mpc_Q = nh_priv.param("mpc_Q", default_mpc_Q); 
         mpc_R = nh_priv.param("mpc_R", default_mpc_R);
         use_poly_com = nh_priv.param("use_poly_com", default_use_poly_com);
-        manage_delay = nh_priv.param("manage_delay", manage_delay);
+        duration_preview_window = nh_priv.param("duration_preview_window", default_duration_preview_window);
         
         _initial_param.set_crouch(drop);
         _initial_param.set_max_steps(max_steps);
-        _initial_param.set_duration_step(duration);
+        _initial_param.set_duration_step(duration_step);
         _initial_param.set_clearance_step(clearance_heigth);
         _initial_param.set_indent_zmp(indentation_zmp);
-        _initial_param.set_double_stance(double_stance);
+        _initial_param.set_double_stance(duration_double_stance);
         _initial_param.set_start_time(start_time);
         _initial_param.set_lean_forward(lean_forward);
         _initial_param.set_threshold_impact_right(thresholds_impact_right);
@@ -127,8 +128,7 @@ bool virtualConstraintsNode::get_param_ros()
         _initial_param.set_MPC_Q(mpc_Q);
         _initial_param.set_MPC_R(mpc_R);
         _initial_param.set_use_poly_com(use_poly_com);
-        _initial_param.set_manage_delay(manage_delay);
-        
+        _initial_param.set_duration_preview_window(duration_preview_window);
         if (first_side == "Left")
                 _initial_param.set_first_step_side(robot_interface::Side::Left);
         else if (first_side == "Right")
@@ -949,80 +949,23 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 {
         
         double dt = 0.01; //TODO take it out from here
-//         _entered_forward = 0;
-//         
-//         if (_event == Event::IMPACT && _step_counter <= _initial_param.get_max_steps() - 1)  // jump in time, going to closer planned impact
-//         {
+     
+        // algorithm to choose from T (duration of window prev for _item_MpC) the spatial pattern
+        
+        double velocity_step;
 // 
-//             _entered_forward = 1;  
-//             _shift_time = time - _planned_impacts(_step_counter) - dt; //_planned_impacts(ceil((time - _initial_param.get_start_time())/_initial_param.get_duration_step()))
-//             
-//             _period_delay = 0;
-// 
-//                 
-//         }
-// //         // -----------------------------------------------------------------------------------------------------------------------------
-//         
-//         double window_start = time - _shift_time;
-//         
-//         
-//         _entered_delay = 0;
-//         
-//         if (_initial_param.get_manage_delay())
-//         {
-//             if (_current_state != State::IDLE && time > _planned_impacts(_step_counter) + _shift_time)
-//             {
-//                 _entered_delay = 1;
-//                 _period_delay = time - _planned_impacts(_step_counter) + _shift_time; // HOW MUCH TIME IT IS STAYING HERE
-//                 
-//                 
-//                 if (_step_counter < _initial_param.get_max_steps()-1)
-//                 {
-//                     if (_step_counter % 2 == 0)
-//                     {
-//                                 window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
-//                                 zmp_window(_zmp_t_fake_right, _zmp_y_fake_right, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-//                     }
-//                     else
-//                     {
-//                                 window_start = time - (_planned_impacts(_step_counter) + _shift_time);
-//                                 zmp_window(_zmp_t_fake_left, _zmp_y_fake_left, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-//                     }
-//                 }
-//                 else 
-//                 {
-//                     window_start = time - (_planned_impacts(_step_counter) + _shift_time); 
-//                     zmp_window(_zmp_t, _zmp_y_fake_center, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-//                 }
-// 
-//             }
-//             else // if it's not entered inside delay
-//             {
-//                 zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-//             }
-//         }
-//         else
-//         {
-//             zmp_window(_zmp_t, _zmp_y, window_start, _MpC_lat->_window_length + window_start, _zmp_window_t, _zmp_window_y);
-//         }
+        if (_step_type == Step::HALF)
+        {
+            velocity_step = _nominal_half_step / _initial_param.get_duration_step();
+        }
+        else if (_step_type == Step::FULL)
+        {
+            velocity_step = _nominal_full_step / _initial_param.get_duration_step();
+        }
         
-        
-        
-        
-//         double velocity_com = get_com_velocity().coeff(0);
-//         
-//         std::cout << get_com_velocity().coeff(0) << std::endl;
-//         
-//         if (get_com_velocity().coeff(0) < 0)
-//         {
-//             velocity_com = 0.01;
-//         }
-
-        double velocity_step = _nominal_full_step / _initial_param.get_duration_step();
-//         double velocity_step = 0.3;
-        double length_preview_window = 5 * velocity_step; //_steep_coeff
+//         double velocity_step = _nominal_full_step / _initial_param.get_duration_step();
+        double length_preview_window = _initial_param.get_duration_preview_window() * velocity_step; //_steep_coeff
         double dx =  velocity_step * dt;
-        
         
         spatial_zmp(_current_spatial_zmp_y, _spatial_window_preview, length_preview_window, dx, _step_type);
         
@@ -1038,6 +981,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
             _zmp_window_y = _spatial_window_preview;
         }
         
+        std::cout << "size: " << _zmp_window_y.size() << std::endl; 
         _u = _MpC_lat->_K_fb * _com_y + _MpC_lat->_K_prev * _zmp_window_y;
         _MpC_lat->_integrator->integrate(_com_y, _u, dt, _com_y);
          
@@ -1504,7 +1448,7 @@ bool virtualConstraintsNode::initialize(double time)
     /* comy */
 
     double Ts = 0.01; //window resolution
-    double T = 5; //window length for MpC
+    double T = _initial_param.get_duration_preview_window(); //window length for MpC
     double dt = 0.01; //rate of ros
     _t_before_first_step = 0; // preparation time in the first step for the com to swing laterally before stepping 
     
@@ -1625,47 +1569,10 @@ bool virtualConstraintsNode::initialize(double time)
                 
 }
 
-
-
-
-
-// double virtualConstraintsNode::calc_zmp_x(double delta_com)
-// {
-//     /**
-//      * @brief spatial zmp x computed at each control cycle
-//      * 
-//      **/
-//     
-//     _current_pose_ROS.sense();
-//     double com_x = _current_pose_ROS.get_com().coeff(0);
-//     double zmp_x;
-//     
-//     
-//     double dt = 0.01;
-//     double h = _initial_height; //TODO current or initial?
-//     double w = sqrt(9.8/h);
-//     
-//     _vel_q1 = (_q1 - _q1_old)/dt;
-//     if (_vel_q1 > _steep_coeff/2)
-//     {
-//         zmp_x = com_x;
-//     }
-//     else
-//     {
-//         if (delta_com < 1e-5)
-//         {
-//             delta_com = 0.001;
-//         }
-//         zmp_x = com_x + pow(_steep_coeff, 2) / (delta_com * pow(w, 2));
-//     }
-//     return zmp_x;
-// }
-
 void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::VectorXd &spatial_window_preview, double length_preview_window, double dx, Step type_step)
 {
     /**
      * @brief spatial ZMP_y computed at each control cycle
-     * 
      * 
      **/
     
@@ -1713,34 +1620,25 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
 //     double foot_position = _current_pose_ROS.get_sole(other_side).coeff(0);
     double foot_position = _initial_pose.get_sole(other_side).coeff(0);
     
+
+//     double size = floor((length_preview_window_1 * velocity_step_1)/dx_1  + (length_preview_window_2 * velocity_step_2)/ dx_2);
     
-    
-    double T = 5;
-    double dt = 0.01;
-    
-    double velocity_step_1 = _nominal_full_step / _initial_param.get_duration_step();
-    double length_preview_window_1 = (T - _initial_param.get_duration_step()) * velocity_step_1; //_steep_coeff
-    
-    double dx_1 =  velocity_step_1 * dt;
-    
-    double velocity_step_2 = _nominal_half_step / _initial_param.get_duration_step();
-    
-    double length_preview_window_2 = _initial_param.get_duration_step() * velocity_step_2; //_steep_coeff
-    
-    double dx_2 =  velocity_step_2 * dt;
-    
-    double size = floor((length_preview_window_1 * velocity_step_1)/dx_1  + (length_preview_window_2 * velocity_step_2)/ dx_2);
-    
-    std::cout << length_preview_window_1 << " + " << length_preview_window_2 << " = " << length_preview_window << std::endl;
-    std::cout << "size: " << size << std::endl;
+//     std::cout << length_preview_window_1 << " + " << length_preview_window_2 << " = " << length_preview_window << std::endl;
+//     std::cout << "size: " << size << std::endl;
     
     _switched_prev = 1;
     
-    double size_window = floor(length_preview_window/dx);
+    double dt = 0.01;
+    double size_window = _initial_param.get_duration_preview_window() / dt;
     
-    std::cout << "size_window: " << size_window << std::endl;
     
-    spatial_window_preview.resize(size_window);
+    double velocity_step_F = _nominal_full_step / _initial_param.get_duration_step();
+    double velocity_step_H = _nominal_half_step / _initial_param.get_duration_step();
+    double length_preview_window_H = _initial_param.get_duration_step() * velocity_step_H; //_steep_coeff
+    double length_preview_window_F = _initial_param.get_duration_step() * velocity_step_F; //_steep_coeff
+    double dx_H =  velocity_step_H * dt;
+    double dx_F =  velocity_step_F * dt;
+    
     double first_max_space;
     double n_steps_future;
     int size_step;
@@ -1753,7 +1651,7 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
         length_step = _nominal_full_step;
         
         first_max_space = fabs(length_step) + foot_position;
-        size_step = floor(fabs(length_step)/dx);
+        size_step = round(fabs(length_step)/dx);
         n_steps_future = (double)size_window / (double)size_step;
 
         max_spaces.resize(ceil(n_steps_future) + 1); //because 
@@ -1774,8 +1672,9 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
         double lenght_full_step = 2 * length_step;
         
         first_max_space = fabs(length_step) + foot_position;
-        size_step = floor(fabs(length_step)/dx);
-        n_steps_future = (double)(size_window - size_step) / (double)(size_step*2) + 1;
+        size_step = round(fabs(length_step)/dx);
+        double size_full_step = round((length_step*2)/dx_F);
+        n_steps_future = (double)(size_window - size_step) / (double)(size_full_step) + 1;
 
         max_spaces.resize(ceil(n_steps_future) + 1);
         
@@ -1794,12 +1693,45 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
     }
     
     
-
+    spatial_window_preview.resize(size_window);
     int j = 0;
     double space = alpha * fabs(length_step) + foot_position;
     
     
-//     std::cout << "type_step: " << type_step << std::endl;
+    
+//     std::cout << "space_half: " << _nominal_half_step << std::endl;
+//     std::cout << "space_full: " << _nominal_full_step << std::endl;
+//     
+
+//     
+//     std::cout << "vel_H: " << velocity_step_F << std::endl;
+//     std::cout << "vel_F: "<< velocity_step_H << std::endl;
+//      
+
+//     
+//     std::cout << "space half: " << length_preview_window_H << std::endl;
+//     std::cout << "space full: " << length_preview_window_F << std::endl;
+//     
+
+//     
+//     std::cout << "dx_H: " << dx_H << std::endl;
+//     std::cout << "dx_F: " << dx_F << std::endl;
+//     
+//     
+//     double size_H = length_preview_window_H / dx_H;
+//     double size_F = length_preview_window_F / dx_F;
+//     
+//     std::cout << "size_H: " << size_H << std::endl;
+//     std::cout << "size_F: " << size_F << std::endl;
+//     
+//     double size_tot = size_H + size_F * n_steps_future;
+//     
+//     std::cout << "n_steps_future: " << n_steps_future << std::endl;
+//     std::cout << "size_tot: " << size_tot << std::endl;
+    
+//     dx = dx_H;
+    
+    std::cout << "type_step: " << type_step << std::endl;
 //     std::cout << "alpha: " << alpha << std::endl;
 //     std::cout << "space: " << space << std::endl;
 //     std::cout << "foot_position: " << foot_position << std::endl;
@@ -1827,7 +1759,15 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
         {
 //             std::cout << "current_space: " << space << std::endl;
 //             std::cout << "max_spaces[n_step]: " << max_spaces[n_step] << std::endl;
-//             std::cout << "steps: " << n_step<< std::endl;
+//             std::cout << "steps: " << n_step << std::endl;
+            if (type_step == Step::HALF && n_step >= 1)
+            {
+                dx = dx_F;
+            }
+//             else if (type_step == Step::FULL)
+//             {
+//                 dx = dx_F;
+//             }
             
             if (space <= max_spaces[n_step])
             {
@@ -1848,7 +1788,8 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
         spatial_window_preview.setZero();
     }
     
-    
+//     std::cout << "inside_dx: " << dx << std::endl;
+//     std::cout << "-------------------------------------" << std::endl;
 //     _logger->add("length_step", fabs(length_step));
 //     _logger->add("side_value", side_value);
 //     _logger->add("switched_prev", _switched_prev);
@@ -1857,14 +1798,6 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
 //     _logger->add("max_space", first_max_space);
 //     _logger->add("foot_position", foot_position);
 }
-
-// Eigen::VectorXd virtualConstraintsNode::generate_time_zmp(Eigen::VectorXd spatial_zmp)
-// {
-//     double dt = 0.01;
-//     
-//     Eigen::Vector3d com_x_vel = get_com_velocity();
-//     temporal_zmp = spatial_zmp
-// }
 
 
 Eigen::Vector3d virtualConstraintsNode::get_com_velocity()
@@ -2148,4 +2081,37 @@ Eigen::Vector3d virtualConstraintsNode::get_foot_velocity()
 //     _logger->add("distance2", distance2);
 //     
 //     
+// }
+
+
+// double virtualConstraintsNode::calc_zmp_x(double delta_com)
+// {
+//     /**
+//      * @brief spatial zmp x computed at each control cycle
+//      * 
+//      **/
+//     
+//     _current_pose_ROS.sense();
+//     double com_x = _current_pose_ROS.get_com().coeff(0);
+//     double zmp_x;
+//     
+//     
+//     double dt = 0.01;
+//     double h = _initial_height; //TODO current or initial?
+//     double w = sqrt(9.8/h);
+//     
+//     _vel_q1 = (_q1 - _q1_old)/dt;
+//     if (_vel_q1 > _steep_coeff/2)
+//     {
+//         zmp_x = com_x;
+//     }
+//     else
+//     {
+//         if (delta_com < 1e-5)
+//         {
+//             delta_com = 0.001;
+//         }
+//         zmp_x = com_x + pow(_steep_coeff, 2) / (delta_com * pow(w, 2));
+//     }
+//     return zmp_x;
 // }

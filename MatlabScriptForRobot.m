@@ -8,6 +8,7 @@ plot(time, entered_forward)
 plot(time, entered_delay)
 plot(time, flag_impact);
 
+%% window zmp y
 figure(2);
 for i = 1:size(window_tot,2)
     plot(window_tot(:,i));
