@@ -1,15 +1,14 @@
 solver_options:
-    regularization: 1e-4
+    regularization: 1e-6
     back_end: "qpoases"
 
 stack:
-    - ["LFoot", "RFoot", "PosturalPennacchio"] #,
+    - ["LFoot", "RFoot", "PosturalPennacchio"] #, "PosturalPennacchio"]
     - ["CoM"]
     - ["WaistOrient"]
     - ["Postural"]
     
-constraints: ["JointLimits"] #VelocityLimits
-
+constraints: ["JointLimits"] #, "VelocityLimits"]
 
 ################################################
 ############### TASK DEFINITIONS ###############
@@ -33,7 +32,7 @@ WaistOrient:
     base_link: "world"
     lambda: 0.1
     indices: [3,4,5]
-    weight: 0.07
+#    weight: 0.07
 
 CoM:
     type: "Com"
@@ -43,7 +42,7 @@ CoM:
 PosturalPennacchio:
     type: "Postural"
     lambda: 1.0
-    indices: [18]
+    enabled_joints: [WaistLat]
 
 Postural:
     type: "Postural"

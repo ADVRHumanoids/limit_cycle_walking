@@ -2,16 +2,36 @@ figure(1);
 plot(time, zmp');
 hold on; plot(time, zmp_ref', 'r--');
 plot(time, com_trajectory(2,:)'); hold on;
+
 plot(time, foot_trajectory');
 
-plot(time, entered_forward)
-plot(time, entered_delay)
-plot(time, flag_impact);
+plot(time, impact_detected);
 
+plot(time, stopped_received);
+plot(time, alpha_sensed);
+plot(time, steep_coeff);
+plot(time, started);
+plot(time, q1_cmd);hold on;
+%%
+plot(time, impact_detected, 'r--'); hold on;
+plot(time(1:end-1), cond_step); hold on;
+plot(time(1:end-1), cond); hold on;
+plot(time(1:end-1), cond_q); hold on;
+
+plot(q1_min);
+
+plot(q1_max);
 %% window zmp y
 figure(2);
 for i = 1:size(window_tot,2)
     plot(window_tot(:,i));
+    ylim([-.1,.1])
+    drawnow;
+end
+
+for i = 1:size(spatial_window_preview,2)
+    plot(spatial_window_preview(:,i));
+    ylim([-.1,.1])
     drawnow;
 end
 %% zmp x
@@ -40,7 +60,7 @@ plot(current_spatial_zmp_y); hold on;
 
 plot(alpha_sensed);hold on;
 plot(side_value); hold on; %% if alpha is >0 and <1
-plot(space);hold on; %%which is dependent on alpha
+plot(space);hold on; %% which is dependent on alpha
 
 plot(switched_prev); hold on; %% when the zmp_y preview switch. it is dependent on space (space <= max_space)
 
@@ -132,19 +152,6 @@ hold on; plot(zmp_ref')
 plot(0.1*landed_left,'k--');
 plot(0.1*landed_right, 'r--');
 
-%% com trajectory
-plot(q1)
-plot(com_trajectory')
-hold on;
-plot(foot_trajectory');hold on;
-% plot(delayed');hold on;
-plot(current_side);hold on;
-plot(entered_period_delay');hold on;
-plot(lateral_step); hold on;
-plot(reset_lateral); hold on;
-plot(event);hold on;
-% plot(entered_left);
-% plot(entered_right);
 
 %% com trajectory (realized by opensot) and steps
 
@@ -178,5 +185,4 @@ plot(com_vel_cmd(1,:)');
 plot(steepness);
 
 plot(foot_vel_current(1,:)'); hold on;
-plot(foot_vel_other(1,:)'); hold on;
 plot(foot_vel_cmd(1,:)'); hold on;

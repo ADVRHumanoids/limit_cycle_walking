@@ -2,7 +2,7 @@
 
     <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/cogimon/urdf/cogimon.urdf"/>
     <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/cogimon/srdf/cogimon.srdf"/>
-    <param name="problem_description" textfile="$(env ROBOTOLOGY_ROOT)/external/limit_cycle_walking/cogimon_walker/VC_cartesio/problems/comanPlus_VC_stack.yaml"/>
+    <param name="cartesian/problem_description" textfile="$(env ROBOTOLOGY_ROOT)/external/limit_cycle_walking/cogimon_walker/VC_cartesio/problems/comanPlus_VC_stack.yaml"/>
     
     <include file="$(find cartesian_interface)/launch/cartesio_include.launch"/>
 

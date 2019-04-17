@@ -39,7 +39,7 @@ public:
      
     enum class Phase {FLIGHT = 0, LAND = 1};
     enum class Event { IMPACT = 0, START = 1, STOP = 2, EMPTY = 3 };
-    enum class State {IDLE = 0, WALK = 1, STARTING = 2, STOPPING = 4 };
+    enum class State {IDLE = 0, WALK = 1, STARTING = 2, STOPPING = 4, LASTSTEP = 5};
     enum class Step {FULL, HALF, STEER, VOID};
     
     
@@ -318,6 +318,11 @@ public:
     Eigen::Vector3d sense_foot_velocity();
     Eigen::Vector3d get_foot_velocity();
     
+    double calculate_stopping_window_zmp(double time, Eigen::VectorXd& zmp_y_window);
+    double q_handler();
+    
+    
+    double _entered_last_step = 0;
     Eigen::VectorXd _spatial_zmp_y;
     
     double _q1_fake;
@@ -336,7 +341,7 @@ public:
 //     double _lateral_step_left, _lateral_step_right;
     double _starting_time = 0;
     double _internal_time = 0;
-    double q1_temp = 0;
+    double _q1_temp = 0;
     
     double _current_spatial_zmp_y, _current_spatial_zmp_y_cmd;
 protected:
@@ -461,6 +466,10 @@ protected:
     double _old_invert_step = 0;
     double _entered_main;
     
+    
+    
+    bool _started = 0;
+    
     class param
     {
     public:
@@ -560,6 +569,8 @@ protected:
     
     bool _first_time = 0;
     
+    bool _stopped_received = 0;
+    
         friend std::ostream& operator<<(std::ostream& os, Event s)
     {
         switch (s)
@@ -581,6 +592,7 @@ protected:
             case State::WALK : return os << "walking";
             case State::STARTING : return os << "start walking";
             case State::STOPPING : return os << "stop walking";
+            case State::LASTSTEP : return os << "last step";
             default : return os << "wrong state";
         }
     };
