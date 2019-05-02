@@ -3,34 +3,51 @@ plot(time, zmp');
 hold on; plot(time, zmp_ref', 'r--');
 plot(time, com_trajectory(2,:)'); hold on;
 
+plot(time, com_trajectory(1,:)'); hold on;
 plot(time, foot_trajectory');
 
-plot(time, impact_detected);
+plot(time, impact_detected); hold on;
 
 plot(time, stopped_received);
 plot(time, alpha_sensed);
 plot(time, steep_coeff);
 plot(time, started);
 plot(time, q1_cmd);hold on;
-%%
+plot(time, q1_temp - 0.60);hold on;
+%% q1 and step
+plot(time, q1_sensed); hold on; %why why why
+plot(time, q1_cmd);hold on;
+
+plot(time, com_trajectory(1,:)', 'r--'); hold on; % reference
+plot(time, foot_trajectory(1,:)','b--');hold on; % reference
+
+plot(time, com_pos(1,:)');hold on; % actual 
+plot(time, foot_pos_left);hold on; % actual 
+plot(time, foot_pos_right);hold on; % actual 
+
+%% alpha and tilt   
+plot(time, q1_sensed);hold on;
+plot(time, q1_cmd);hold on;
+
+plot(time, q1_start);
+plot(time, q1_temp);
+plot(time, q1_max);hold on;
+plot(time, q1_min);hold on;
+%% impact conditions
 plot(time, impact_detected, 'r--'); hold on;
-plot(time(1:end-1), cond_step); hold on;
+plot(time(1:end-1), cond_step); hold on; %% step
 plot(time(1:end-1), cond); hold on;
 plot(time(1:end-1), cond_q); hold on;
-
-plot(q1_min);
-
-plot(q1_max);
 %% window zmp y
 figure(2);
 for i = 1:size(window_tot,2)
     plot(window_tot(:,i));
     ylim([-.1,.1])
-    drawnow;
+    drawnow
 end
 
-for i = 1:size(spatial_window_preview,2)
-    plot(spatial_window_preview(:,i));
+for i = 1:size(window_preview,2)
+    plot(window_preview(:,i));
     ylim([-.1,.1])
     drawnow;
 end
@@ -186,3 +203,15 @@ plot(steepness);
 
 plot(foot_vel_current(1,:)'); hold on;
 plot(foot_vel_cmd(1,:)'); hold on;
+
+
+%% switch on switch off trials
+
+
+plot(time, q1_sensed); hold on;
+plot(time, q1_max); hold on;
+plot(time, q1_min); hold on;
+plot(switched);
+
+plot(q1_cmd);
+plot(q1_temp);

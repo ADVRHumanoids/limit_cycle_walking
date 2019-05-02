@@ -3,12 +3,12 @@ solver_options:
     back_end: "qpoases"
 
 stack:
-    - ["LFoot", "RFoot", "PosturalPennacchio"] #, "PosturalPennacchio"]
-    - ["CoM"]
+    - ["LFoot", "RFoot", "PosturalPennacchio"]
+    - ["CoMStabilizer"] #CoM #CoMStabilizer
     - ["WaistOrient"]
     - ["Postural"]
     
-constraints: ["JointLimits"] #, "VelocityLimits"]
+constraints: ["JointLimits", "VelocityLimits"]
 
 ################################################
 ############### TASK DEFINITIONS ###############
@@ -38,12 +38,39 @@ CoM:
     type: "Com"
     lambda: 1
     
+CoMStabilizer:
+    type: "CoMStabilizer"
+    lambda: 0.1
+    foot_size: [0.22, 0.11]
+    K: [0.1, 0.1]
+    D: [-0.005,-0.005]
+    l_sole: "l_sole"
+    r_sole: "r_sole"
+    ft_sensor_l_sole: "l_leg_ft"
+    ft_sensor_r_sole: "r_leg_ft"
+    ankle: "l_ankle"
+    dT: 0.01
+    lib_name: "libCoMStabilizerAddon.so"
     
 PosturalPennacchio:
     type: "Postural"
     lambda: 1.0
-    enabled_joints: [WaistLat]
+    enabled_joints: ["WaistLat"]
 
 Postural:
     type: "Postural"
     lambda: .01
+
+LArm:
+    type: "Cartesian"
+    distal_link: "LSoftHand"
+    base_link: "world"
+    lamda: 0.1
+
+RArm:
+    type: "Cartesian"
+    distal_link: "RSoftHand"
+    base_link: "world"
+    lamda: 0.1
+
+

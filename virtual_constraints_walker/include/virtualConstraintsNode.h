@@ -47,8 +47,8 @@ public:
     {
     public:
         
-        void log(XBot::MatLogger::Ptr logger) { logger->add("step_initial_position_Poly", _step_initial_position);
-                                                logger->add("step_final_position_Poly", _step_final_position);
+        void log(XBot::MatLogger::Ptr logger) { logger->add("step_initial_position_Poly", _step_initial_pose.translation());
+                                                logger->add("step_final_position_Poly", _step_final_pose.translation());
                                                 logger->add("com_initial_pose_Poly", _com_initial_position);
                                                 logger->add("com_final_pose_Poly", _com_final_position);
                                                 logger->add("step_clearing_Poly", _step_clearing);
@@ -194,6 +194,8 @@ public:
     bool new_q1();
     
     double sense_q1();
+    double sense_q1(double& q1);
+    
     double sense_qlat();
     
     Eigen::MatrixXd get_supportPolygon();
@@ -304,6 +306,7 @@ public:
     
     void write_vec(const std::vector<double>& vec);
     void initializeMpc();
+    void generate_starting_zmp();
     
     Eigen::VectorXd initialize_spatial_zmp();
     void add_zmp_y_chunk(Eigen::VectorXd& spatial_zmp_y, double length_step, double dx, robot_interface::Side zmp_side);
@@ -320,7 +323,9 @@ public:
     
     double calculate_stopping_window_zmp(double time, Eigen::VectorXd& zmp_y_window);
     double q_handler();
+    void q_max_handler();
     
+    void resetter();
     
     double _entered_last_step = 0;
     Eigen::VectorXd _spatial_zmp_y;
@@ -349,6 +354,7 @@ protected:
 //     ros::NodeHandle n;
     double _start_walk;
     double _end_walk;
+    double _delay_start;
     double _steep_coeff;
     
     double _reducer;
@@ -371,6 +377,7 @@ protected:
     double _q1_state;
     
     double _initial_height;
+    Eigen::Vector3d _initial_com_to_ankle;
     int _joint_number = 10; /*ankle_pitch_angle*/
 
     Eigen::Affine3d _foot_trajectory;
@@ -456,6 +463,7 @@ protected:
     Eigen::VectorXd _planned_impacts;
     Eigen::Vector3d _com_y; 
     
+    Eigen::VectorXd _zmp_starting;
     double _time_fake_impact = 0;
     double _time_real_impact = 0;
     double _delay_time = 0;
@@ -570,6 +578,7 @@ protected:
     bool _first_time = 0;
     
     bool _stopped_received = 0;
+    double _q1_start;
     
         friend std::ostream& operator<<(std::ostream& os, Event s)
     {
