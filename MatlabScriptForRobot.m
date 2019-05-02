@@ -14,6 +14,10 @@ plot(time, steep_coeff);
 plot(time, started);
 plot(time, q1_cmd);hold on;
 plot(time, q1_temp - 0.60);hold on;
+
+%% stab
+
+plot(time, zmp_stab);
 %% q1 and step
 plot(time, q1_sensed); hold on; %why why why
 plot(time, q1_cmd);hold on;

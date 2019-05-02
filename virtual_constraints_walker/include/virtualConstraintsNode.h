@@ -232,6 +232,8 @@ public:
     void send_step(Eigen::Vector3d foot_command);
     void send_step(Eigen::Affine3d foot_command);
     
+    void send_zmp(Eigen::Vector3d zmp_command);
+    
     void update_com();
     void update_step();
     
@@ -359,7 +361,8 @@ protected:
     
     double _reducer;
     int _numerator = 0;
-    ros::Publisher _com_pub;     
+    ros::Publisher _com_pub;   
+    ros::Publisher _zmp_pub;
 
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
     
@@ -419,6 +422,7 @@ protected:
     
     Eigen::Vector3d _com_trajectory, _previous_com_trajectory;
     
+    Eigen::Vector3d _zmp_ref;
     data_step_poly _poly_step;
     data_com_poly _poly_com;
     std::shared_ptr<item_MpC> _MpC_lat;

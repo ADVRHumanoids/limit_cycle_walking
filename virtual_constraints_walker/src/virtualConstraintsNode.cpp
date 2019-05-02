@@ -8,8 +8,6 @@
 // #include <boost/geometry/geometries/adapted/boost_tuple.hpp>
 #include <boost/geometry/geometries/adapted/boost_tuple.hpp>
 
-
-
 #include <XmlRpcValue.h>
 
 #define runOnlyOnce ([] { \
@@ -38,15 +36,9 @@ virtualConstraintsNode::virtualConstraintsNode()
         
         _terrain_heigth =  _current_pose_ROS.get_sole(_current_side).coeff(2);
 
-        //      prepare subscriber node for commands
+//      prepare subscriber node for commands
         _switch_srv = n.advertiseService("/virtual_constraints/walk_switch", &virtualConstraintsNode::cmd_switch, this);
-        
-        
-//         std_srvs::TriggerRequest req;
-//         std_srvs::TriggerResponse res;
-//         cmd_switch(req, res);
-        
-        
+             
 //      prepare subscriber node
         _q1_sub = n.subscribe("/q1", 10, &virtualConstraintsNode::q1_callback, this); /*subscribe to /q1 topic*/
         
@@ -56,8 +48,8 @@ virtualConstraintsNode::virtualConstraintsNode()
         _sole_pubs[robot_interface::Side::Left] = n.advertise<geometry_msgs::PoseStamped>("/cartesian/l_sole/reference", 10); /*publish to /l_sole/reference*/
         _sole_pubs[robot_interface::Side::Right] = n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 10); /*publish to /r_sole/reference*/
         
-
-        
+//        // required for STABILIZER
+        _zmp_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com_stabilizer/zmp/reference", 10);
   
     }
 
@@ -268,26 +260,6 @@ bool virtualConstraintsNode::cmd_switch(std_srvs::SetBoolRequest& req, std_srvs:
             return true;
     };
     
-// bool virtualConstraintsNode::cmd_switch(std_srvs::TriggerRequest& req, std_srvs::TriggerResponse& res)
-//     {
-// //         _last_event = _event;
-// //         _event = Event::START;
-//     double hello;
-//         hello = 5;
-//         
-//     if (hello == 5)
-//     {
-//         res.message = "Started";
-//         res.success = true;
-//     }
-//     else
-//     {
-//         res.message = "Unable to start";
-//         res.success = false;
-//     }
-//             return true;
-//     };
-    
 void virtualConstraintsNode::cmd_switch_callback(const std_msgs::Bool msg_rcv)
 {
         if (msg_rcv.data == true)
@@ -301,12 +273,6 @@ void virtualConstraintsNode::cmd_switch_callback(const std_msgs::Bool msg_rcv)
             _event = Event::STOP;
             _stopped_received = 1; // for logging
         }
-
-
-    
-
-        
-
 }
 
 void virtualConstraintsNode::q1_callback(const std_msgs::Float64 msg_rcv) //this is called by ros
@@ -405,20 +371,19 @@ double virtualConstraintsNode::sense_q1(double& q2)
         left_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left);
         right_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right);
             
-    q1 = atan(left_ankle_to_com(0)/left_ankle_to_com(2));
-    q2 = atan(right_ankle_to_com(0)/right_ankle_to_com(2));
-    
+        q1 = atan(left_ankle_to_com(0)/left_ankle_to_com(2));
+        q2 = atan(right_ankle_to_com(0)/right_ankle_to_com(2));
     }
     else
     {
-    Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com;
-    
-    robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
-//     swing_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
-    stance_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(other_side);
+        Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com;
         
-    q1 = atan(stance_ankle_to_com(0)/stance_ankle_to_com(2));
-    q2 = atan(swing_ankle_to_com(0)/swing_ankle_to_com(2));
+        robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
+    //     swing_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
+        stance_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(other_side);
+            
+        q1 = atan(stance_ankle_to_com(0)/stance_ankle_to_com(2));
+        q2 = atan(swing_ankle_to_com(0)/swing_ankle_to_com(2));
     
     }
     
@@ -720,7 +685,7 @@ void virtualConstraintsNode::send(std::string type, Eigen::Vector3d command)
 //     {
 //             
 //     }
-    
+
 void virtualConstraintsNode::send_com(Eigen::Vector3d com_command)
     {
         geometry_msgs::PoseStamped cmd_com;
@@ -741,13 +706,22 @@ void virtualConstraintsNode::send_step(Eigen::Affine3d foot_command)
         geometry_msgs::PoseStamped cmd_sole;
         tf::poseEigenToMsg(foot_command, cmd_sole.pose);
         _sole_pubs[_current_side].publish(cmd_sole);
-    } 
+    }
+    
+void virtualConstraintsNode::send_zmp(Eigen::Vector3d zmp_command)
+    {
+        geometry_msgs::PoseStamped cmd_zmp;
+        tf::pointEigenToMsg(zmp_command, cmd_zmp.pose.position);
+        
+        _zmp_pub.publish(cmd_zmp);
+    }
+    
 Eigen::Affine3d virtualConstraintsNode::compute_trajectory(Eigen::Affine3d T_i, Eigen::Affine3d T_f,
                                                 double clearance,
                                                 double start_time, double end_time, 
                                                 double time
                                                 )
-{
+    {
 //     XBot::Utils::FifthOrderPlanning(0, 0, 0, 1, t_start, t_end, time, tau, dtau, ddtau);
     
     //position
@@ -785,8 +759,8 @@ Eigen::Affine3d virtualConstraintsNode::compute_trajectory(Eigen::Affine3d T_i, 
     
     return interpolated;
     
-}
-           
+    }
+            
 Eigen::Vector3d virtualConstraintsNode::compute_swing_trajectory(const Eigen::Vector3d& start, 
                                                                  const Eigen::Vector3d& end,
                                                                  double clearance,
@@ -1146,6 +1120,9 @@ void virtualConstraintsNode::commander(double time)
 
         }
 
+        
+        _zmp_ref << _com_trajectory.coeff(0), _zmp_window_y.coeff(0), 0;
+        
 //         _logger->add("old_com_pos", _old_com_pos);
         _logger->add("com_vel", sense_com_velocity());
         
@@ -1234,7 +1211,9 @@ void virtualConstraintsNode::commander(double time)
         {
             _logger->add("impact_detected", 0);
         }
-            
+        
+        _logger->add("zmp_stab", _zmp_ref);
+        
         _poly_step.log(_logger);
        
 
@@ -1242,6 +1221,10 @@ void virtualConstraintsNode::commander(double time)
         
         send_com(_com_trajectory);
         send_step(_foot_trajectory);
+        
+        
+        send_zmp(_zmp_ref);
+        
 //     }
     
     //burn impact event
@@ -2024,6 +2007,12 @@ void virtualConstraintsNode::generate_starting_zmp()
 //     _zmp_starting.segment(first_chunck_pos+2*chunck_size+1, chunck_size) << zmp_chunck;
 }
 
+
+// void virtualConstraintsNode::stabilizer()
+// {
+//     
+// }
+
 // Eigen::VectorXd virtualConstraintsNode::initialize_spatial_zmp()
 // {
 //     /**
@@ -2152,56 +2141,56 @@ void virtualConstraintsNode::generate_starting_zmp()
 //     
 // }
 
-// void virtualConstraintsNode::zmp_x_online(int s_max)
-// {
-//     double dt = 0.01;
-//     double com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side).coeff(2);
-//     
-//     Eigen::VectorXd com_x(s_max);
-//     Eigen::VectorXd zmp_x(s_max);
-//     
-//     double q1 = sense_q1();
-//     double com_x_initial =  _current_pose_ROS.get_com().coeff(0);
-//     
-//     _logger->add("q1", q1);
-//     int n_step = 0;
-//     double dx = 0;
-//     int s = 0;
-//     while (s < s_max)
-//     {
-//         q1 = q1 + (_steep_coeff * dt);
-//         
-//        
-//         if (n_step < 1)
-//         {
-//             dx = - com_to_ankle_distance * tan(q1);
-//         }
-//         else if (n_step >= 1)
-//         {
-//             dx = - 2* com_to_ankle_distance * tan(q1);
-//         }
-//         
-//         com_x[s] = com_x_initial + dx;
-//         
-//         if (com_x[s] >= _com_max[n_step])
-//         {
-//             q1 = 0;
-//             com_x_initial = com_x[s-4];
-//             n_step++;
-//             
-//         }
-//         zmp_x[s] = com_x[s];
-//         s = s+1;
-//         
-//         _logger->add("q1", q1);
-//         
-//     }
-//     
-//     _logger->add("zmp_x_offline", zmp_x);
-//     _logger->add("com_x_offline", com_x);
-//     _logger->add("n_step", n_step);
-//     _logger->add("com_max", _com_max);
-// }
+void virtualConstraintsNode::zmp_x_online(int s_max)
+{
+    double dt = 0.01;
+    double com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(_current_side).coeff(2);
+    
+    Eigen::VectorXd com_x(s_max);
+    Eigen::VectorXd zmp_x(s_max);
+    
+    double q1 = sense_q1();
+    double com_x_initial =  _current_pose_ROS.get_com().coeff(0);
+    
+    _logger->add("q1", q1);
+    int n_step = 0;
+    double dx = 0;
+    int s = 0;
+    while (s < s_max)
+    {
+        q1 = q1 + (_steep_coeff * dt);
+        
+       
+        if (n_step < 1)
+        {
+            dx = - com_to_ankle_distance * tan(q1);
+        }
+        else if (n_step >= 1)
+        {
+            dx = - 2* com_to_ankle_distance * tan(q1);
+        }
+        
+        com_x[s] = com_x_initial + dx;
+        
+        if (com_x[s] >= _com_max[n_step])
+        {
+            q1 = 0;
+            com_x_initial = com_x[s-4];
+            n_step++;
+            
+        }
+        zmp_x[s] = com_x[s];
+        s = s+1;
+        
+        _logger->add("q1", q1);
+        
+    }
+    
+    _logger->add("zmp_x_offline", zmp_x);
+    _logger->add("com_x_offline", com_x);
+    _logger->add("n_step", n_step);
+    _logger->add("com_max", _com_max);
+}
 
 
 

@@ -101,6 +101,7 @@ class robot_interface
         };
 
         Eigen::Affine3d _com_state;
+//         Eigen::Affine3d _zmp_state;
 //         std::vector<Eigen::Affine3d> _sole_state;     /*0 is left, 1 is right*/
         std::map<robot_interface::Side, Eigen::Affine3d> _sole_state;
         std::map<robot_interface::Side, Eigen::Affine3d>_ankle_to_com;
