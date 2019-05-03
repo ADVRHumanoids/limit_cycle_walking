@@ -6,7 +6,7 @@ first_step_side: Right
 indent_zmp: 0.02
 double_stance_duration: 0.0
 start_time: 1
-lean_forward: 0.00
+lean_forward: 0.02
 real_impacts: false
 force_sensor_threshold_right: 40 70
 force_sensor_threshold_left: 40 70

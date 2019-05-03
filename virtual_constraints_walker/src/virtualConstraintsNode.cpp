@@ -488,9 +488,12 @@ bool virtualConstraintsNode::real_impacts()
 bool virtualConstraintsNode::fake_impacts()
 {
     bool cond;
+    bool cond_q;
     
     if (_initial_param.get_walking_forward())
     {
+        cond_q = (sense_q1() >= _q1_max);
+        
         if (_current_state != State::STOPPING)
         {
             cond = fabs(_current_pose_ROS.get_sole(_current_side).coeff(0) - _initial_pose.get_sole(_current_side).coeff(0)) >  0.05;
@@ -502,15 +505,23 @@ bool virtualConstraintsNode::fake_impacts()
     }
     else
     {
-        cond = _internal_time > (_initial_param.get_start_time() + 0.2)  && _impact_cond > 0.2;
-        if (_step_counter > _initial_param.get_max_steps()-1)
-            cond = 0; 
+        if (_current_state != State::IDLE)
+        {
+            cond = _internal_time > (_start_walk + 0.2)  && _impact_cond > 0.2;
+        }
+        else
+        {
+            cond = 0;
+        }
+        cond_q = 1;
+//         if (_step_counter > _initial_param.get_max_steps()-1)
+//             cond = 0; 
     }
     
     bool cond_step = fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3;
 //     bool cond_com = fabs(fabs(_current_pose_ROS.get_com().coeff(0)) - fabs(_poly_com.get_com_final_position().coeff(0))) <= 1e-3;
     //     bool cond_q = fabs(sense_q1() - _q1_max) <= 1e-2; // so i wait the sensed tilt to be the tilt i want
-    bool cond_q = (sense_q1() >= _q1_max); // same as above
+//     bool cond_q = (sense_q1() >= _q1_max); // same as above
     
     _logger->add("cond_q", cond_q);
     _logger->add("cond_step", cond_step);
@@ -1112,7 +1123,7 @@ void virtualConstraintsNode::commander(double time)
             
             keep_position.translation()[0] = _poly_step.get_foot_initial_pose().translation()[0];
             keep_position.translation()[2] = _poly_step.get_foot_initial_pose().translation()[2];
-             _poly_step.set_foot_final_pose(keep_position);
+            _poly_step.set_foot_final_pose(keep_position);
                 
             _foot_trajectory = compute_trajectory(_poly_step.get_foot_initial_pose(), _poly_step.get_foot_final_pose(), _poly_step.get_step_clearing(), _poly_step.get_starTime(), _poly_step.get_endTime(), time);
         
@@ -2152,7 +2163,7 @@ void virtualConstraintsNode::zmp_x_online(int s_max)
     double q1 = sense_q1();
     double com_x_initial =  _current_pose_ROS.get_com().coeff(0);
     
-    _logger->add("q1", q1);
+//     _logger->add("q1", q1);
     int n_step = 0;
     double dx = 0;
     int s = 0;
