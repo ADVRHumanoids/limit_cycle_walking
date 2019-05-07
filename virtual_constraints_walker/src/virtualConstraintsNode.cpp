@@ -1556,9 +1556,9 @@ void virtualConstraintsNode::core(double time)
 bool virtualConstraintsNode::initialize(double time) 
 {
     double clearance = _initial_param.get_clearance_step();
-    _reset_condition = 0; 
+    _reset_condition = 0; /*needed for resetting q1*/
     
-    _delay_start = 1.5;
+    _delay_start = 1.5; /*time between instant that received START command is received and instant where robot starts walking. Required for initial lateral shift of the CoM*/
     _current_side = _initial_param.get_first_step_side();
     std::cout << "First step: " << _current_side << std::endl;
     _other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
@@ -1573,29 +1573,28 @@ bool virtualConstraintsNode::initialize(double time)
     _final_sole_pose = _initial_sole_pose;
     _final_com_position = _initial_com_position;
 
-    planner(time);
+    /*just to run it once, heat up the process*/
+    planner(time); /*void run of planner*/
     Eigen::Vector3d foot_trajectory;
     Eigen::Vector3d fake_pose;
     fake_pose.setZero();
     
-    // just to run it once, heat up the process
+    /*just to run it once, heat up the process*/
     foot_trajectory = compute_swing_trajectory(fake_pose, fake_pose, 0, 0, 0, time);
+
     /* comy */
-
-    double Ts = 0.01; //window resolution
-    double T = _initial_param.get_duration_preview_window(); //window length for MpC
-    double dt = 0.01; //rate of ros
-    _t_before_first_step = 0; // preparation time in the first step for the com to swing laterally before stepping 
+    double Ts = 0.01; /*window resolution*/
+    double T = _initial_param.get_duration_preview_window(); /*window length for MpC*/
+    double dt = 0.01; /*rate of ros*/
+    _t_before_first_step = 0; /*preparation time in the first step for the com to swing laterally before stepping */
     
-    _q1_min = sense_q1(); // min angle of inclination
-    _q1_max = _initial_param.get_max_inclination(); // max angle of inclination
-    _q1_start = 0; // starting q1, incremented every time that the robot stops (when restart, it needs it)
-    _step_duration = _initial_param.get_duration_step();
+    _q1_min = sense_q1(); /* min angle of inclination, starting inclination of the robot*/
+    _q1_max = _initial_param.get_max_inclination(); /*max angle of inclination of the robot*/
+    _q1_start = 0; /*starting q1, incremented every time that the robot stops (when restart, it needs it)*/
+    _step_duration = _initial_param.get_duration_step(); 
 
-//     _steep_coeff = _q1_max/_step_duration;
-        _steep_coeff = 0; //(_q1_max - _q1_min)/_step_duration;
+    _steep_coeff = 0; //(_q1_max - _q1_min)/_step_duration; /*at first is 0, setted when START command is received*/
 
-//     std::cout << "_steep_coeff: " << _steep_coeff << std::endl;
     _nominal_full_step = fabs(- 4* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max));
     _nominal_half_step = fabs(- 2* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max));
     
@@ -1608,9 +1607,9 @@ bool virtualConstraintsNode::initialize(double time)
     std::cout << "Real impacts: " << _initial_param.get_switch_real_impact() <<  std::endl;
     
 
-    _com_y << _initial_com_position(1), 0, 0; //com trajectory used by mpc: pos, vel, acc
+    _com_y << _initial_com_position(1), 0, 0; /*com trajectory used by mpc: pos, vel, acc*/
 
-    int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0);
+    int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
 
     _first_stance_step = _current_pose_ROS.get_sole(_other_side).coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
 
@@ -1658,13 +1657,10 @@ bool virtualConstraintsNode::initialize(double time)
     Eigen::MatrixXd Q(1,1);
     Eigen::MatrixXd R(1,1);
     
-    Q << _initial_param.get_MPC_Q(); //1000000
+    Q << _initial_param.get_MPC_Q(); 
     R << _initial_param.get_MPC_R();
     
-    
-//     _spatial_zmp_y = initialize_spatial_zmp();
-    
-    _MpC_lat = std::make_shared<item_MpC>(_initial_height, Ts, T, Q, R);
+    _MpC_lat = std::make_shared<item_MpC>(_initial_height, Ts, T, Q, R); /* initializing the MPC for the lateral motion of the CoM */
     
     generate_starting_zmp();
     
@@ -1673,31 +1669,31 @@ bool virtualConstraintsNode::initialize(double time)
     _com_y.setZero();
     _u.setZero();
     
-        
-    _lateral_step = 0;
+
     _init_completed = 1;
     
-    _last_event = Event::EMPTY;
-    _event = Event::EMPTY;
+    _last_event = Event::EMPTY; /*initializing the last event to EMPTY*/
+    _event = Event::EMPTY; /*initializing the event to EMPTY*/
     
+       /*fake cycle*/
 //     planner(0);
 //     impact_routine();
 //     core(0);
-       commander(_internal_time); //fake commander
-//         
-//     com displacement given the max angle  
-    _com_max.resize(_initial_param.get_max_steps(), 1);
-    double d_com = - 2 * _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max);
+       commander(_internal_time); 
+
+       
+    /*   com displacement given the max angle  */
+//     _com_max.resize(_initial_param.get_max_steps(), 1);
+//     double d_com = - 2 * _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max);
+//     
+//     _com_max[0] = _current_pose_ROS.get_com().coeff(0) - _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max);
+//     
+//     for (int i = 1; i < _initial_param.get_max_steps(); i++)
+//     {
+//         _com_max[i] = _com_max[i-1] + d_com;
+//     }
     
-    _com_max[0] = _current_pose_ROS.get_com().coeff(0) - _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max);
-    
-    for (int i = 1; i < _initial_param.get_max_steps(); i++)
-    {
-        _com_max[i] = _com_max[i-1] + d_com;
-    }
-// ---------------------------------------
-    
-    _start_walk =_initial_param.get_start_time();
+    _start_walk =_initial_param.get_start_time(); /* getting start walking from the user param */
    
     _logger->add("zmp_starting", _zmp_starting);
     _logger->add("spatial_zmp_y", _spatial_zmp_y);
