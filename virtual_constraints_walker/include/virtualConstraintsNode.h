@@ -79,6 +79,7 @@ public:
         void set_com_clearing(double com_clearing) {_com_clearing = com_clearing;};
         void set_starTime(double start_time) {_start_time = start_time;};
         void set_endTime(double end_time) {_end_time = end_time;};
+        
     private:
         
         Eigen::Vector3d _step_initial_position, _step_final_position;
@@ -118,7 +119,7 @@ public:
         item_MpC(double initial_height, double Ts, double T, Eigen::MatrixXd Q, Eigen::MatrixXd R)
         {
             
-            double h = initial_height; //TODO current or initial?
+            double h = initial_height; //TODO current or initial? as it is now, it's really the same thing more or less
             double w = sqrt(9.8/h);
             
             // inverted pendulum

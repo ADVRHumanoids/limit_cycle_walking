@@ -3,6 +3,9 @@ plot(time, zmp');
 hold on; plot(time, zmp_ref', 'r--');
 plot(time, com_trajectory(2,:)'); hold on;
 
+plot(time, steep_coeff);
+plot(time, alpha);
+
 plot(time, com_trajectory(1,:)'); hold on;
 plot(time, foot_trajectory');
 
@@ -13,12 +16,12 @@ plot(time, alpha_sensed);
 plot(time, steep_coeff);
 plot(time, started);
 plot(time, q1_cmd);hold on;
-plot(time, q1_temp - 0.60);hold on;
 
 %% stab
 
 plot(time, zmp_stab);
 %% q1 and step
+figure(2);
 plot(time, q1_sensed); hold on; %why why why
 plot(time, q1_cmd);hold on;
 
@@ -48,6 +51,7 @@ for i = 1:size(window_tot,2)
     plot(window_tot(:,i));
     ylim([-.1,.1])
     drawnow
+    pause();
 end
 
 for i = 1:size(window_preview,2)
@@ -219,3 +223,7 @@ plot(switched);
 
 plot(q1_cmd);
 plot(q1_temp);
+
+
+
+plot(time, alpha_sensed);

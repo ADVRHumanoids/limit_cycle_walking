@@ -87,13 +87,6 @@ int main(int argc, char **argv)
 
 
 
-
-
-
-
-
-
-
 /////////////////////trial for traj////////////////////////////////////
 // int main(int argc, char **argv)
 // {
@@ -179,4 +172,117 @@ int main(int argc, char **argv)
 // //         ret = VC.compute_swing_trajectory(starting_position, ending_position, clearance, starting_time, ending_time, ros::Time::now().toSec(), "xy");
 // //         loop_rate.sleep();
 // //     }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+////////////// trial for trajectory with q ///////////////////////////
+// int main(int argc, char **argv)
+// {
+//     
+//     
+//     ros::init(argc, argv, "virtual_constraints");
+//     virtualConstraintsNode VC;
+//     
+//     XBot::MatLogger::Ptr _logger;
+//     _logger = XBot::MatLogger::getLogger("/tmp/test");
+//         
+//     ros::Rate loop_rate(100);
+//     double x1 = 0;
+//     double x2 = 0.8; 
+//     double x3 = 0;
+//     
+//     double tau = 0;
+//     double t_min = ros::Time::now().toSec(); 
+//     double t_max = ros::Time::now().toSec()+ 1;
+// 
+// 
+//     Eigen::Vector3d starting_position, ending_position, ret;  
+//     double starting_time, ending_time;
+//     starting_position << 0, 0, 0;
+//     ending_position << 1, 1, 1;
+// //     ending_position << 1, 1, 1;
+//     double clearance = 0;
+//     starting_time = ros::Time::now().toSec();
+//     ending_time = ros::Time::now().toSec() + 10;
+//     bool flag = true;
+//     double t = starting_time;
+//     double dt = 0.01;
+//         while (ros::ok() && ros::Time::now().toSec() <= ending_time +20)
+//     {  
+//         if (ros::Time::now().toSec() >= starting_time && ros::Time::now().toSec() <= ending_time-5)
+//         {
+//             t = t + dt;
+//         }
+//         if (ros::Time::now().toSec() >= starting_time+7 && ros::Time::now().toSec() <= ending_time+2)
+//         {
+//             t = t - dt;
+//         }
+//         
+//         if (ros::Time::now().toSec() >= ending_time + 3)
+//         {
+//             t = t + dt;
+//         }
+//         ret = VC.compute_swing_trajectory(starting_position, ending_position, clearance, starting_time, ending_time, t);
+//         _logger->add("ret", ret);
+//                                                     
+//         std::cout << ret.transpose() << std::endl;
+//         loop_rate.sleep();
+//     }
+//     
+//     _logger->flush();
+// }
+
+
+
+
+
+
+
+
+
+
+
+////////////// trial for trajectory with q ///////////////////////////
+// int main(int argc, char **argv)
+// {
+//     
+//     
+//     ros::init(argc, argv, "virtual_constraints");
+//     virtualConstraintsNode VC;
+//     
+//     XBot::MatLogger::Ptr _logger;
+//     _logger = XBot::MatLogger::getLogger("/tmp/test");
+//         
+//     ros::Rate loop_rate(100);
+//     double dt = 0.01;
+//     double ending_time = ros::Time::now().toSec()  + 1;
+//     double traj = 0;
+//     double alpha = 0.1;
+//     double h = 1;
+//     double q = 0;
+//     double x = M_PI/4;     
+//     Eigen::Matrix2d R;
+//     R << cos(x), sin(x), -sin(x), cos(x);
+//     
+//     while (ros::ok() && ros::Time::now().toSec() <= ending_time)
+//     {  
+//         q = q + alpha * dt;
+//         traj = h * tan(q);
+//         
+//         _logger->add("q", q);
+//         _logger->add("traj", traj);
+//         loop_rate.sleep();
+//     }
+//     
+//     _logger->flush();
 // }
