@@ -16,6 +16,14 @@ plot(time, alpha_sensed);
 plot(time, steep_coeff);
 plot(time, started);
 plot(time, q1_cmd);hold on;
+       
+%% steer
+
+plot(time, com_trajectory'); hold on;
+plot(time, traj_steered'); hold on;
+
+plot(com_trajectory(1,:), com_trajectory(2,:));
+plot(traj_steered(1,:), traj_steered(2,:));
 
 %% stab
 
@@ -201,29 +209,14 @@ plot(time, foot_pos_left(1,:)); hold on;
 plot(time, foot_pos_right(1,:)); hold on;
 
 %% com velocity
-plot(com_pos(1,:)'); hold on;
-plot(com_vel(1,:)'); hold on;
+plot(time, com_pos(1,:)'); hold on;
+plot(time, com_vel(1,:)'); hold on;
 
-plot(com_trajectory(1,:));
-plot(com_vel_cmd(1,:)');
+plot(time, com_trajectory(2,:)); hold on;
+plot(time, com_vel_cmd(2,:)'); hold on;
 
 plot(steepness);
 
 plot(foot_vel_current(1,:)'); hold on;
 plot(foot_vel_cmd(1,:)'); hold on;
 
-
-%% switch on switch off trials
-
-
-plot(time, q1_sensed); hold on;
-plot(time, q1_max); hold on;
-plot(time, q1_min); hold on;
-plot(switched);
-
-plot(q1_cmd);
-plot(q1_temp);
-
-
-
-plot(time, alpha_sensed);

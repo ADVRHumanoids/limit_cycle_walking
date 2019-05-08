@@ -479,7 +479,8 @@ protected:
     double _old_invert_step = 0;
     double _entered_main;
     
-    
+    double _theta_steer;
+    Eigen::Matrix2d _R_steer;
     
     bool _started = 0;
     
