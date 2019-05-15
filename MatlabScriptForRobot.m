@@ -6,48 +6,29 @@ plot(time, com_trajectory(2,:)'); hold on;
 plot(time, steep_coeff);
 plot(time, alpha);
 
-plot(time, com_trajectory(1,:)'); hold on;
-plot(time, foot_trajectory');
-
-plot(time, impact_detected); hold on;
-
-plot(time, stopped_received);
-plot(time, alpha_sensed);
-plot(time, steep_coeff);
-plot(time, started);
-plot(time, q1_cmd);hold on;
-
 plot(time, com_trajectory'); hold on;
-plot(time, com_trajectory_fake'); hold on;
-
 plot(time, foot_trajectory'); hold on;
-plot(time, foot_trajectory_fake'); hold on;
+
 
 plot(time, delta_com'); hold on;
 plot(time, delta_com_rot'); hold on;
 
-plot(time, delta_com(1,:)'); hold on;
-plot(time, delta_com_rot(1,:)'); hold on;
 %% steer
-plot(time, com_trajectory_fake', 'r--'); hold on;
-plot(time, foot_trajectory_fake'); hold on;
-
 plot(time, com_trajectory'); hold on;
 plot(time, foot_trajectory'); hold on;
 
-plot(time, step_counter/10); hold on;
 plot(com_trajectory(1,:), com_trajectory(2,:));
-
-
-plot(time, step_counter/10); hold on;
 
 plot(time, q1_sensed); hold on;
 %% stab
 
 plot(time, zmp_stab);
+%% something
+
+plot(time, stopped_received)
 %% q1 and step
 figure(2);
-plot(time, q1_sensed); hold on; %why why why
+ta
 plot(time, q1_cmd);hold on;
 
 plot(time, com_trajectory(1,:)', 'r--'); hold on; % reference

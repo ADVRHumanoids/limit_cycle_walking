@@ -480,7 +480,6 @@ protected:
     double _q1_initial;
     double _q1_min;
     double _q1_max;
-    double _q1_max_steer;
     double _q1 = 0;
     double _q1_old = 0;
     bool _init_completed = 0;
