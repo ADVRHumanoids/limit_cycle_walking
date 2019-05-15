@@ -28,11 +28,13 @@ class robot_interface_ROS: public robot_interface
         std::vector<double> _joints_state;
         std::vector<ros::Subscriber> _subs;
         
-        tf::TransformListener l_com_to_ankle_listener, r_com_to_ankle_listener, _l_to_r_foot_listener;
-        tf::StampedTransform l_com_to_ankle_transform;
-        tf::StampedTransform r_com_to_ankle_transform;
+        tf::TransformListener l_com_to_ankle_listener, r_com_to_ankle_listener, _l_to_r_foot_listener, _world_to_com_listener;
+        tf::StampedTransform _l_com_to_ankle_transform;
+        tf::StampedTransform _r_com_to_ankle_transform;
         tf::StampedTransform _l_to_r_foot_transform;
-   
+        tf::StampedTransform _world_to_com_transform;
+            
+        Eigen::Affine3d listen_world_to_com();
         
         Eigen::Affine3d listen_l_ankle_to_com();
         Eigen::Affine3d listen_r_ankle_to_com();

@@ -16,15 +16,32 @@ plot(time, alpha_sensed);
 plot(time, steep_coeff);
 plot(time, started);
 plot(time, q1_cmd);hold on;
-       
-%% steer
 
 plot(time, com_trajectory'); hold on;
-plot(time, traj_steered'); hold on;
+plot(time, com_trajectory_fake'); hold on;
 
+plot(time, foot_trajectory'); hold on;
+plot(time, foot_trajectory_fake'); hold on;
+
+plot(time, delta_com'); hold on;
+plot(time, delta_com_rot'); hold on;
+
+plot(time, delta_com(1,:)'); hold on;
+plot(time, delta_com_rot(1,:)'); hold on;
+%% steer
+plot(time, com_trajectory_fake', 'r--'); hold on;
+plot(time, foot_trajectory_fake'); hold on;
+
+plot(time, com_trajectory'); hold on;
+plot(time, foot_trajectory'); hold on;
+
+plot(time, step_counter/10); hold on;
 plot(com_trajectory(1,:), com_trajectory(2,:));
-plot(traj_steered(1,:), traj_steered(2,:));
 
+
+plot(time, step_counter/10); hold on;
+
+plot(time, q1_sensed); hold on;
 %% stab
 
 plot(time, zmp_stab);
@@ -39,7 +56,6 @@ plot(time, foot_trajectory(1,:)','b--');hold on; % reference
 plot(time, com_pos(1,:)');hold on; % actual 
 plot(time, foot_pos_left);hold on; % actual 
 plot(time, foot_pos_right);hold on; % actual 
-
 %% alpha and tilt   
 plot(time, q1_sensed);hold on;
 plot(time, q1_cmd);hold on;
@@ -48,6 +64,8 @@ plot(time, q1_start);
 plot(time, q1_temp);
 plot(time, q1_max);hold on;
 plot(time, q1_min);hold on;
+
+plot(zmp_y_rec)
 %% impact conditions
 plot(time, impact_detected, 'r--'); hold on;
 plot(time(1:end-1), cond_step); hold on; %% step
@@ -57,14 +75,13 @@ plot(time(1:end-1), cond_q); hold on;
 figure(2);
 for i = 1:size(window_tot,2)
     plot(window_tot(:,i));
-    ylim([-.1,.1])
+    ylim([-.2,.2])
     drawnow
-    pause();
 end
 
 for i = 1:size(window_preview,2)
     plot(window_preview(:,i));
-    ylim([-.1,.1])
+    ylim([-.2,.2])
     drawnow;
 end
 %% zmp x

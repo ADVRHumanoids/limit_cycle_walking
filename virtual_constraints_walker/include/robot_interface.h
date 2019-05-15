@@ -16,6 +16,8 @@ class robot_interface
 
         Eigen::Vector3d get_com() {return _com_state.translation();};
         
+        Eigen::Vector3d get_world_to_com() {return _world_to_com.translation();};
+        
         Eigen::Vector3d get_distance_ankle_to_com(Side desired_side) 
         {
             if (desired_side == Side::Double) 
@@ -30,6 +32,7 @@ class robot_interface
             return _ankle_to_com[desired_side].translation();
             
         }
+        
         Eigen::Vector3d get_distance_l_to_r_foot() {return _l_to_r_foot.translation();};
         
         Eigen::Vector3d get_sole(Side desired_side) 
@@ -106,6 +109,7 @@ class robot_interface
         std::map<robot_interface::Side, Eigen::Affine3d> _sole_state;
         std::map<robot_interface::Side, Eigen::Affine3d>_ankle_to_com;
         std::map<robot_interface::Side, Eigen::Matrix<double, 6,1> > _sole_ft;
+        Eigen::Affine3d _world_to_com;
         Eigen::Affine3d _l_to_r_foot;
         bool _check_messages;
     };

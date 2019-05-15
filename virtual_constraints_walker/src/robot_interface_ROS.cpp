@@ -22,7 +22,8 @@ robot_interface_ROS::robot_interface_ROS()
         _subs.push_back(n.subscribe("/xbotcore/cogimon/ft/l_leg_ft", 10, &robot_interface_ROS::l_sole_ft_callback, this));
         _subs.push_back(n.subscribe("/xbotcore/cogimon/ft/r_leg_ft", 10, &robot_interface_ROS::r_sole_ft_callback, this));
         
-//      prepare listener node       
+//      prepare listener node
+        _world_to_com_listener.waitForTransform("ci/com", "ci/world_odom", ros::Time(0), ros::Duration(3.0));
         l_com_to_ankle_listener.waitForTransform("ci/l_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
         r_com_to_ankle_listener.waitForTransform("ci/r_ankle", "ci/com", ros::Time(0), ros::Duration(3.0)); /*ros::Time::now()*/
         _l_to_r_foot_listener.waitForTransform("ci/l_sole", "ci/r_sole", ros::Time(0), ros::Duration(3.0));
@@ -56,6 +57,7 @@ void robot_interface_ROS::sense()
         ros::spinOnce();
         _ankle_to_com[Side::Left] = listen_l_ankle_to_com();
         _ankle_to_com[Side::Right] = listen_r_ankle_to_com();
+        _world_to_com = listen_world_to_com();
         _l_to_r_foot = listen_l_to_r_foot();
     }
     
@@ -108,14 +110,26 @@ void robot_interface_ROS::r_sole_ft_callback(const geometry_msgs::WrenchStamped 
 //         tf::poseMsgToEigen(msg_rcv.pose, _zmp_state);
 //         _check_7 = true;
 //     }
-    
+
+Eigen::Affine3d robot_interface_ROS::listen_world_to_com()
+    {
+        tf::Pose distance;
+        Eigen::Affine3d world_to_com;
+        
+        _world_to_com_listener.lookupTransform("ci/com", "ci/world_odom", ros::Time(0), _world_to_com_transform); /*ros::Time(0)*/
+        distance = _world_to_com_transform;
+        
+        tf::poseTFToEigen(distance,world_to_com);
+        return world_to_com;
+    }
+
 Eigen::Affine3d robot_interface_ROS::listen_l_ankle_to_com()
     {
         tf::Pose distance;
         Eigen::Affine3d l_ankle_to_com;
                 
-        l_com_to_ankle_listener.lookupTransform("ci/com", "ci/l_ankle", ros::Time(0), l_com_to_ankle_transform); /*ros::Time(0)*/
-        distance = l_com_to_ankle_transform;
+        l_com_to_ankle_listener.lookupTransform("ci/com", "ci/l_ankle", ros::Time(0), _l_com_to_ankle_transform); /*ros::Time(0)*/
+        distance = _l_com_to_ankle_transform;
         
 //         tf::transformTFToEigen(l_com_to_ankle_transform, l_ankle_to_com);
         tf::poseTFToEigen(distance,l_ankle_to_com);
@@ -127,8 +141,8 @@ Eigen::Affine3d robot_interface_ROS::listen_r_ankle_to_com()
         tf::Pose distance;
         Eigen::Affine3d r_ankle_to_com;
         
-        r_com_to_ankle_listener.lookupTransform("ci/com", "ci/r_ankle", ros::Time(0), r_com_to_ankle_transform);
-        distance = r_com_to_ankle_transform;
+        r_com_to_ankle_listener.lookupTransform("ci/com", "ci/r_ankle", ros::Time(0), _r_com_to_ankle_transform);
+        distance = _r_com_to_ankle_transform;
         
         tf::poseTFToEigen(distance, r_ankle_to_com);
         return r_ankle_to_com;

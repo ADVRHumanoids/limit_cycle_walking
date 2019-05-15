@@ -57,9 +57,13 @@ public:
                                                 logger->add("end_time_Poly", _end_time);}
         
         const Eigen::Affine3d get_foot_initial_pose() const {return _step_initial_pose;}
-        const Eigen::Vector3d get_foot_initial_position() const {return _step_initial_position;};
         const Eigen::Affine3d get_foot_final_pose() const {return _step_final_pose;};
+        
         const Eigen::Vector3d get_foot_final_position() const {return _step_final_position;};
+        const Eigen::Vector3d get_foot_initial_position() const {return _step_initial_position;};
+        
+        const Eigen::Affine3d get_foot_initial_pose_fake() const {return _step_initial_pose_fake;}
+        const Eigen::Affine3d get_foot_final_pose_fake() const {return _step_final_pose_fake;};
         
         const Eigen::Vector3d get_com_initial_position() const {return _com_initial_position;};
         const Eigen::Vector3d get_com_final_position() const {return _com_final_position;};
@@ -68,10 +72,15 @@ public:
         const double get_starTime() const {return _start_time;};
         const double get_endTime() const {return _end_time;};
         
+
         void set_foot_initial_pose(Eigen::Affine3d step_initial_pose) {_step_initial_pose =  step_initial_pose;};
-        void set_foot_initial_position(Eigen::Vector3d step_initial_position) {_step_initial_position =  step_initial_position;};
         void set_foot_final_pose(Eigen::Affine3d step_final_pose) {_step_final_pose = step_final_pose;};
+        
+        void set_foot_initial_position(Eigen::Vector3d step_initial_position) {_step_initial_position =  step_initial_position;};
         void set_foot_final_position(Eigen::Vector3d step_final_position) {_step_final_position = step_final_position;};
+        
+        void set_foot_initial_pose_fake(Eigen::Affine3d step_initial_pose_fake) {_step_initial_pose_fake =  step_initial_pose_fake;};
+        void set_foot_final_pose_fake(Eigen::Affine3d step_final_pose_fake) {_step_final_pose_fake = step_final_pose_fake;};
         
         void set_com_initial_position(Eigen::Vector3d com_initial_pose) {_com_initial_position = com_initial_pose;};
         void set_com_final_position(Eigen::Vector3d com_final_pose) {_com_final_position = com_final_pose;};
@@ -83,7 +92,9 @@ public:
     private:
         
         Eigen::Vector3d _step_initial_position, _step_final_position;
+        
         Eigen::Affine3d _step_initial_pose, _step_final_pose;
+        Eigen::Affine3d _step_initial_pose_fake, _step_final_pose_fake;
         
         Eigen::Vector3d _com_initial_position, _com_final_position;
         double _step_clearing, _com_clearing;
@@ -97,8 +108,14 @@ public:
         void log(XBot::MatLogger::Ptr logger) { logger->add("com_initial_pose", _com_initial_position);}
         const Eigen::Vector3d get_com_initial_position() const {return _com_initial_position;};
         const Eigen::Vector3d get_com_final_position() const {return _com_final_position;};
+        
+        const Eigen::Vector3d get_com_initial_position_fake() const {return _com_initial_position_fake;};
+        const Eigen::Vector3d get_com_final_position_fake() const {return _com_final_position_fake;};
         const double get_starTime() const {return _start_time;};
         const double get_endTime() const {return _end_time;};
+        
+        void set_com_initial_position_fake(Eigen::Vector3d com_initial_pose_fake) {_com_initial_position_fake = com_initial_pose_fake;};
+        void set_com_final_position_fake(Eigen::Vector3d com_final_pose_fake) {_com_initial_position_fake = com_final_pose_fake;};
         
         void set_com_initial_position(Eigen::Vector3d com_initial_pose) {_com_initial_position = com_initial_pose;};
         void set_com_final_position(Eigen::Vector3d com_final_pose) {_com_final_position = com_final_pose;};
@@ -107,7 +124,7 @@ public:
 
     private:
         
-        Eigen::Vector3d _com_initial_position, _com_final_position;
+        Eigen::Vector3d _com_initial_position, _com_final_position, _com_initial_position_fake, _com_final_position_fake;
         double _start_time, _end_time;
     };  
     
@@ -375,6 +392,8 @@ protected:
     ros::Publisher _q1_pub;
     
     robot_interface _initial_pose;
+//     robot_interface _initial_pose_fake;
+    
     robot_interface_ROS _current_pose_ROS;
     
     double _q1_cmd;
@@ -422,8 +441,24 @@ protected:
     Eigen::VectorXd _spatial_window_preview;
     
     Eigen::Vector3d _com_trajectory, _previous_com_trajectory;
+    Eigen::Vector3d _com_trajectory_fake;
+    
+    Eigen::Affine3d _foot_trajectory_fake;
+    
+    Eigen::Vector3d _starting_com_pos;
+    Eigen::Affine3d _starting_foot_pos;
+    
+    Eigen::Affine3d _starting_foot_pos_right, _starting_foot_pos_left;
     
     Eigen::Vector3d _zmp_ref;
+    
+    Eigen::Vector3d _distance_feet;
+    
+    Eigen::Vector3d _current_world_to_com;
+    
+    double _q1_com;
+    double _q1_again;
+    
     data_step_poly _poly_step;
     data_com_poly _poly_com;
     std::shared_ptr<item_MpC> _MpC_lat;
@@ -445,6 +480,7 @@ protected:
     double _q1_initial;
     double _q1_min;
     double _q1_max;
+    double _q1_max_steer;
     double _q1 = 0;
     double _q1_old = 0;
     bool _init_completed = 0;
@@ -458,6 +494,7 @@ protected:
     
     double _loop_n = 0;
     double _initial_sole_y_right, _initial_sole_y_left;
+    double _initial_zmp_y_right, _initial_zmp_y_left;
     
     double _t_before_first_step;
 //     Eigen::VectorXd u(1);
@@ -480,9 +517,13 @@ protected:
     double _entered_main;
     
     double _theta_steer;
+    int _first_step_steer, _last_step_steer;
+    
     Eigen::Matrix2d _R_steer;
     
     bool _started = 0;
+    
+
     
     class param
     {
@@ -561,6 +602,12 @@ protected:
     Eigen::Vector2d _pointsBezier_x;
     
     Eigen::Vector3d _initial_com_position, _final_com_position;
+    
+    Eigen::Vector3d _initial_com_position_fake;
+    Eigen::Affine3d _initial_sole_pose_fake;
+
+    Eigen::Affine3d _final_sole_pose_fake;
+    Eigen::Vector3d _final_com_position_fake;
 //     Eigen::Vector3d _initial_sole_position, _final_sole_position;
     
     Eigen::Affine3d _initial_sole_pose, _final_sole_pose;
