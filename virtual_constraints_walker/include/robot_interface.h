@@ -16,6 +16,8 @@ class robot_interface
 
         Eigen::Vector3d get_com() {return _com_state.translation();};
         
+        Eigen::Affine3d get_waist() {return _waist_state;};
+        
         Eigen::Vector3d get_world_to_com() {return _world_to_com.translation();};
         
         Eigen::Vector3d get_distance_ankle_to_com(Side desired_side) 
@@ -104,6 +106,7 @@ class robot_interface
         };
 
         Eigen::Affine3d _com_state;
+        Eigen::Affine3d _waist_state;
 //         Eigen::Affine3d _zmp_state;
 //         std::vector<Eigen::Affine3d> _sole_state;     /*0 is left, 1 is right*/
         std::map<robot_interface::Side, Eigen::Affine3d> _sole_state;

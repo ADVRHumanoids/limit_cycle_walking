@@ -17,6 +17,8 @@ plot(time, delta_com_rot'); hold on;
 plot(time, com_trajectory'); hold on;
 plot(time, foot_trajectory'); hold on;
 
+plot(time, com_pos');hold on; % actual 
+
 plot(com_trajectory(1,:), com_trajectory(2,:));
 
 plot(time, q1_sensed); hold on;
@@ -24,11 +26,10 @@ plot(time, q1_sensed); hold on;
 
 plot(time, zmp_stab);
 %% something
-
-plot(time, stopped_received)
+plot(time, get_com_initial_position); hold on;
+plot(time, stopped_received); hold on;
 %% q1 and step
 figure(2);
-ta
 plot(time, q1_cmd);hold on;
 
 plot(time, com_trajectory(1,:)', 'r--'); hold on; % reference

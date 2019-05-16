@@ -4,7 +4,7 @@ solver_options:
 
 stack:
     - ["LFoot", "RFoot", "PosturalPennacchio"]
-    - ["CoM"] #CoM #CoMStabilizer
+    - ["CoMStabilizer"] #CoM #CoMStabilizer
     - ["WaistOrient"]
     - ["Postural"]
     
@@ -42,15 +42,15 @@ CoMStabilizer:
     type: "CoMStabilizer"
     lambda: 0.1
     foot_size: [0.22, 0.11]
-    K: [0.1, 0.1] #0.1 0.0005, 0.01
-    D: [-0.01,-0.01] #-0.01 0.0,-0.005
+    K: [0.0, 0.0] #0.1, 0.1 - // - 0.1 0.0005, 0.01
+    D: [0.0,0.0] # -0.01,-0.01 // -0.01 0.0,-0.005
     l_sole: "l_sole"
     r_sole: "r_sole"
     ft_sensor_l_sole: "l_leg_ft"
     ft_sensor_r_sole: "r_leg_ft"
     ankle: "l_ankle"
     dT: 0.01
-    invertFTSensors: true
+    invertFTSensors: false
     lib_name: "libCoMStabilizerAddon.so"
     
 PosturalPennacchio:

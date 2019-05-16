@@ -47,6 +47,8 @@ class robot_interface_ROS: public robot_interface
         void r_sole_state_callback(const geometry_msgs::PoseStamped msg_rcv); //this is called by ros
         void l_sole_ft_callback(const geometry_msgs::WrenchStamped msg_rcv);
         void r_sole_ft_callback(const geometry_msgs::WrenchStamped msg_rcv);
+        void waist_state_callback(const geometry_msgs::PoseStamped msg_rcv);
+        
 //         void zmp_callback(const geometry_msgs::PoseStamped msg_rcv);
         
         bool _check_1, _check_2, _check_3, _check_4, _check_5, _check_6, _check_7;

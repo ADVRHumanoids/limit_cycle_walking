@@ -247,8 +247,11 @@ public:
     
     void send(std::string type, Eigen::Vector3d command);
     void send_com(Eigen::Vector3d com_command);
+    
     void send_step(Eigen::Vector3d foot_command);
+    
     void send_step(Eigen::Affine3d foot_command);
+    void send_waist(Eigen::Affine3d waist_command);
     
     void send_zmp(Eigen::Vector3d zmp_command);
     
@@ -379,8 +382,9 @@ protected:
     
     double _reducer;
     int _numerator = 0;
-    ros::Publisher _com_pub;   
+    ros::Publisher _com_pub;
     ros::Publisher _zmp_pub;
+    ros::Publisher _waist_pub;
 
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
     
@@ -405,6 +409,8 @@ protected:
 
     Eigen::Affine3d _foot_trajectory;
     Eigen::Affine3d _previous_foot_trajectory;
+    
+    Eigen::Affine3d _waist_trajectory;
     
     Eigen::Vector3d _previous_com_pos;
     Eigen::Vector3d _previous_foot_pos;
@@ -455,6 +461,8 @@ protected:
     Eigen::Vector3d _distance_feet;
     
     Eigen::Vector3d _current_world_to_com;
+    
+    double _foot_pos_y_left, _foot_pos_y_right;
     
     double _q1_com;
     double _q1_again;
@@ -586,6 +594,7 @@ protected:
     double _initial_q1;
     double _new_event_time;
    
+    State _previous_state = State::IDLE;
     State _current_state = State::IDLE;
     Event _event = Event::EMPTY;
     Event _last_event = Event::EMPTY;
@@ -602,14 +611,10 @@ protected:
     
     Eigen::Vector3d _initial_com_position, _final_com_position;
     
-    Eigen::Vector3d _initial_com_position_fake;
-    Eigen::Affine3d _initial_sole_pose_fake;
 
-    Eigen::Affine3d _final_sole_pose_fake;
-    Eigen::Vector3d _final_com_position_fake;
 //     Eigen::Vector3d _initial_sole_position, _final_sole_position;
     
-    Eigen::Affine3d _initial_sole_pose, _final_sole_pose;
+    Eigen::Affine3d _initial_sole_pose, _final_sole_pose, _initial_waist_pose, _final_waist_pose;
     
     void planner(double time);
     void core(double time);

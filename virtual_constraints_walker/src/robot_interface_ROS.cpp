@@ -14,7 +14,8 @@ robot_interface_ROS::robot_interface_ROS()
         _subs.push_back(n.subscribe("/cartesian/solution", 10, &robot_interface_ROS::joints_state_callback, this)); /*subscribe to cartesian/solution topic*/
         _subs.push_back(n.subscribe("/cartesian/com/state", 10, &robot_interface_ROS::com_state_callback, this)); 
         _subs.push_back(n.subscribe("/cartesian/l_sole/state", 10, &robot_interface_ROS::l_sole_state_callback, this)); 
-        _subs.push_back(n.subscribe("/cartesian/r_sole/state", 10, &robot_interface_ROS::r_sole_state_callback, this)); 
+        _subs.push_back(n.subscribe("/cartesian/r_sole/state", 10, &robot_interface_ROS::r_sole_state_callback, this));
+        _subs.push_back(n.subscribe("/cartesian/Waist/state", 10, &robot_interface_ROS::waist_state_callback, this));
         
         //  STABILIZER
 //         _subs.push_back(n.subscribe("/cartesian/com_stabilizer/zmp/reference", 10, &robot_interface_ROS::zmp_callback, this));
@@ -104,7 +105,13 @@ void robot_interface_ROS::r_sole_ft_callback(const geometry_msgs::WrenchStamped 
 //         if COUNT_ONCE {_callback_counter++;};
         _check_6 = true;
     }
-    
+
+void robot_interface_ROS::waist_state_callback(const geometry_msgs::PoseStamped msg_rcv)
+    {
+        tf::poseMsgToEigen(msg_rcv.pose, _waist_state); /*TODO: is this a good implementation??*/
+//         if COUNT_ONCE {_callback_counter++;};
+        _check_7 = true;
+    }
 // void robot_interface_ROS::zmp_callback(const geometry_msgs::PoseStamped msg_rcv)
 //     {
 //         tf::poseMsgToEigen(msg_rcv.pose, _zmp_state);
