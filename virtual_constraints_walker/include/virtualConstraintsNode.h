@@ -372,6 +372,8 @@ public:
     double _q1_temp = 0;
     
     double _current_spatial_zmp_y, _current_spatial_zmp_y_cmd;
+    
+    bool _cond_step, _cond_q;
 protected:
     
 //     ros::NodeHandle n;

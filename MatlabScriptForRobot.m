@@ -12,16 +12,27 @@ plot(time, foot_trajectory'); hold on;
 
 plot(time, delta_com'); hold on;
 plot(time, delta_com_rot'); hold on;
+figure;
 
 %% steer
 plot(time, com_trajectory'); hold on;
 plot(time, foot_trajectory'); hold on;
 
-plot(time, com_pos');hold on; % actual 
-
 plot(com_trajectory(1,:), com_trajectory(2,:));
+plot(foot_trajectory(1,:), foot_trajectory(2,:));
+
+plot(com_pos(1,:),com_pos(2,:));hold on; % actual 
+plot(foot_pos_left(1,:), foot_pos_left(2,:));hold on; % actual 
+plot(foot_pos_right(1,:), foot_pos_right(2,:));hold on; % actual
 
 plot(time, q1_sensed); hold on;
+
+plot(dist_com'); hold on;
+plot(left_ankle_to_com_z); hold on;
+plot(world_to_com'); hold on;
+plot(q1_sns); hold on;
+plot(current_world_to_com');
+
 %% stab
 
 plot(time, zmp_stab);
@@ -50,9 +61,8 @@ plot(time, q1_min);hold on;
 plot(zmp_y_rec)
 %% impact conditions
 plot(time, impact_detected, 'r--'); hold on;
-plot(time(1:end-1), cond_step); hold on; %% step
-plot(time(1:end-1), cond); hold on;
-plot(time(1:end-1), cond_q); hold on;
+plot(time, cond_step); hold on; %% step
+plot(time, cond_q); hold on;
 %% window zmp y
 figure(2);
 for i = 1:size(window_tot,2)

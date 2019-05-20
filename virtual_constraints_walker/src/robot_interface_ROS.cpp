@@ -123,7 +123,8 @@ Eigen::Affine3d robot_interface_ROS::listen_world_to_com()
         tf::Pose distance;
         Eigen::Affine3d world_to_com;
         
-        _world_to_com_listener.lookupTransform("ci/com", "ci/world_odom", ros::Time(0), _world_to_com_transform); /*ros::Time(0)*/
+//         _world_to_com_listener.lookupTransform("ci/com", "ci/world_odom", ros::Time(0), _world_to_com_transform); /*ros::Time(0)*/
+        _world_to_com_listener.lookupTransform("ci/world_odom", "ci/com", ros::Time(0), _world_to_com_transform); /*ros::Time(0)*/
         distance = _world_to_com_transform;
         
         tf::poseTFToEigen(distance,world_to_com);
