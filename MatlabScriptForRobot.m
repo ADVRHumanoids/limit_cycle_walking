@@ -1,25 +1,40 @@
 figure(1);
 plot(time, zmp');
 hold on; plot(time, zmp_ref', 'r--');
-plot(time, com_trajectory(2,:)'); hold on;
+plot(time, com_trajectory(2,:)'); hold on; %% commanded trajectory
+plot(time, com_pos(2,:)'); hold on; %% real trajectory
+
+
+plot(time, initial_com_position);
+plot(time, final_com_position);
+
+plot(time, initial_sole_position);
+plot(time, final_sole_position);
+
+plot(time, final_com_position(1,:)); hold on;
+plot(time, com_trajectory(1,:), 'r--'); hold on;
 
 plot(time, steep_coeff);
 plot(time, alpha);
 
 plot(time, com_trajectory'); hold on;
+
 plot(time, foot_trajectory'); hold on;
 
 
 plot(time, delta_com'); hold on;
 plot(time, delta_com_rot'); hold on;
+
+plot(time, foot_pos_left(1,:));hold on; % actual
+plot(time, foot_pos_right(1,:));hold on; % actual
 figure;
 
 %% steer
 plot(time, com_trajectory'); hold on;
 plot(time, foot_trajectory'); hold on;
 
-plot(com_trajectory(1,:), com_trajectory(2,:));
-plot(foot_trajectory(1,:), foot_trajectory(2,:));
+plot(com_trajectory(1,:), com_trajectory(2,:)); hold on;
+plot(foot_trajectory(1,:), foot_trajectory(2,:)); hold on;
 
 plot(com_pos(1,:),com_pos(2,:));hold on; % actual 
 plot(foot_pos_left(1,:), foot_pos_left(2,:));hold on; % actual 
@@ -41,7 +56,7 @@ plot(time, get_com_initial_position); hold on;
 plot(time, stopped_received); hold on;
 %% q1 and step
 figure(2);
-plot(time, q1_cmd);hold on;
+
 
 plot(time, com_trajectory(1,:)', 'r--'); hold on; % reference
 plot(time, foot_trajectory(1,:)','b--');hold on; % reference

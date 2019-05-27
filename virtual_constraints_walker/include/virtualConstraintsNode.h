@@ -374,6 +374,8 @@ public:
     double _current_spatial_zmp_y, _current_spatial_zmp_y_cmd;
     
     bool _cond_step, _cond_q;
+    
+    double _dt;
 protected:
     
 //     ros::NodeHandle n;
@@ -466,6 +468,8 @@ protected:
     
     double _foot_pos_y_left, _foot_pos_y_right;
     
+    Eigen::Vector4d _disp_vec;
+    
     double _q1_com;
     double _q1_again;
     
@@ -528,7 +532,6 @@ protected:
     double _theta_steer;
     int _first_step_steer, _last_step_steer;
     
-    Eigen::Matrix2d _R_steer;
     
     bool _started = 0;
     
@@ -612,7 +615,7 @@ protected:
     Eigen::Vector2d _pointsBezier_x;
     
     Eigen::Vector3d _initial_com_position, _final_com_position;
-    
+    Eigen::Vector3d _first_com_pos;
 
 //     Eigen::Vector3d _initial_sole_position, _final_sole_position;
     
@@ -638,6 +641,9 @@ protected:
     
     bool _stopped_received = 0;
     double _q1_start;
+    
+
+
     
         friend std::ostream& operator<<(std::ostream& os, Event s)
     {
