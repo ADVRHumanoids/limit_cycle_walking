@@ -365,7 +365,8 @@ double virtualConstraintsNode::sense_q1()
 //         double theta_calc = atan2(world_to_com(1) - _current_world_to_com(1), world_to_com(0) - _current_world_to_com(0));
 //         std::cout << "theta_calc: " << theta_calc << std::endl;
     
-        q1 = atan(dist_com(0)/ - left_ankle_to_com(2)) - _initial_param.get_max_inclination(); // HACK
+//         q1 = atan(dist_com(0)/ - left_ankle_to_com(2)) - _initial_param.get_max_inclination(); // HACK
+        q1 = atan(dist_com(0)/ - left_ankle_to_com(2)) - _q1_max; // HACK
         
 
     }
@@ -387,12 +388,20 @@ double virtualConstraintsNode::sense_q1()
                
         dist_com.head(2) = _R_steer_local * dist_com.head(2); // rotate back CoM
         
-//         std::cout << "theta: " << theta << std::endl;
-//         double theta_calc = atan2(world_to_com(1) - _current_world_to_com(1), world_to_com(0) - _current_world_to_com(0));
-//         std::cout << "theta_calc: " << theta_calc << std::endl;
         
-        q1 = atan(dist_com(0)/- stance_ankle_to_com(2)) - _initial_param.get_max_inclination(); // HACK
-
+        
+    double offset_q1;
+        if (_step_counter >= _first_step_steer+1  && _step_counter < _last_step_steer+1)
+    {
+        offset_q1 = 0.01;
+    }
+    else
+    {
+        offset_q1 = 0.05;
+    }
+    
+        q1 = atan(dist_com(0)/- stance_ankle_to_com(2)) - offset_q1; // HACK
+//         q1 = atan(dist_com(0)/- stance_ankle_to_com(2)) - _q1_max; // HACK
     }
 
     return q1;
@@ -495,6 +504,7 @@ bool virtualConstraintsNode::real_impacts()
 
 bool virtualConstraintsNode::fake_impacts()
 { 
+                
     _cond_q = (sense_q1() >= _q1_max);
     _cond_step = fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3;
     
@@ -637,7 +647,6 @@ void virtualConstraintsNode::exe(double time)
 
         if (impact_routine())
         {    
-//             _q1_min = sense_q1();
             _reset_condition = _q1_temp;
 //             _q1_temp = 0; //ver2
             
@@ -1243,14 +1252,16 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 
                 if (_step_counter >= _first_step_steer && _step_counter < _last_step_steer)
                 {
-                    
-                    q1_max_new = _q1_max; // change step length
+                    _q1_max = 0.01;
+                    q1_max_new = 0.01; // change step length
                     double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),
                                     sin(theta), cos(theta);
                 }
                 else
                 {
+                    _q1_max = 0.05;
+                    q1_max_new = 0.05;
                     double theta = 0;
                     R_steer << cos(theta), -sin(theta),
                                 sin(theta), cos(theta); 
@@ -1264,10 +1275,10 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 /*----------------------------------------------------*/
                 
                 std::cout << "q1: " << q1 << std::endl;
-                Eigen::Vector2d disp_com;
+                Eigen::Vector2d disp_com; // displacement in the xy plane
                 disp_com << - _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(q1), 0; // displacement of com in x
                 disp_com = R_steer * disp_com; // angle steering
-                std::cout << "disp_com: " << disp_com.transpose() << std::endl;
+//                 std::cout << "disp_com: " << disp_com.transpose() << std::endl;
                 
                 _final_com_position.head(2) = _initial_com_position.head(2) + disp_com;
                 
@@ -1485,8 +1496,9 @@ bool virtualConstraintsNode::initialize(double time)
     double dt = _dt; /*rate of ros*/
     _t_before_first_step = 0; /*preparation time in the first step for the com to swing laterally before stepping */
     
-    _q1_min = sense_q1(); /* min angle of inclination, starting inclination of the robot*/
     _q1_max = _initial_param.get_max_inclination(); /*max angle of inclination of the robot*/
+    _q1_min = sense_q1(); /* min angle of inclination, starting inclination of the robot*/
+    
     _q1_start = 0; /*starting q1, incremented every time that the robot stops (when restart, it needs it)*/
     _step_duration = _initial_param.get_duration_step(); 
 
@@ -1542,9 +1554,9 @@ bool virtualConstraintsNode::initialize(double time)
 
     
     /* steer */
-    _theta_steer = M_PI/3; //M_PI/3//M_PI/8;
+    _theta_steer = 0; //M_PI/3//M_PI/8;
     _first_step_steer = 3;
-    _last_step_steer = 5;
+    _last_step_steer = 10;
     
     
 

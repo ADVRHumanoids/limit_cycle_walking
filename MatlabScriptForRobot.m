@@ -41,6 +41,8 @@ plot(foot_pos_left(1,:), foot_pos_left(2,:));hold on; % actual
 plot(foot_pos_right(1,:), foot_pos_right(2,:));hold on; % actual
 
 plot(time, q1_sensed); hold on;
+plot(time, q1_max); hold on;
+plot(time, q1_min); hold on;
 
 plot(dist_com'); hold on;
 plot(left_ankle_to_com_z); hold on;
