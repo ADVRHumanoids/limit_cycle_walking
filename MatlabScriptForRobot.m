@@ -6,7 +6,7 @@ plot(time, com_pos(2,:)'); hold on; %% real trajectory
 
 
 plot(time, initial_com_position);
-plot(time, final_com_position);
+plot(time, final_com_position(2,:));
 
 plot(time, initial_sole_position);
 plot(time, final_sole_position);

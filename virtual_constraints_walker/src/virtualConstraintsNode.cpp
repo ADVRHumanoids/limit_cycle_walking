@@ -990,7 +990,7 @@ void virtualConstraintsNode::commander(double time)
         }
 
         delta_com_rot.head(2) = R_steer_local * delta_com.head(2);
-        delta_com_rot(2) = 0;
+//         delta_com_rot(2) = 0;
         /* ---------------------------------------------------------------------------------------------- */
 //         Eigen::Vector3d someth = _poly_com.get_com_initial_position();
 //         someth(1) = 0;
@@ -1186,7 +1186,7 @@ bool virtualConstraintsNode::ST_idle(double time)
 bool virtualConstraintsNode::ST_walk(double time, Step step_type)
 {
 
-    _com_trajectory(1) = 0; /* HACK! to keep the CoM in the middle of the walk*/
+//     _com_trajectory(1) = 0; /* HACK! to keep the CoM in the middle of the walk*/
     
 //     _initial_com_position = _current_pose_ROS.get_com();
     _initial_com_position = _final_com_position;
@@ -1241,9 +1241,11 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 Eigen::Matrix2d R_steer;
                 
                 
-                if (_step_counter >= _first_step_steer && _step_counter < _first_step_steer)
+                if (_step_counter >= _first_step_steer && _step_counter < _last_step_steer)
                 {
-                    double theta = _theta_steer;
+                    
+                    q1_max_new = _q1_max; // change step length
+                    double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),
                                     sin(theta), cos(theta);
                 }
@@ -1257,11 +1259,6 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 /*----------------generate q1-------------------------*/
                 double q1 = (q1_max_new - _q1_min);
                 
-                // needed for the first inclination (if any) of the robot. The step needs to travel independently _q1_max
-//                 if (_current_state == State::STARTING)
-//                 {
-//                     q1 = q1_max_new;
-//                 }
 
                 _steep_coeff = (q1_max_new - _q1_min)/_step_duration;
                 /*----------------------------------------------------*/
@@ -1545,7 +1542,7 @@ bool virtualConstraintsNode::initialize(double time)
 
     
     /* steer */
-    _theta_steer = 0; //M_PI/3//M_PI/8;
+    _theta_steer = M_PI/3; //M_PI/3//M_PI/8;
     _first_step_steer = 3;
     _last_step_steer = 5;
     
