@@ -18,7 +18,7 @@
     
 virtualConstraintsNode::virtualConstraintsNode()
     {
-//         initialize_cmd_fake_q1(); //TODO
+//         initialze_cmd_fake_q1(); //TODO
         
         std::string this_node_name = ros::this_node::getName();
         _logger = XBot::MatLogger::getLogger("/tmp/" + this_node_name);
@@ -327,7 +327,7 @@ double virtualConstraintsNode::sense_q1()
 //     std::cout << "get_world_to_com: " << _current_pose_ROS.get_world_to_com().transpose() << std::endl;
     Eigen::Matrix2d _R_steer_local;
     double theta;
-    if (_step_counter >= _first_step_steer  && _step_counter < _last_step_steer)
+    if (_step_counter >= 4  && _step_counter < 15)
     {
         theta = - _theta_steer;
         _R_steer_local << cos(theta), -sin(theta),
@@ -389,13 +389,33 @@ double virtualConstraintsNode::sense_q1()
         dist_com.head(2) = _R_steer_local * dist_com.head(2); // rotate back CoM
         
         
-        
+    /* take care of the lenght of the step*/
     double offset_q1;
-        if (_step_counter >= _first_step_steer+1  && _step_counter < _last_step_steer+1)
+    if (_step_counter >= 4+1  && _step_counter < 5+1) /*Left*/
     {
-        offset_q1 = 0.01;
+        offset_q1 = 0.001;
     }
-    else
+    else if (_step_counter >= 5+1 && _step_counter < 6+1) /*Right*/
+    {
+        offset_q1 = 0.05;
+    }
+    else if (_step_counter >= 6+1 && _step_counter < 7+1) /*Left*/
+    {
+        offset_q1 = 0.001;
+    }
+    else if (_step_counter >= 7+1 && _step_counter < 8+1) /*Right*/
+    {
+        offset_q1 = 0.05;
+    }
+    else if (_step_counter >= 8+1 && _step_counter < 9+1) /*Left*/
+    {
+        offset_q1 = 0.001;
+    }
+    else if (_step_counter >= 9+1 && _step_counter < 10+1) /*Right*/
+    {
+        offset_q1 = 0.05;
+    }
+    else       
     {
         offset_q1 = 0.05;
     }
@@ -985,7 +1005,7 @@ void virtualConstraintsNode::commander(double time)
        
        Eigen::Matrix2d R_steer_local;
        
-        if (_step_counter >= _first_step_steer && _step_counter < _last_step_steer)
+        if (_step_counter >= 4 && _step_counter < 15)
         {
             double theta = _theta_steer;
                 R_steer_local << cos(theta), -sin(theta),
@@ -1250,10 +1270,58 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 Eigen::Matrix2d R_steer;
                 
                 
-                if (_step_counter >= _first_step_steer && _step_counter < _last_step_steer)
+                if (_step_counter >= 4 && _step_counter < 5)       /*Left*/
                 {
-                    _q1_max = 0.01;
-                    q1_max_new = 0.01; // change step length
+                    _q1_max = 0.001;
+                    q1_max_new = _q1_max; // change step length
+                    double theta = _theta_steer; // change heading
+                    R_steer << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
+                {
+                    _q1_max = 0.05;
+                    q1_max_new = _q1_max; // change step length
+                    double theta = _theta_steer; // change heading
+                    R_steer << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 6 && _step_counter < 7)   /*Left*/
+                {
+                    _q1_max = 0.001;
+                    q1_max_new = _q1_max; // change step length
+                    double theta = _theta_steer; // change heading
+                    R_steer << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 7 && _step_counter < 8)  /*Right*/
+                {
+                    _q1_max = 0.05;
+                    q1_max_new = _q1_max; // change step length
+                    double theta = _theta_steer; // change heading
+                    R_steer << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 8 && _step_counter < 9)   /*Left*/
+                {
+                    _q1_max = 0.001;
+                    q1_max_new = _q1_max; // change step length
+                    double theta = _theta_steer; // change heading
+                    R_steer << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 9 && _step_counter < 10) /*Right*/
+                {
+                    _q1_max = 0.05;
+                    q1_max_new = _q1_max; // change step length
+                    double theta = _theta_steer; // change heading
+                    R_steer << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 10 && _step_counter < 15)
+                {
+                    _q1_max = 0.05;
+                    q1_max_new = _q1_max; // change step length
                     double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),
                                     sin(theta), cos(theta);
@@ -1261,12 +1329,11 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 else
                 {
                     _q1_max = 0.05;
-                    q1_max_new = 0.05;
+                    q1_max_new = _q1_max;
                     double theta = 0;
                     R_steer << cos(theta), -sin(theta),
                                 sin(theta), cos(theta); 
                 }
-                    
                 /*----------------generate q1-------------------------*/
                 double q1 = (q1_max_new - _q1_min);
                 
@@ -1274,11 +1341,15 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 _steep_coeff = (q1_max_new - _q1_min)/_step_duration;
                 /*----------------------------------------------------*/
                 
-                std::cout << "q1: " << q1 << std::endl;
+                std::cout << "q1_max: " << q1_max_new << std::endl;
+                std::cout << "q1_min: " << _q1_min << std::endl;
+                std::cout << "angle: " << q1 << std::endl;
+                std::cout << "h: " <<  _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() << std::endl;
+               
                 Eigen::Vector2d disp_com; // displacement in the xy plane
                 disp_com << - _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(q1), 0; // displacement of com in x
                 disp_com = R_steer * disp_com; // angle steering
-//                 std::cout << "disp_com: " << disp_com.transpose() << std::endl;
+                std::cout << "disp_com: " << disp_com.transpose() << std::endl;
                 
                 _final_com_position.head(2) = _initial_com_position.head(2) + disp_com;
                 
@@ -1292,15 +1363,24 @@ bool virtualConstraintsNode::compute_step(Step step_type)
 //                 std::cout << "initial_sole_pose: " << _initial_sole_pose.translation().transpose() << std::endl;
 //                 std::cout << "final_sole_pose: " << _final_sole_pose.translation().transpose() << std::endl;
                 
-
+                double theta_heading;
                 /* orientation */
                 
+                if (_step_counter >= 4 && _step_counter < 15)
+                {
+                    theta_heading = _theta_steer;
+                }
+                else
+                {
+                    theta_heading = 0;
+                }
+                
                 //Sole
-//                 _final_sole_pose.linear() = (Eigen::AngleAxisd(_theta_steer, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+                _final_sole_pose.linear() = (Eigen::AngleAxisd(theta_heading, Eigen::Vector3d::UnitZ())).toRotationMatrix();
                 
                 //Waist
                 
-//                 _final_waist_pose.linear() = (Eigen::AngleAxisd(_theta_steer, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+                _final_waist_pose.linear() = (Eigen::AngleAxisd(theta_heading, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 }
 
 void virtualConstraintsNode::planner(double time) 
@@ -1554,9 +1634,9 @@ bool virtualConstraintsNode::initialize(double time)
 
     
     /* steer */
-    _theta_steer = 0; //M_PI/3//M_PI/8;
-    _first_step_steer = 3;
-    _last_step_steer = 10;
+    _theta_steer = M_PI/10; //M_PI/3//M_PI/8;
+//     _first_step_steer = 3;
+//     _last_step_steer = 5;
     
     
 
