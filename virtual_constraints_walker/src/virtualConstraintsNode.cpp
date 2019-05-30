@@ -327,6 +327,8 @@ double virtualConstraintsNode::sense_q1()
 //     std::cout << "get_world_to_com: " << _current_pose_ROS.get_world_to_com().transpose() << std::endl;
     Eigen::Matrix2d _R_steer_local;
     double theta;
+    
+       /* TODO refactor: this is needed for the steering */
     if (_step_counter >= 4  && _step_counter < 15)
     {
         theta = - _theta_steer;
@@ -388,7 +390,7 @@ double virtualConstraintsNode::sense_q1()
                
         dist_com.head(2) = _R_steer_local * dist_com.head(2); // rotate back CoM
         
-        
+    /* TODO refactor: this is needed for the lenght of the step */
     /* take care of the lenght of the step*/
     double offset_q1;
     if (_step_counter >= 4+1  && _step_counter < 5+1) /*Left*/
@@ -995,14 +997,13 @@ void virtualConstraintsNode::commander(double time)
         Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
         
         
-//         delta_com(0) = - com_to_ankle_distance.z() * tan(_q1);
         
         delta_com(0) = - com_to_ankle_distance.z() * tan(_q1);
         delta_com(1) = lateral_com(time).coeff(0);
         delta_com(2) = 0;
         
        /* ------------------------------------- steer -------------------------------------------------- */
-       
+       /* TODO refactor: this is needed for the steering */
        Eigen::Matrix2d R_steer_local;
        
         if (_step_counter >= 4 && _step_counter < 15)
@@ -1019,13 +1020,14 @@ void virtualConstraintsNode::commander(double time)
         }
 
         delta_com_rot.head(2) = R_steer_local * delta_com.head(2);
-//         delta_com_rot(2) = 0;
         /* ---------------------------------------------------------------------------------------------- */
-//         Eigen::Vector3d someth = _poly_com.get_com_initial_position();
-//         someth(1) = 0;
-//         _poly_com.set_com_initial_position(someth);
-//          Eigen::Vector3d init(_poly_com.get_com_initial_position().coeff(0), 0, _poly_com.get_com_initial_position().coeff(2));
+        
         _com_trajectory = _poly_com.get_com_initial_position() + delta_com_rot;
+        
+        /* -------------------------------------- fake com ---------------------------------------------- */
+        
+        _com_trajectory_fake = _initial_com_position_fake + delta_com;
+        /* ---------------------------------------------------------------------------------------------- */
   
         
         
@@ -1036,15 +1038,25 @@ void virtualConstraintsNode::commander(double time)
 
         
         /* for stabilizer */
+        double zmp_sag_ref = _com_trajectory.coeff(0);
         
-        _zmp_ref << _com_trajectory.coeff(0), _zmp_window_y.coeff(0), 0; 
+        Eigen::Vector2d zmp_lat_ref;
+        zmp_lat_ref << _com_trajectory_fake.coeff(0), _zmp_window_y.coeff(0);
+        
+        _logger->add("zmp_lat_ref", zmp_lat_ref);
+        
+        zmp_lat_ref = R_steer_local * zmp_lat_ref;
+        _zmp_ref << zmp_sag_ref, zmp_lat_ref.coeff(1), 0;
         
         /* send waist*/
         
-        _waist_trajectory = _final_waist_pose; // TODO NOT WORKING
+        _waist_trajectory = _final_waist_pose;
         
 //         _logger->add("traj_steered", traj_steered);
 //         _logger->add("old_com_pos", _old_com_pos);
+        _logger->add("zmp_lat_ref_rot", zmp_lat_ref);
+        
+        
         _logger->add("delta_com_rot", delta_com_rot);
         
         _logger->add("com_vel", sense_com_velocity());
@@ -1066,10 +1078,12 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("foot_pos_right", _current_pose_ROS.get_sole(robot_interface::Side::Right));
         _logger->add("foot_pos_left", _current_pose_ROS.get_sole(robot_interface::Side::Left));
         
+        _logger->add("com_trajectory_fake", _com_trajectory_fake);
         _logger->add("foot_trajectory_fake", _foot_trajectory_fake.translation());
         
         _logger->add("com_trajectory", _com_trajectory);
         _logger->add("foot_trajectory", _foot_trajectory.translation());
+        
         
         _logger->add("time", _internal_time);
         
@@ -1102,9 +1116,9 @@ void virtualConstraintsNode::commander(double time)
 
         _logger->add("vel_q1", _vel_q1);
         _logger->add("steepness", _steep_coeff);
+        
        
-        _logger->add("initial_com_x", _poly_com.get_com_initial_position().coeff(0));
-        _logger->add("initial_com_y", _poly_com.get_com_initial_position().coeff(1));
+        
         _logger->add("delta_com", delta_com);
 //         _logger->add("zmp_x", calc_zmp_x(delta_com.coeff(0)));
         
@@ -1147,8 +1161,9 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("step_counter", _step_counter);
         _logger->add("distance_feet", _distance_feet);
         _logger->add("current_world_to_com", _current_world_to_com);
-        _logger->add("get_com_final_position",  _poly_com.get_com_final_position());
-        _logger->add("get_com_initial_position",  _poly_com.get_com_initial_position());
+        _logger->add("com_final_position",  _poly_com.get_com_final_position());
+        _logger->add("com_initial_position",  _poly_com.get_com_initial_position());
+        
 //         tilt_x_meas();
         _logger->add("initial_com_position", _initial_com_position);
         _logger->add("final_com_position", _final_com_position);
@@ -1156,9 +1171,10 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("initial_sole_position", _initial_sole_pose.translation());
         _logger->add("final_sole_position", _final_sole_pose.translation());
                 
-        
         _logger->add("cond_q", _cond_q);
         _logger->add("cond_step", _cond_step);
+        
+        
         send_com(_com_trajectory);
         send_step(_foot_trajectory);
         send_zmp(_zmp_ref);
@@ -1178,6 +1194,7 @@ bool virtualConstraintsNode::ST_idle(double time)
     _initial_com_position = _final_com_position; // the reason is, I get as initial position when in IDLE the final position computed (in computestep)
 //     _initial_com_position = _poly_com.get_com_initial_position();
 //     _initial_com_position(0) =  _current_pose_ROS.get_com().coeff(0);
+    _initial_com_position_fake = _final_com_position_fake;
     
     _initial_sole_pose = _current_pose_ROS.get_sole_tot(_current_side);
 //     _initial_sole_pose = _final_sole_pose;
@@ -1220,7 +1237,7 @@ bool virtualConstraintsNode::ST_walk(double time, Step step_type)
 //     _initial_com_position = _current_pose_ROS.get_com();
     _initial_com_position = _final_com_position;
 //     _initial_com_position = _com_trajectory;
-    
+    _initial_com_position_fake = _final_com_position_fake;
 //     std::cout << "com_traj: " << _com_trajectory.transpose() << std::endl; // trajectory planned by virtual_constraints_node
 //     std::cout << "com_computed: " << _final_com_position.transpose() << std::endl; // trajectory computed ahead by virtual_constraints_node
 //     std::cout << "com_cartesio: " << _current_pose_ROS.get_com().transpose() << std::endl; // trajectory computed by cartesi/o
@@ -1232,6 +1249,8 @@ bool virtualConstraintsNode::ST_walk(double time, Step step_type)
     _final_sole_pose = _initial_sole_pose;
     _final_com_position = _initial_com_position;
     _initial_waist_pose = _final_waist_pose;
+    
+    _final_com_position_fake = _initial_com_position_fake;
     
     compute_step(step_type);
     
@@ -1263,13 +1282,15 @@ bool virtualConstraintsNode::ST_walk(double time, Step step_type)
 bool virtualConstraintsNode::compute_step(Step step_type)
 {
                 
-    
                 double q1_max_new;
                     
                 q1_max_new = _q1_max;
                 Eigen::Matrix2d R_steer;
                 
+                _q1_max = 0.05;
+                q1_max_new = _q1_max;
                 
+                /* TODO refactor: this is needed for the steering and the length step */
                 if (_step_counter >= 4 && _step_counter < 5)       /*Left*/
                 {
                     _q1_max = 0.001;
@@ -1344,25 +1365,22 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 std::cout << "q1_max: " << q1_max_new << std::endl;
                 std::cout << "q1_min: " << _q1_min << std::endl;
                 std::cout << "angle: " << q1 << std::endl;
-                std::cout << "h: " <<  _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() << std::endl;
                
                 Eigen::Vector2d disp_com; // displacement in the xy plane
+                Eigen::Vector2d disp_com_rot; // displacement in the xy plane
                 disp_com << - _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(q1), 0; // displacement of com in x
-                disp_com = R_steer * disp_com; // angle steering
-                std::cout << "disp_com: " << disp_com.transpose() << std::endl;
                 
-                _final_com_position.head(2) = _initial_com_position.head(2) + disp_com;
+                disp_com_rot = R_steer * disp_com; // angle steering
+                std::cout << "disp_com_rot: " << disp_com_rot.transpose() << std::endl;
                 
-//                 std::cout << "initial_com_position: " << _initial_com_position.transpose() << std::endl;
-//                 std::cout << "final_com_position: " << _final_com_position.transpose() << std::endl;
+                _final_com_position.head(2) = _initial_com_position.head(2) + disp_com_rot;
+                _final_com_position_fake.head(2) = _initial_com_position_fake.head(2) + disp_com;
+
                 
-                /*TODO this is not good, apparently, because it drifts. Do something*/
+
                 _final_sole_pose.translation() = _current_pose_ROS.get_sole_tot(_other_side).translation() + 2 * (_final_com_position - _current_pose_ROS.get_sole_tot(_other_side).translation());  // get final step given the displacement vector
-//                 _final_sole_pose.translation().head(2) = _final_sole_pose.translation().head(2) + 2 *  disp_com;
-                
-//                 std::cout << "initial_sole_pose: " << _initial_sole_pose.translation().transpose() << std::endl;
-//                 std::cout << "final_sole_pose: " << _final_sole_pose.translation().transpose() << std::endl;
-                
+
+                /* TODO refactor: this is needed for the steering (orientation) */
                 double theta_heading;
                 /* orientation */
                 
@@ -1375,10 +1393,10 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                     theta_heading = 0;
                 }
                 
-                //Sole
+                /* Sole */
                 _final_sole_pose.linear() = (Eigen::AngleAxisd(theta_heading, Eigen::Vector3d::UnitZ())).toRotationMatrix();
                 
-                //Waist
+                /* Waist */
                 
                 _final_waist_pose.linear() = (Eigen::AngleAxisd(theta_heading, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 }
@@ -1560,6 +1578,9 @@ bool virtualConstraintsNode::initialize(double time)
     _final_sole_pose = _initial_sole_pose;
     _final_com_position = _initial_com_position;
 
+    _initial_com_position_fake = _initial_com_position;
+    _final_com_position_fake = _final_com_position;
+    
     _com_trajectory  = _initial_com_position;
     /*just to run it once, heat up the process*/
     planner(time); /*void run of planner*/
@@ -1751,7 +1772,7 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
     /**
      * generate previewed position of steps in the future
      **/
-    
+    /* TODO change here because there are no more FULL and HALF steps */
     if (type_step == Step::FULL)
     {
         length_step = _nominal_full_step;

@@ -55,3 +55,7 @@ end
 
 %% stab
 plot(time, zmp_stab);
+
+
+plot(com_trajectory_fake'); hold on;
+plot(com_trajectory'); hold on;

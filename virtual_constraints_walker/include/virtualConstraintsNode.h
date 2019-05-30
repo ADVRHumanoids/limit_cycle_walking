@@ -615,6 +615,8 @@ protected:
     Eigen::Vector2d _pointsBezier_x;
     
     Eigen::Vector3d _initial_com_position, _final_com_position;
+    Eigen::Vector3d _initial_com_position_fake, _final_com_position_fake;
+    
     Eigen::Vector3d _first_com_pos;
 
 //     Eigen::Vector3d _initial_sole_position, _final_sole_position;
