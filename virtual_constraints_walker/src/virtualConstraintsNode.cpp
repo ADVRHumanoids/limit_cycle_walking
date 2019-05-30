@@ -399,11 +399,11 @@ double virtualConstraintsNode::sense_q1()
     }
     else if (_step_counter >= 5+1 && _step_counter < 6+1) /*Right*/
     {
-        offset_q1 = 0.05;
+        offset_q1 = 0.02;
     }
     else if (_step_counter >= 6+1 && _step_counter < 7+1) /*Left*/
     {
-        offset_q1 = 0.001;
+        offset_q1 = 0.05;
     }
     else if (_step_counter >= 7+1 && _step_counter < 8+1) /*Right*/
     {
@@ -411,7 +411,7 @@ double virtualConstraintsNode::sense_q1()
     }
     else if (_step_counter >= 8+1 && _step_counter < 9+1) /*Left*/
     {
-        offset_q1 = 0.001;
+        offset_q1 = 0.05;
     }
     else if (_step_counter >= 9+1 && _step_counter < 10+1) /*Right*/
     {
@@ -1038,26 +1038,24 @@ void virtualConstraintsNode::commander(double time)
 
         
         /* for stabilizer */
-        double zmp_sag_ref = _com_trajectory.coeff(0);
+        double zmp_sag_ref, zmp_lat_ref;
+        zmp_sag_ref = _com_trajectory.coeff(0);
         
-        Eigen::Vector2d zmp_lat_ref;
-        zmp_lat_ref << _com_trajectory_fake.coeff(0), _zmp_window_y.coeff(0);
         
-        _logger->add("zmp_lat_ref", zmp_lat_ref);
-        
-        zmp_lat_ref = R_steer_local * zmp_lat_ref;
-        _zmp_ref << zmp_sag_ref, zmp_lat_ref.coeff(1), 0;
+        int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
+        zmp_lat_ref = _current_pose_ROS.get_sole_tot(_other_side).translation().coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
+
+        _zmp_ref << zmp_sag_ref, zmp_lat_ref, 0;
+
+        if (_started == 0 || (_started == 1 && _internal_time < _start_walk))
+        {
+            _zmp_ref << _first_com_pos.coeff(0), 0, 0;
+        }
         
         /* send waist*/
         
         _waist_trajectory = _final_waist_pose;
         
-//         _logger->add("traj_steered", traj_steered);
-//         _logger->add("old_com_pos", _old_com_pos);
-        _logger->add("zmp_lat_ref_rot", zmp_lat_ref);
-        
-        
-        _logger->add("delta_com_rot", delta_com_rot);
         
         _logger->add("com_vel", sense_com_velocity());
         
@@ -1301,7 +1299,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 }
                 else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
                 {
-                    _q1_max = 0.05;
+                    _q1_max = 0.02;
                     q1_max_new = _q1_max; // change step length
                     double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),
@@ -1309,7 +1307,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 }
                 else if (_step_counter >= 6 && _step_counter < 7)   /*Left*/
                 {
-                    _q1_max = 0.001;
+                    _q1_max = 0.05;
                     q1_max_new = _q1_max; // change step length
                     double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),
@@ -1325,7 +1323,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 }
                 else if (_step_counter >= 8 && _step_counter < 9)   /*Left*/
                 {
-                    _q1_max = 0.001;
+                    _q1_max = 0.05;
                     q1_max_new = _q1_max; // change step length
                     double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),
@@ -1655,7 +1653,7 @@ bool virtualConstraintsNode::initialize(double time)
 
     
     /* steer */
-    _theta_steer = M_PI/10; //M_PI/3//M_PI/8;
+    _theta_steer = M_PI/10; //M_PI/10 // M_PI/3//M_PI/8;
 //     _first_step_steer = 3;
 //     _last_step_steer = 5;
     

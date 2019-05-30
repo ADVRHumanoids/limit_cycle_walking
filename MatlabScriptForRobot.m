@@ -9,6 +9,7 @@ plot(time, com_pos(2,:)'); hold on; %% real trajectory
 % planned
 figure()
 plot(final_com_position(1,:), final_com_position(2,:), 'o'); hold on;
+plot(initial_com_position(1,:), initial_com_position(2,:), 'o'); hold on;
 plot(com_trajectory(1,:), com_trajectory(2,:)); hold on;
 plot(foot_trajectory(1,:), foot_trajectory(2,:)); hold on;
 % real
@@ -52,10 +53,20 @@ for i = 1:size(window_preview,2)
     ylim([-.2,.2])
     drawnow;
 end
-
-%% stab
-plot(time, zmp_stab);
-
-
+%% com real and fake
 plot(com_trajectory_fake'); hold on;
 plot(com_trajectory'); hold on;
+%% stab
+plot(time, zmp_ref); hold on;
+plot(time, zmp_stab); hold on;
+
+% ---------------------- %
+figure()
+plot(zmp_measured'); hold on;
+plot(zmp_ref'); hold on;
+
+plot(zmp_measured(1,:)'); hold on;
+plot(zmp_ref(1,:)'); hold on;
+
+plot(zmp_measured(2,:)'); hold on;
+plot(zmp_ref(2,:)'); hold on;
