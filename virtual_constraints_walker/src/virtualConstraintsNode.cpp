@@ -381,7 +381,6 @@ double virtualConstraintsNode::sense_q1()
     swing_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
     stance_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(other_side);
     
-    
         
         world_to_com = _current_pose_ROS.get_world_to_com(); //current world to CoM
         
@@ -395,11 +394,11 @@ double virtualConstraintsNode::sense_q1()
     double offset_q1;
     if (_step_counter >= 4+1  && _step_counter < 5+1) /*Left*/
     {
-        offset_q1 = 0.001;
+        offset_q1 = 0.05;
     }
     else if (_step_counter >= 5+1 && _step_counter < 6+1) /*Right*/
     {
-        offset_q1 = 0.02;
+        offset_q1 = 0.05;
     }
     else if (_step_counter >= 6+1 && _step_counter < 7+1) /*Left*/
     {
@@ -1292,7 +1291,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 /* TODO refactor: this is needed for the steering and the length step */
                 if (_step_counter >= 4 && _step_counter < 5)       /*Left*/
                 {
-                    _q1_max = 0.001;
+                    _q1_max = 0.05;
                     q1_max_new = _q1_max; // change step length
                     double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),
@@ -1300,7 +1299,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 }
                 else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
                 {
-                    _q1_max = 0.02;
+                    _q1_max = 0.05;
                     q1_max_new = _q1_max; // change step length
                     double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),

@@ -70,3 +70,18 @@ plot(zmp_ref(1,:)'); hold on;
 
 plot(zmp_measured(2,:)'); hold on;
 plot(zmp_ref(2,:)'); hold on;
+
+
+figure();
+plot(zmp_measured(2,:)'); hold on;
+plot(zmp_ref(2,:)'); hold on;
+
+% -------- % 
+% plot(CoMStabilizer_delta_com(2,:)); hold on;
+figure()
+plot(CoMStabilizer_com_updated(2,:)); hold on;
+plot(CoMStabilizer_com_pos_desired(2,:),'r--'); hold on;
+figure()
+plot(CoMStabilizer_zmp_measured(2,:)); hold on;
+plot(CoMStabilizer_zmp_ref(2,:),'r--'); hold on;
+plot(CoMStabilizer_zmp_scaled(2,:),'k--'); hold on;
