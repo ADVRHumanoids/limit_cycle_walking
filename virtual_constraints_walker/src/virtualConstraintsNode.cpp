@@ -1041,10 +1041,11 @@ void virtualConstraintsNode::commander(double time)
         double zmp_sag_ref, zmp_lat_ref;
         zmp_sag_ref = _com_trajectory.coeff(0);
         
-        
-        int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
-        zmp_lat_ref = _current_pose_ROS.get_sole_tot(_other_side).translation().coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
-
+        /* send ZMP ref before kajita */
+//         int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
+//         zmp_lat_ref = _current_pose_ROS.get_sole_tot(_other_side).translation().coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
+        /* send ZMP ref after kajita */
+        zmp_lat_ref = _MpC_lat->_C_zmp*_com_y;
         _zmp_ref << zmp_sag_ref, zmp_lat_ref, 0;
 
         if (_started == 0 || (_started == 1 && _internal_time < _start_walk))
@@ -1653,7 +1654,7 @@ bool virtualConstraintsNode::initialize(double time)
 
     
     /* steer */
-    _theta_steer = M_PI/10; //M_PI/10 // M_PI/3//M_PI/8;
+    _theta_steer = 0; //M_PI/10 // M_PI/3//M_PI/8;
 //     _first_step_steer = 3;
 //     _last_step_steer = 5;
     
