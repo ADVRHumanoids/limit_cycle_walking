@@ -134,13 +134,14 @@ bool virtualConstraintsNode::get_param_ros()
 Eigen::Vector3d virtualConstraintsNode::straighten_up_goal()
     {      
         Eigen::Vector3d straight_com = _current_pose_ROS.get_com();
-        
+        /* center the CoM w.r.t. the feet */
         straight_com(0) = _current_pose_ROS.get_sole(_current_side).coeff(0) + _initial_param.get_lean_forward();
-//         straight_com(1) = 0; //TODO put in
+        straight_com(1) = (_current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1) + _current_pose_ROS.get_sole(robot_interface::Side::Right).coeff(1))/2; //TODO put in
         straight_com(2) = _initial_param.get_crouch();
         
         /*TODO PUT DEFAULT POSITION*/
         _poly_com.set_com_initial_position(straight_com);
+        std::cout << straight_com.transpose() << std::endl;
         return straight_com;
     }
     
@@ -530,7 +531,7 @@ bool virtualConstraintsNode::fake_impacts()
     _cond_q = (sense_q1() >= _q1_max);
     _cond_step = fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3;
     
-    if (_cond_step && _cond_q) //1e-4
+    if (_cond_step && _cond_q)
     {
         _time_fake_impact = _internal_time;
         return true;

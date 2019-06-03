@@ -3,8 +3,8 @@ solver_options:
     back_end: "qpoases"
 
 stack:
-    - ["LFoot", "RFoot", "PosturalPennacchio"]
-    - ["CoMStabilizer"] # CoM # CoMStabilizer
+    - ["LFoot", "RFoot"] #PosturalPennacchio
+    - ["CoMStabilizer", "Torso"] # CoM # CoMStabilizer #"Torso"
     - ["WaistOrient"]
     - ["Postural"]
     
@@ -42,8 +42,8 @@ CoMStabilizer:
     type: "CoMStabilizer"
     lambda: 1
     foot_size: [0.22, 0.11]
-    K: [0.0, 0.06] # 0.01, 0.01 // 0.0, 0.06
-    D: [0.0, -0.01] # -0.001, -0.005 // 0.0, -0.01
+    K: [0.0, 0.00] # 0.01, 0.01 // 0.0, 0.06
+    D: [0.0, 0.00] # -0.001, -0.005 // 0.0, -0.01
     l_sole: "l_sole"
     r_sole: "r_sole"
     ft_sensor_l_sole: "l_leg_ft"
@@ -60,7 +60,7 @@ PosturalPennacchio:
 
 Postural:
     type: "Postural"
-    lambda: .01
+    lambda: 0.01
 
 LArm:
     type: "Cartesian"
@@ -74,4 +74,9 @@ RArm:
     base_link: "world"
     lambda: 0.1
 
-
+Torso:
+    type: "Cartesian"
+    distal_link: "torso"
+    base_link: "world"
+    lambda: 0.1
+    indices: [3]

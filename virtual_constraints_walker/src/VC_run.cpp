@@ -16,16 +16,6 @@ int main(int argc, char **argv)
     robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
     
     
-//     std::vector<Eigen::MatrixXd> supportPolygon(VC.get_max_steps());
-    
-// --------initialize robot so that q1 is exactly 0---------
-//     if (ros::ok())
-//     {
-//     robot.sense(); /*inside there is ros::spinOnce*/
-//     VC.straighten_up_action();
-//     VC.sense_q1();
-//     }
-    
     while (ros::ok())
     {
         VC.get_robot().sense();
