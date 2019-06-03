@@ -18,6 +18,13 @@ plot(com_pos(1,:),com_pos(2,:));hold on; % actual
 plot(foot_pos_left(1,:), foot_pos_left(2,:));hold on; % actual 
 plot(foot_pos_right(1,:), foot_pos_right(2,:));hold on; % actual
 
+
+%% 
+plot(time, com_trajectory(1,:)); hold on;
+plot(time, final_com_position(1,:)'); hold on;
+plot(time, initial_com_position(1,:)'); hold on;
+
+plot(time, com_trajectory_fake(1,:));
 %% alpha and tilt   
 % q (tilt)
 figure()
@@ -30,7 +37,7 @@ plot(time, q1_cmd); hold on;
 figure();
 
 plot(time, com_trajectory(1,:)); hold on; % reference
-plot(time, foot_trajectory(1,:));hold on; % reference
+plot(time, foot_trajectory(1,:)); hold on; % reference
 
 plot(time, com_pos(1,:)');hold on; % actual 
 plot(time, foot_pos_left);hold on; % actual 
