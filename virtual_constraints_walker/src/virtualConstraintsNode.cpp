@@ -369,7 +369,7 @@ double virtualConstraintsNode::sense_q1()
 //         std::cout << "theta_calc: " << theta_calc << std::endl;
     
 //         q1 = atan(dist_com(0)/ - left_ankle_to_com(2)) - _initial_param.get_max_inclination(); // HACK
-        q1 = atan(dist_com(0)/ - left_ankle_to_com(2)) - _q1_max; // HACK
+        q1 = atan(dist_com(0)/ fabs(left_ankle_to_com(2))) - _q1_max; // HACK
         
 
     }
@@ -423,7 +423,7 @@ double virtualConstraintsNode::sense_q1()
         offset_q1 = 0.05;
     }
     
-        q1 = atan(dist_com(0)/- stance_ankle_to_com(2)) - offset_q1; // HACK
+        q1 = atan(dist_com(0)/ fabs(stance_ankle_to_com(2))) - offset_q1; // HACK
 //         q1 = atan(dist_com(0)/- stance_ankle_to_com(2)) - _q1_max; // HACK
     }
 
@@ -999,7 +999,7 @@ void virtualConstraintsNode::commander(double time)
         
         
         
-        delta_com(0) = - com_to_ankle_distance.z() * tan(_q1);
+        delta_com(0) = fabs(com_to_ankle_distance.z()) * tan(_q1);
         delta_com(1) = lateral_com(time).coeff(0);
         delta_com(2) = 0;
         
@@ -1368,7 +1368,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                
                 Eigen::Vector2d disp_com; // displacement in the xy plane
                 Eigen::Vector2d disp_com_rot; // displacement in the xy plane
-                disp_com << - _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(q1), 0; // displacement of com in x
+                disp_com << fabs(_current_pose_ROS.get_distance_ankle_to_com(_current_side).z()) * tan(q1), 0; // displacement of com in x
                 
                 disp_com_rot = R_steer * disp_com; // angle steering
                 std::cout << "disp_com_rot: " << disp_com_rot.transpose() << std::endl;
@@ -1605,8 +1605,8 @@ bool virtualConstraintsNode::initialize(double time)
 
     _steep_coeff = 0; //(_q1_max - _q1_min)/_step_duration; /*at first is 0, setted when START command is received*/
 
-    _nominal_full_step = fabs(- 4* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max));
-    _nominal_half_step = fabs(- 2* _current_pose_ROS.get_distance_ankle_to_com(_current_side).z() * tan(_q1_max));
+    _nominal_full_step = fabs(4* fabs(_current_pose_ROS.get_distance_ankle_to_com(_current_side).z()) * tan(_q1_max));
+    _nominal_half_step = fabs(2* fabs(_current_pose_ROS.get_distance_ankle_to_com(_current_side).z()) * tan(_q1_max));
     
 //     std::cout << "Position foot RIGHT: " << "x: " << _current_pose_ROS.get_sole(robot_interface::Side::Right).coeff(0) 
 //                                          << "y: " << _current_pose_ROS.get_sole(robot_interface::Side::Right).coeff(1) 
