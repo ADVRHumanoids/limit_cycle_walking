@@ -11,7 +11,7 @@ real_impacts: false
 force_sensor_threshold_right: 40 70
 force_sensor_threshold_left: 40 70
 walking_forward: true
-max_inclination: -0.05
+max_inclination: 0.05
 mpc_Q: 100000
 mpc_R: 1
 lateral_step: 0.02
