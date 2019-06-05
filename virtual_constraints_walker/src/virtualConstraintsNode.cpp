@@ -442,7 +442,7 @@ bool virtualConstraintsNode::new_q1()
 
     return flag_q1;
 }
-    
+
 
 void virtualConstraintsNode::left_sole_phase()
 {
@@ -1041,10 +1041,12 @@ void virtualConstraintsNode::commander(double time)
         zmp_sag_ref = _com_trajectory.coeff(0);
         
         /* send ZMP ref before kajita */
-//         int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
-//         zmp_lat_ref = _current_pose_ROS.get_sole_tot(_other_side).translation().coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
+//         zmp_lat_ref = _zmp_window_y.coeff(0);
+        /* other way to send ZMP before Kajita, which is basically giving the reference of the stance leg + indent */
+        int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
+        zmp_lat_ref = _current_pose_ROS.get_sole_tot(_other_side).translation().coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
         /* send ZMP ref after kajita */
-        zmp_lat_ref = _MpC_lat->_C_zmp*_com_y;
+//         zmp_lat_ref = _MpC_lat->_C_zmp*_com_y;
         _zmp_ref << zmp_sag_ref, zmp_lat_ref, 0;
 
         if (_started == 0 || (_started == 1 && _internal_time < _start_walk))

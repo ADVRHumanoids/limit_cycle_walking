@@ -42,8 +42,8 @@ CoMStabilizer:
     type: "CoMStabilizer"
     lambda: 1
     foot_size: [0.22, 0.11]
-    K: [0.0, 0.06] # 0.0, 0.06 # 0.01, 0.01 // 0.0, 0.06
-    D: [0.0, -0.01] # 0.0, -0.01 # -0.001, -0.005 // 0.0, -0.01
+    K: [0.05, 0.05] # not bad 0.05, 0.05 //// 0.0, 0.06 // 0.0, 0.1 // extremely compliant, bad 0.0, 0.25
+    D: [-0.01, -0.01] # not bad -0.01, -0.01 // 0.0, -0.01 // 0.0, -0.01 // 0.0, -0.1
     l_sole: "l_sole"
     r_sole: "r_sole"
     ft_sensor_l_sole: "l_leg_ft"
