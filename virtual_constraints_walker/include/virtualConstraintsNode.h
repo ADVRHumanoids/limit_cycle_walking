@@ -350,6 +350,8 @@ public:
     
     void resetter();
     
+    void torso_stabilizer();
+            
     double _entered_last_step = 0;
     Eigen::VectorXd _spatial_zmp_y;
     

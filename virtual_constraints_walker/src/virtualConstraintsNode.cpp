@@ -1188,6 +1188,7 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("cond_q", _cond_q);
         _logger->add("cond_step", _cond_step);
         
+        torso_stabilizer();
         
         send_com(_com_trajectory);
         send_step(_foot_trajectory);
@@ -2024,4 +2025,18 @@ void virtualConstraintsNode::generate_starting_zmp()
     _zmp_starting.segment(first_chunck_pos, chunck_size) << zmp_chunck;
     _zmp_starting.segment(first_chunck_pos+chunck_size+1, chunck_size) << - zmp_chunck;
 //     _zmp_starting.segment(first_chunck_pos+2*chunck_size+1, chunck_size) << zmp_chunck;
+}
+
+
+void virtualConstraintsNode::torso_stabilizer()
+{
+    auto imu_euler = _current_pose_ROS.get_imu_meas().orientation.toRotationMatrix().eulerAngles(0, 1, 2); //TODO
+    Eigen::Vector3d imu_angular = _current_pose_ROS.get_imu_meas().angular_velocity;
+    Eigen::Vector3d imu_linear = _current_pose_ROS.get_imu_meas().linear_acc;
+    
+    _logger->add("imu_orientation", imu_euler);
+    _logger->add("imu_angular", imu_angular);
+    _logger->add("imu_linear", imu_linear);
+    
+    
 }

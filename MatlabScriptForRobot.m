@@ -77,3 +77,32 @@ plot(zmp_ref(1,:)'); hold on;
 
 plot(zmp_measured(2,:)'); hold on;
 plot(zmp_ref(2,:)'); hold on;
+
+
+%% imu
+figure();
+subplot(311)
+plot(imu_orientation(1,:)'); hold on;
+subplot(312)
+plot(imu_orientation(2,:)'); hold on;
+subplot(313)
+plot(imu_orientation(3,:)'); hold on;
+suptitle('orientation')
+
+figure();
+subplot(311)
+plot(imu_angular(1,:)'); hold on;
+subplot(312)
+plot(imu_angular(2,:)'); hold on;
+subplot(313)
+plot(imu_angular(3,:)'); hold on;
+suptitle('angular velocity')
+
+figure();
+subplot(311)
+plot(imu_linear(1,:)'); hold on;
+subplot(312)
+plot(imu_linear(2,:)'); hold on;
+subplot(313)
+plot(imu_linear(3,:)'); hold on;
+suptitle('linear acceleration')

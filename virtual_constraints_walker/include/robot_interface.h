@@ -14,6 +14,13 @@ class robot_interface
         enum class Side { Left = 0, Right = 1, Double = -1}; /*Side that is SWINGING*/     /*think a way to put here the values of step_y*/
         typedef std::shared_ptr<robot_interface> Ptr;
 
+        struct imu_meas
+        {
+            Eigen::Quaterniond orientation;
+            Eigen::Vector3d angular_velocity;
+            Eigen::Vector3d linear_acc;
+        } _imu_state;
+        
         Eigen::Vector3d get_com() {return _com_state.translation();};
         
         Eigen::Affine3d get_waist() {return _waist_state;};
@@ -91,6 +98,7 @@ class robot_interface
             else return _sole_ft[desired_side];
         }
         
+        imu_meas get_imu_meas() {return _imu_state;};
         
     protected:
         
@@ -105,8 +113,12 @@ class robot_interface
             }
         };
 
+        
+        
         Eigen::Affine3d _com_state;
         Eigen::Affine3d _waist_state;
+        
+        
 //         Eigen::Affine3d _zmp_state;
 //         std::vector<Eigen::Affine3d> _sole_state;     /*0 is left, 1 is right*/
         std::map<robot_interface::Side, Eigen::Affine3d> _sole_state;
