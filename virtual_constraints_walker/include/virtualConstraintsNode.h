@@ -29,6 +29,8 @@
 #include <robot_interface.h>
 #include <robot_interface_ROS.h>
 
+#include <stabilizer/momentum_stabilizer.h>
+
 #define PI 3.141592653589793238463
 # define grav 9.80665 
 
@@ -251,7 +253,10 @@ public:
     void send_step(Eigen::Vector3d foot_command);
     
     void send_step(Eigen::Affine3d foot_command);
-    void send_waist(Eigen::Affine3d waist_command);
+    
+    void send_waist(Eigen::Affine3d waist_pos_command); /* pos */
+    
+    void send_torso_vel(Eigen::Vector6d torso_vel_command); /* vel */
     
     void send_zmp(Eigen::Vector3d zmp_command);
     
@@ -350,8 +355,8 @@ public:
     
     void resetter();
     
-    void torso_stabilizer();
-            
+    Eigen::Vector6d run_momentum_stabilizer();
+    
     double _entered_last_step = 0;
     Eigen::VectorXd _spatial_zmp_y;
     
@@ -391,6 +396,8 @@ protected:
     ros::Publisher _com_pub;
     ros::Publisher _zmp_pub;
     ros::Publisher _waist_pub;
+    
+    ros::Publisher _torso_vel_pub;
 
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
     
@@ -484,6 +491,12 @@ protected:
     robot_interface::Side _other_side;
     
     XBot::MatLogger::Ptr _logger;
+//     XBot::ImuSensor::ConstPtr _imu;
+//     XBot::ForceTorqueSensor::Ptr _ft_sensor;
+    
+    robot_interface::imuSensor::Ptr _imu;
+    
+    vc::MomentumStabilizer::Ptr _momentum_stabilizer;
     
     double _terrain_heigth;
     double _first_stance_step;

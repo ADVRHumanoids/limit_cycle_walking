@@ -37,15 +37,16 @@ robot_interface_ROS::robot_interface_ROS()
 
     
     ROS_INFO("waiting for robot..");
-    _check_1 = _check_2 = _check_3 = _check_4 = _check_5 = _check_6 = false;
+    _check_1 = _check_2 = _check_3 = _check_4 = _check_5 = _check_6 = _check_6 = _check_7 = _check_8 = _check_9 = false;
     
-    _check_5 = true; //TODO take them out
-    _check_6 = true;
+    _check_5 = true; //TODO take them out /* ft sensor */
+    _check_6 = true; /* ft sensor */
+    _check_9 = true; /* imu */
     
     while (!all_check)
     {
     
-        if (_check_1 && _check_2 && _check_3 && _check_4 && _check_5 && _check_6)
+        if (_check_1 && _check_2 && _check_3 && _check_4 && _check_5 && _check_6  && _check_7 && _check_8 && _check_9 )
         {
             all_check = true;
         }
@@ -115,14 +116,25 @@ void robot_interface_ROS::waist_state_callback(const geometry_msgs::PoseStamped 
     _check_7 = true;
 }
 
+void robot_interface_ROS::torso_state_callback(const geometry_msgs::PoseStamped msg_rcv)
+{
+    tf::poseMsgToEigen(msg_rcv.pose, _torso_state);
+    _check_8 = true;
+}
 void robot_interface_ROS::imu_callback(const sensor_msgs::Imu msg_rcv)
 {  
-    tf::quaternionMsgToEigen(msg_rcv.orientation, _imu_state.orientation);
-    tf::vectorMsgToEigen(msg_rcv.angular_velocity, _imu_state.angular_velocity);
-    tf::vectorMsgToEigen(msg_rcv.linear_acceleration, _imu_state.linear_acc);
+    Eigen::Quaterniond orientation;
+    Eigen::Vector3d angular_velocity;
+    Eigen::Vector3d linear_acc;
+    
+    tf::quaternionMsgToEigen(msg_rcv.orientation, orientation);
+    tf::vectorMsgToEigen(msg_rcv.angular_velocity, angular_velocity);
+    tf::vectorMsgToEigen(msg_rcv.linear_acceleration, linear_acc);
+    
+    _imu_state.setImuData(orientation, angular_velocity, linear_acc);
         
 //         if COUNT_ONCE {_callback_counter++;};
-    _check_8 = true;
+    _check_9 = true;
 }
 
 // void robot_interface_ROS::zmp_callback(const geometry_msgs::PoseStamped msg_rcv)

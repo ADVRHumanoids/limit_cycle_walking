@@ -59,10 +59,10 @@ include_directories(${catkin_INCLUDE_DIRS})
 include_directories(${XBotInterface_INCLUDE_DIRS})
 include_directories(include/)
 
-
 add_library(virtual_constraints_walker STATIC
               src/virtualConstraintsNode.cpp
-              src/robot_interface_ROS.cpp)
+              src/robot_interface_ROS.cpp
+              src/stabilizer/momentum_stabilizer.cpp)
 
 
 
@@ -74,7 +74,7 @@ target_link_libraries(virtual_constraints_walker ${catkin_LIBRARIES} ${XBotInter
 
 
 add_executable(VC_run src/VC_run.cpp)
-add_executable(kajitaTest src/kajitaTraj.cpp)
+# add_executable(kajitaTest src/kajitaTraj.cpp)
 
 
 #target_link_libraries(VC_publisher ${catkin_LIBRARIES})
@@ -83,7 +83,7 @@ add_executable(kajitaTest src/kajitaTraj.cpp)
 
 target_link_libraries(VC_run virtual_constraints_walker ${catkin_LIBRARIES})
 
-target_link_libraries(kajitaTest ${OpenMpC_LIBRARIES})
+# target_link_libraries(kajitaTest ${OpenMpC_LIBRARIES})
  
 #add_dependencies(VC_publisher)
 #add_dependencies(VC_subscriber)

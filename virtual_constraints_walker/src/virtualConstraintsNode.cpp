@@ -19,12 +19,18 @@
 virtualConstraintsNode::virtualConstraintsNode()
     {
 //         initialze_cmd_fake_q1(); //TODO
-        
+        _internal_time = 0;
         std::string this_node_name = ros::this_node::getName();
         _logger = XBot::MatLogger::getLogger("/tmp/" + this_node_name);
+        
+        
         ros::NodeHandle n;
         
         _dt = 0.01;
+        
+        _momentum_stabilizer = std::make_shared<vc::MomentumStabilizer>(_imu, _dt);
+                
+                
         _step_counter = 0;
         get_param_ros(); //initial parameters from ros
         
@@ -50,6 +56,8 @@ virtualConstraintsNode::virtualConstraintsNode()
         _sole_pubs[robot_interface::Side::Right] = n.advertise<geometry_msgs::PoseStamped>("/cartesian/r_sole/reference", 10); /*publish to /r_sole/reference*/
         
         _waist_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian//Waist/reference", 10);
+        
+        _torso_vel_pub = n.advertise<geometry_msgs::TwistStamped>("/cartesian/torso/velocity_reference", 10);
         
 //        // required for STABILIZER
         _zmp_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com_stabilizer/zmp/reference", 10);
@@ -725,7 +733,7 @@ void virtualConstraintsNode::send(std::string type, Eigen::Vector3d command)
 //             
 //     }
 
-void virtualConstraintsNode::send_com(Eigen::Vector3d com_command)
+void virtualConstraintsNode::send_com(Eigen::Vector3d com_command) /* TODO call this setPositionReference("link", value)*/
     {
         geometry_msgs::PoseStamped cmd_com;
         tf::pointEigenToMsg(com_command, cmd_com.pose.position);
@@ -755,14 +763,21 @@ void virtualConstraintsNode::send_zmp(Eigen::Vector3d zmp_command)
         _zmp_pub.publish(cmd_zmp);
     }
     
-void virtualConstraintsNode::send_waist(Eigen::Affine3d waist_command)
+void virtualConstraintsNode::send_waist(Eigen::Affine3d waist_pos_command)
     {
-        geometry_msgs::PoseStamped cmd_waist;
-        tf::poseEigenToMsg(waist_command, cmd_waist.pose);
+        geometry_msgs::PoseStamped cmd_pos_waist;
+        tf::poseEigenToMsg(waist_pos_command, cmd_pos_waist.pose);
         
-        _waist_pub.publish(cmd_waist);
+        _waist_pub.publish(cmd_pos_waist);
     }
     
+void virtualConstraintsNode::send_torso_vel(Eigen::Vector6d torso_vel_command)
+    {
+        geometry_msgs::TwistStamped cmd_vel_torso;
+        tf::twistEigenToMsg(torso_vel_command, cmd_vel_torso.twist);
+        
+        _torso_vel_pub.publish(cmd_vel_torso);
+    }
     
 Eigen::Affine3d virtualConstraintsNode::compute_trajectory(Eigen::Affine3d T_i, Eigen::Affine3d T_f,
                                                 double clearance,
@@ -1070,7 +1085,14 @@ void virtualConstraintsNode::commander(double time)
         
         /* send waist*/
         
+        /* this is for turning */
         _waist_trajectory = _final_waist_pose;
+        
+        /* send torso */
+        
+        Eigen::Vector6d torso_vel = run_momentum_stabilizer();
+        
+        
         
         
         _logger->add("com_vel", sense_com_velocity());
@@ -1188,12 +1210,12 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("cond_q", _cond_q);
         _logger->add("cond_step", _cond_step);
         
-        torso_stabilizer();
         
         send_com(_com_trajectory);
         send_step(_foot_trajectory);
         send_zmp(_zmp_ref);
         send_waist(_waist_trajectory);
+        send_torso_vel(torso_vel);
         
 //     }
     
@@ -2028,15 +2050,18 @@ void virtualConstraintsNode::generate_starting_zmp()
 }
 
 
-void virtualConstraintsNode::torso_stabilizer()
+Eigen::Vector6d virtualConstraintsNode::run_momentum_stabilizer()
 {
-    auto imu_euler = _current_pose_ROS.get_imu_meas().orientation.toRotationMatrix().eulerAngles(0, 1, 2); //TODO
-    Eigen::Vector3d imu_angular = _current_pose_ROS.get_imu_meas().angular_velocity;
-    Eigen::Vector3d imu_linear = _current_pose_ROS.get_imu_meas().linear_acc;
     
-    _logger->add("imu_orientation", imu_euler);
-    _logger->add("imu_angular", imu_angular);
-    _logger->add("imu_linear", imu_linear);
+    Eigen::Matrix3d w_R_torso;
+    w_R_torso = _current_pose_ROS.get_torso().linear();
     
+    _momentum_stabilizer->update();
     
+    Eigen::Vector6d twist;
+    twist.setZero();
+    twist.tail<3>() = w_R_torso * _momentum_stabilizer->getOmega();
+    
+    return twist;
+ 
 }
