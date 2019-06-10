@@ -16,7 +16,7 @@ robot_interface_ROS::robot_interface_ROS()
     _subs.push_back(n.subscribe("/cartesian/l_sole/state", 10, &robot_interface_ROS::l_sole_state_callback, this)); 
     _subs.push_back(n.subscribe("/cartesian/r_sole/state", 10, &robot_interface_ROS::r_sole_state_callback, this));
     _subs.push_back(n.subscribe("/cartesian/Waist/state", 10, &robot_interface_ROS::waist_state_callback, this));
-    
+    _subs.push_back(n.subscribe("/cartesian/torso/state", 10, &robot_interface_ROS::torso_state_callback, this));
     //  STABILIZER
 //         _subs.push_back(n.subscribe("/cartesian/com_stabilizer/zmp/reference", 10, &robot_interface_ROS::zmp_callback, this));
     
@@ -121,6 +121,7 @@ void robot_interface_ROS::torso_state_callback(const geometry_msgs::PoseStamped 
     tf::poseMsgToEigen(msg_rcv.pose, _torso_state);
     _check_8 = true;
 }
+
 void robot_interface_ROS::imu_callback(const sensor_msgs::Imu msg_rcv)
 {  
     Eigen::Quaterniond orientation;
