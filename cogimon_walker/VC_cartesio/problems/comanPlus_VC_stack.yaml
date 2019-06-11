@@ -31,7 +31,7 @@ WaistOrient:
     distal_link: "Waist"
     base_link: "world"
     lambda: 0.1
-    indices: [3,4,5]
+    indices: [3,5]
 #    weight: 0.07
 
 CoM:
@@ -79,4 +79,4 @@ Torso:
     distal_link: "torso"
     base_link: "world"
     lambda: 0.1
-    indices: [3]
+    indices: [3,4,5]

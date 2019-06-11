@@ -9,8 +9,12 @@
 robot_interface_ROS::robot_interface_ROS()
 { 
     ros::NodeHandle n;
+  
+    /* construct imu*/
+    robot_interface::imuSensor::Ptr imuptr = std::make_shared<imuSensor>();
+    _imu = imuptr;
     
-//      prepare subscribers node
+     /* prepare subscribers node */
     _subs.push_back(n.subscribe("/cartesian/solution", 10, &robot_interface_ROS::joints_state_callback, this)); /*subscribe to cartesian/solution topic*/
     _subs.push_back(n.subscribe("/cartesian/com/state", 10, &robot_interface_ROS::com_state_callback, this)); 
     _subs.push_back(n.subscribe("/cartesian/l_sole/state", 10, &robot_interface_ROS::l_sole_state_callback, this)); 
@@ -63,6 +67,11 @@ void robot_interface_ROS::sense()
     _ankle_to_com[Side::Right] = listen_r_ankle_to_com();
     _world_to_com = listen_world_to_com();
     _l_to_r_foot = listen_l_to_r_foot();
+    
+    /* fill sensors */
+    
+    
+    
 }
     
 void robot_interface_ROS::joints_state_callback(const sensor_msgs::JointState msg_rcv) //this is called by ros
@@ -132,8 +141,7 @@ void robot_interface_ROS::imu_callback(const sensor_msgs::Imu msg_rcv)
     tf::vectorMsgToEigen(msg_rcv.angular_velocity, angular_velocity);
     tf::vectorMsgToEigen(msg_rcv.linear_acceleration, linear_acc);
     
-    _imu_state.setImuData(orientation, angular_velocity, linear_acc);
-        
+    _imu->setImuData(orientation, angular_velocity, linear_acc);
 //         if COUNT_ONCE {_callback_counter++;};
     _check_9 = true;
 }

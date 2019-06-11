@@ -18,16 +18,18 @@ class robot_interface
         {
         public:
             
-            typedef std::shared_ptr<imuSensor> Ptr;
+            typedef std::shared_ptr< imuSensor > Ptr;
             
-            void getOrientation(Eigen::Matrix3d orientation) {orientation = _orientation.toRotationMatrix();}; 
-            void getOrientation(Eigen::Quaterniond orientation) {orientation = _orientation;};
-            void getAngularVelocity(Eigen::Vector3d angular_velocity) {angular_velocity = _angular_velocity;};
-            void getLinearAcceleration(Eigen::Vector3d linear_acc) {linear_acc = _linear_acc;};
+            imuSensor() : _orientation(0,0,0,1), _angular_velocity(0,0,0), _linear_acc(0,0,0) {};
             
+            void getOrientation(Eigen::Matrix3d& orientation) {orientation = _orientation.normalized().toRotationMatrix();}; 
+            void getOrientation(Eigen::Quaterniond& orientation) {orientation = _orientation;};
+            void getAngularVelocity(Eigen::Vector3d& angular_velocity) {angular_velocity = _angular_velocity;};
+            void getLinearAcceleration(Eigen::Vector3d& linear_acc) {linear_acc = _linear_acc;};
+
             void setImuData(Eigen::Quaterniond orientation,
                             Eigen::Vector3d angular_velocity,
-                            Eigen::Vector3d linear_acc) 
+                            Eigen::Vector3d linear_acc)
             {
                 
                 _orientation = orientation;
@@ -41,7 +43,7 @@ class robot_interface
             Eigen::Quaterniond _orientation;
             Eigen::Vector3d _angular_velocity;
             Eigen::Vector3d _linear_acc;
-        } _imu_state;
+        };
         
         Eigen::Vector3d get_com() {return _com_state.translation();};
         
@@ -122,7 +124,7 @@ class robot_interface
             else return _sole_ft[desired_side];
         }
         
-        imuSensor get_imu() {return _imu_state;};
+        imuSensor::Ptr& get_imu() {return _imu;};
         
     protected:
         
@@ -142,6 +144,8 @@ class robot_interface
         Eigen::Affine3d _com_state;
         Eigen::Affine3d _waist_state;
         Eigen::Affine3d _torso_state;
+        
+        imuSensor::Ptr _imu;
         
 //         Eigen::Affine3d _zmp_state;
 //         std::vector<Eigen::Affine3d> _sole_state;     /*0 is left, 1 is right*/

@@ -23,13 +23,14 @@ virtualConstraintsNode::virtualConstraintsNode()
         std::string this_node_name = ros::this_node::getName();
         _logger = XBot::MatLogger::getLogger("/tmp/" + this_node_name);
         
+        _imu = _current_pose_ROS.get_imu();
         
         ros::NodeHandle n;
         
         _dt = 0.01;
-        
+
         _momentum_stabilizer = std::make_shared<vc::MomentumStabilizer>(_imu, _dt);
-                
+//         _momentum_stabilizer->setGains( 0.001, 0.0 );
                 
         _step_counter = 0;
         get_param_ros(); //initial parameters from ros
@@ -1089,11 +1090,10 @@ void virtualConstraintsNode::commander(double time)
         _waist_trajectory = _final_waist_pose;
         
         /* send torso */
-        
         Eigen::Vector6d torso_vel = run_momentum_stabilizer();
         
         
-        
+        /* imu sensor */
         
         _logger->add("com_vel", sense_com_velocity());
         
@@ -1210,6 +1210,7 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("cond_q", _cond_q);
         _logger->add("cond_step", _cond_step);
         
+        _logger->add("torso_vel", torso_vel);
         
         send_com(_com_trajectory);
         send_step(_foot_trajectory);
@@ -2052,15 +2053,19 @@ void virtualConstraintsNode::generate_starting_zmp()
 
 Eigen::Vector6d virtualConstraintsNode::run_momentum_stabilizer()
 {
-    
+
     Eigen::Matrix3d w_R_torso;
     w_R_torso = _current_pose_ROS.get_torso().linear();
+    
+    Eigen::Vector3d kp(200, 200, 200);
+    Eigen::Vector3d kd(1, 1, 1);
+    _momentum_stabilizer->setGains(kp,kd);
     
     _momentum_stabilizer->update();
     
     Eigen::Vector6d twist;
     twist.setZero();
-    twist.tail<3>() = w_R_torso * _momentum_stabilizer->getOmega();
+    twist.tail<3>() =   _momentum_stabilizer->getOmega(); // * w_R_torso
     
     return twist;
  
