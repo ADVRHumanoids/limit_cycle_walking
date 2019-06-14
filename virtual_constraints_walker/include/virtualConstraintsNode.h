@@ -550,7 +550,7 @@ protected:
     
     bool _started = 0;
     
-
+    Eigen::Matrix3d _imu_initial_orientation;
     
     class param
     {

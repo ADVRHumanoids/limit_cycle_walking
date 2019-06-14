@@ -18,6 +18,8 @@
     
 virtualConstraintsNode::virtualConstraintsNode()
     {
+        _imu_initial_orientation.setZero();
+        
 //         initialze_cmd_fake_q1(); //TODO
         _internal_time = 0;
         std::string this_node_name = ros::this_node::getName();
@@ -245,6 +247,10 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
         else
             ROS_INFO("Action did not finish before the time out.");
 
+        /* WAIT*/
+        ros::Rate r(.1);
+        r.sleep();
+        
         /* fill initial pose with pose after straighten_up_action */
         _current_pose_ROS.sense();
         _initial_pose = _current_pose_ROS; 
@@ -1069,20 +1075,20 @@ void virtualConstraintsNode::commander(double time)
 
         
         /* for stabilizer */
-        double zmp_sag_ref, zmp_lat_ref;
-        zmp_sag_ref = _com_trajectory.coeff(0);
+//         double zmp_sag_ref, zmp_lat_ref;
+//         zmp_sag_ref = _com_trajectory.coeff(0);
         
         /* send ZMP ref before kajita */
 //         int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
 //         zmp_lat_ref = _current_pose_ROS.get_sole_tot(_other_side).translation().coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
         /* send ZMP ref after kajita */
-        zmp_lat_ref = _MpC_lat->_C_zmp*_com_y;
-        _zmp_ref << zmp_sag_ref, zmp_lat_ref, 0;
+//         zmp_lat_ref = _MpC_lat->_C_zmp*_com_y;
+//         _zmp_ref << zmp_sag_ref, zmp_lat_ref, 0;
 
-        if (_started == 0 || (_started == 1 && _internal_time < _start_walk))
-        {
-            _zmp_ref << _first_com_pos.coeff(0), 0, 0;
-        }
+//         if (_started == 0 || (_started == 1 && _internal_time < _start_walk))
+//         {
+//             _zmp_ref << _first_com_pos.coeff(0), 0, 0;
+//         }
         
         /* send waist*/
         
@@ -1091,9 +1097,8 @@ void virtualConstraintsNode::commander(double time)
         
         /* send torso */
         Eigen::Vector6d torso_vel = run_momentum_stabilizer();
+//         torso_vel.setZero();
         
-        
-        /* imu sensor */
         
         _logger->add("com_vel", sense_com_velocity());
         
@@ -1211,7 +1216,7 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("cond_step", _cond_step);
         
         _logger->add("torso_vel", torso_vel);
-        
+        _logger->add("imu_initial_orientation", _imu_initial_orientation);
         send_com(_com_trajectory);
         send_step(_foot_trajectory);
         send_zmp(_zmp_ref);
@@ -1599,6 +1604,7 @@ bool virtualConstraintsNode::initialize(double time)
 {
     straighten_up_action();
     
+    
     double clearance = _initial_param.get_clearance_step();
     _reset_condition = 0; /*needed for resetting q1*/
     
@@ -1714,6 +1720,11 @@ bool virtualConstraintsNode::initialize(double time)
     
     _start_walk =_initial_param.get_start_time(); /* getting start walking from the user param */
    
+//     while (time < 4)
+        
+    // get initial orientation of imu
+    _imu->getOrientation(_imu_initial_orientation);
+    
     _logger->add("zmp_starting", _zmp_starting);
     _logger->add("_y", _spatial_zmp_y);
     std::cout << "Initialization complete." << std::endl;
@@ -2057,15 +2068,18 @@ Eigen::Vector6d virtualConstraintsNode::run_momentum_stabilizer()
     Eigen::Matrix3d w_R_torso;
     w_R_torso = _current_pose_ROS.get_torso().linear();
     
-    Eigen::Vector3d kp(200, 200, 200);
-    Eigen::Vector3d kd(1, 1, 1);
+                      /*roll pitch yaw*/
+    Eigen::Vector3d kp(0.0, 10.0, 0); // 200, 100, 0
+    Eigen::Vector3d kd(0.0, 0.0, 0); // 1, 0.1, 0
+    
+    _momentum_stabilizer->setWaistReference(_imu_initial_orientation.transpose().col(2));
     _momentum_stabilizer->setGains(kp,kd);
     
     _momentum_stabilizer->update();
     
     Eigen::Vector6d twist;
     twist.setZero();
-    twist.tail<3>() =   _momentum_stabilizer->getOmega(); // * w_R_torso
+    twist.tail<3>() = _momentum_stabilizer->getOmega(); // * w_R_torso
     
     return twist;
  

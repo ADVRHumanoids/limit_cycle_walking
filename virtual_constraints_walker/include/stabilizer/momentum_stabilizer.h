@@ -25,7 +25,7 @@ namespace vc
         Eigen::Vector3d getOmega() const;
         
         void setGains(Eigen::Vector3d kp, Eigen::Vector3d kd);
-    
+        void setWaistReference(Eigen::Vector3d z_waist_ref);
         void update();
         
         
@@ -38,6 +38,7 @@ namespace vc
         Eigen::Vector3d _kp, _kd;
         double _dt;
         
+        Eigen::Vector3d _imu_z_waist_ref;
     //     XBot::ImuSensor::ConstPtr _imu;
         
         robot_interface::imuSensor::Ptr _imu;
