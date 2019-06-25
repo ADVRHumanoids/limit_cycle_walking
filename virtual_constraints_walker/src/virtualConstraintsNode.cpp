@@ -264,6 +264,7 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
         _current_world_to_com(0) = _current_pose_ROS.get_world_to_com().coeff(0) + _current_pose_ROS.get_distance_ankle_to_com(_current_side).coeff(2)*tan(_initial_param.get_max_inclination()) - _initial_param.get_lean_forward();
         _initial_q1 = sense_q1();
         
+        std::cout << _initial_param.get_lean_forward() << std::endl;
 //         std::cout << sense_q1() << std::endl;
         //exit
         return 0;
@@ -393,40 +394,40 @@ double virtualConstraintsNode::sense_q1()
         
     /* TODO refactor: this is needed for the lenght of the step */
     /* take care of the lenght of the step*/
-    double offset_q1;
-    if (_step_counter >= 4+1  && _step_counter < 5+1) /*Left*/
-    {
-        offset_q1 = 0.001;
-    }
-    else if (_step_counter >= 5+1 && _step_counter < 6+1) /*Right*/
-    {
-        offset_q1 = 0.02;
-    }
-    else if (_step_counter >= 6+1 && _step_counter < 7+1) /*Left*/
-    {
-        offset_q1 = 0.05;
-    }
-    else if (_step_counter >= 7+1 && _step_counter < 8+1) /*Right*/
-    {
-        offset_q1 = 0.05;
-    }
-    else if (_step_counter >= 8+1 && _step_counter < 9+1) /*Left*/
-    {
-        offset_q1 = 0.05;
-    }
-    else if (_step_counter >= 9+1 && _step_counter < 10+1) /*Right*/
-    {
-        offset_q1 = 0.05;
-    }
-    else if (_step_counter >= 10+1 && _step_counter < 15+1) /*Left*/
-    {
-        offset_q1 = 0.05;
-    }    
-    else       
-    {
-        offset_q1 = - 0.05;
-    }
-    
+    double offset_q1 = 0.05;
+//     if (_step_counter >= 4+1  && _step_counter < 5+1) /*Left*/
+//     {
+//         offset_q1 = 0.001;
+//     }
+//     else if (_step_counter >= 5+1 && _step_counter < 6+1) /*Right*/
+//     {
+//         offset_q1 = 0.02;
+//     }
+//     else if (_step_counter >= 6+1 && _step_counter < 7+1) /*Left*/
+//     {
+//         offset_q1 = 0.05;
+//     }
+//     else if (_step_counter >= 7+1 && _step_counter < 8+1) /*Right*/
+//     {
+//         offset_q1 = 0.05;
+//     }
+//     else if (_step_counter >= 8+1 && _step_counter < 9+1) /*Left*/
+//     {
+//         offset_q1 = 0.05;
+//     }
+//     else if (_step_counter >= 9+1 && _step_counter < 10+1) /*Right*/
+//     {
+//         offset_q1 = 0.05;
+//     }
+//     else if (_step_counter >= 10+1 && _step_counter < 15+1) /*Left*/
+//     {
+//         offset_q1 = 0.05;
+//     }    
+//     else       
+//     {
+//         offset_q1 = - 0.05;
+//     }
+//     
         q1 = atan(dist_com(0)/ fabs(stance_ankle_to_com(2))) - offset_q1; // HACK
 //         q1 = atan(dist_com(0)/- stance_ankle_to_com(2)) - _q1_max; // HACK
     }
@@ -1017,6 +1018,8 @@ void virtualConstraintsNode::commander(double time)
         delta_com(1) = lateral_com(time).coeff(0);
         delta_com(2) = 0;
         
+        
+        delta_com(0) = 0;
        /* ------------------------------------- steer -------------------------------------------------- */
        /* TODO refactor: this is needed for the steering */
        Eigen::Matrix2d R_steer_local;
@@ -1190,7 +1193,7 @@ void virtualConstraintsNode::commander(double time)
         
         
         send_com(_com_trajectory);
-        send_step(_foot_trajectory);
+//         send_step(_foot_trajectory);
         send_zmp(_zmp_ref);
         send_waist(_waist_trajectory);
         
@@ -1310,70 +1313,70 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 double theta = _theta_steer; // change heading
                 R_steer << cos(theta), -sin(theta),
                                 sin(theta), cos(theta);
-                if (_step_counter >= 4 && _step_counter < 5)       /*Left*/
-                {
-                    _q1_max = 0.001;
-                    q1_max_new = _q1_max; // change step length
-                    double theta = _theta_steer; // change heading
-                    R_steer << cos(theta), -sin(theta),
-                                    sin(theta), cos(theta);
-                }
-                else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
-                {
-                    _q1_max = 0.02;
-                    q1_max_new = _q1_max; // change step length
-                    double theta = _theta_steer; // change heading
-                    R_steer << cos(theta), -sin(theta),
-                                    sin(theta), cos(theta);
-                }
-                else if (_step_counter >= 6 && _step_counter < 7)   /*Left*/
-                {
-                    _q1_max = 0.05;
-                    q1_max_new = _q1_max; // change step length
-                    double theta = _theta_steer; // change heading
-                    R_steer << cos(theta), -sin(theta),
-                                    sin(theta), cos(theta);
-                }
-                else if (_step_counter >= 7 && _step_counter < 8)  /*Right*/
-                {
-                    _q1_max = 0.05;
-                    q1_max_new = _q1_max; // change step length
-                    double theta = _theta_steer; // change heading
-                    R_steer << cos(theta), -sin(theta),
-                                    sin(theta), cos(theta);
-                }
-                else if (_step_counter >= 8 && _step_counter < 9)   /*Left*/
-                {
-                    _q1_max = 0.05;
-                    q1_max_new = _q1_max; // change step length
-                    double theta = _theta_steer; // change heading
-                    R_steer << cos(theta), -sin(theta),
-                                    sin(theta), cos(theta);
-                }
-                else if (_step_counter >= 9 && _step_counter < 10) /*Right*/
-                {
-                    _q1_max = 0.05;
-                    q1_max_new = _q1_max; // change step length
-                    double theta = _theta_steer; // change heading
-                    R_steer << cos(theta), -sin(theta),
-                                    sin(theta), cos(theta);
-                }
-                else if (_step_counter >= 10 && _step_counter < 15)
-                {
-                    _q1_max = 0.05;
-                    q1_max_new = _q1_max; // change step length
-                    double theta = _theta_steer; // change heading
-                    R_steer << cos(theta), -sin(theta),
-                                    sin(theta), cos(theta);
-                }
-                else
-                {
-                    _q1_max = - 0.05;
-                    q1_max_new = _q1_max;
-                    double theta = 0;
-                    R_steer << cos(theta), -sin(theta),
-                                sin(theta), cos(theta); 
-                }
+//                 if (_step_counter >= 4 && _step_counter < 5)       /*Left*/
+//                 {
+//                     _q1_max = 0.001;
+//                     q1_max_new = _q1_max; // change step length
+//                     double theta = _theta_steer; // change heading
+//                     R_steer << cos(theta), -sin(theta),
+//                                     sin(theta), cos(theta);
+//                 }
+//                 else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
+//                 {
+//                     _q1_max = 0.02;
+//                     q1_max_new = _q1_max; // change step length
+//                     double theta = _theta_steer; // change heading
+//                     R_steer << cos(theta), -sin(theta),
+//                                     sin(theta), cos(theta);
+//                 }
+//                 else if (_step_counter >= 6 && _step_counter < 7)   /*Left*/
+//                 {
+//                     _q1_max = 0.05;
+//                     q1_max_new = _q1_max; // change step length
+//                     double theta = _theta_steer; // change heading
+//                     R_steer << cos(theta), -sin(theta),
+//                                     sin(theta), cos(theta);
+//                 }
+//                 else if (_step_counter >= 7 && _step_counter < 8)  /*Right*/
+//                 {
+//                     _q1_max = 0.05;
+//                     q1_max_new = _q1_max; // change step length
+//                     double theta = _theta_steer; // change heading
+//                     R_steer << cos(theta), -sin(theta),
+//                                     sin(theta), cos(theta);
+//                 }
+//                 else if (_step_counter >= 8 && _step_counter < 9)   /*Left*/
+//                 {
+//                     _q1_max = 0.05;
+//                     q1_max_new = _q1_max; // change step length
+//                     double theta = _theta_steer; // change heading
+//                     R_steer << cos(theta), -sin(theta),
+//                                     sin(theta), cos(theta);
+//                 }
+//                 else if (_step_counter >= 9 && _step_counter < 10) /*Right*/
+//                 {
+//                     _q1_max = 0.05;
+//                     q1_max_new = _q1_max; // change step length
+//                     double theta = _theta_steer; // change heading
+//                     R_steer << cos(theta), -sin(theta),
+//                                     sin(theta), cos(theta);
+//                 }
+//                 else if (_step_counter >= 10 && _step_counter < 15)
+//                 {
+//                     _q1_max = 0.05;
+//                     q1_max_new = _q1_max; // change step length
+//                     double theta = _theta_steer; // change heading
+//                     R_steer << cos(theta), -sin(theta),
+//                                     sin(theta), cos(theta);
+//                 }
+//                 else
+//                 {
+//                     _q1_max = - 0.05;
+//                     q1_max_new = _q1_max;
+//                     double theta = 0;
+//                     R_steer << cos(theta), -sin(theta),
+//                                 sin(theta), cos(theta); 
+//                 }
                 /*----------------generate q1-------------------------*/
                 double q1 = (q1_max_new - _q1_min);
                 
