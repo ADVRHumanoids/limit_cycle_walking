@@ -33,6 +33,9 @@ plot(time, q1_max); hold on;
 plot(time, q1_min); hold on;
 
 plot(time, q1_cmd); hold on;
+
+plot(time, alpha_sensed);
+plot(time, steepness);
 %% COM and FOOT trajectories in time
 figure();
 

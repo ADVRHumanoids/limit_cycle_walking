@@ -582,7 +582,7 @@ int virtualConstraintsNode::impact_routine()
 //                 std::cout << "Last side: " << last_side << std::endl;
                 _initial_pose = _current_pose_ROS;
             // ----------------------------------
-                _q1_min = -sense_q1(); /*HACK*/
+                _q1_min = - sense_q1(); /*HACK*/
             // -------------------------------
                 _current_side = robot_interface::Side::Double;
 
@@ -985,7 +985,12 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         spatial_zmp(_current_spatial_zmp_y, _spatial_window_preview, length_preview_window, dx, _step_type); // spatial zmp
         _zmp_window_y.resize(_spatial_window_preview.size());
         _zmp_window_y = _spatial_window_preview;
-
+        
+        if (time > 2.5)
+        {
+            _zmp_window_y.setZero();
+        }
+        
         if (_current_state == State::STARTING)
         {
 // //             this is for the beginning, to move the com before the step
@@ -1384,16 +1389,16 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 _steep_coeff = (q1_max_new - _q1_min)/_step_duration;
                 /*----------------------------------------------------*/
                 
-                std::cout << "q1_max: " << q1_max_new << std::endl;
-                std::cout << "q1_min: " << _q1_min << std::endl;
-                std::cout << "angle: " << q1 << std::endl;
+//                 std::cout << "q1_max: " << q1_max_new << std::endl;
+//                 std::cout << "q1_min: " << _q1_min << std::endl;
+//                 std::cout << "angle: " << q1 << std::endl;
                
                 Eigen::Vector2d disp_com; // displacement in the xy plane
                 Eigen::Vector2d disp_com_rot; // displacement in the xy plane
                 disp_com << fabs(_current_pose_ROS.get_distance_ankle_to_com(_current_side).z()) * tan(q1), 0; // displacement of com in x
                 
                 disp_com_rot = R_steer * disp_com; // angle steering
-                std::cout << "disp_com_rot: " << disp_com_rot.transpose() << std::endl;
+//                 std::cout << "disp_com_rot: " << disp_com_rot.transpose() << std::endl;
                 
                 _final_com_position.head(2) = _initial_com_position.head(2) + disp_com_rot;
                 _final_com_position_fake.head(2) = _initial_com_position_fake.head(2) + disp_com;
@@ -1712,8 +1717,8 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
     double dt = _dt;
     
     _q1_sensed_old = _q1_sensed;
-    _q1_sensed = sense_q1();
-    
+//     _q1_sensed = sense_q1();
+    _q1_sensed = _q1_temp;
     
     double alpha_old = (_q1_sensed_old - _q1_min)/(_q1_max - _q1_min);
     double alpha = (_q1_sensed - _q1_min)/(_q1_max - _q1_min);
@@ -1966,25 +1971,35 @@ double virtualConstraintsNode::q_handler()
     if (_started == 1 && _internal_time >= +_start_walk)
     {
 double cond_q;
-        if (_q1_min <= _q1_max)
-        {
-            cond_q = (sense_q1() >= _q1_max);
-        }
-        else if (_q1_min > _q1_max)
-        {
-            cond_q = (sense_q1() <= _q1_max);
-        }
-        if (cond_q)
-        {
-            _q1_temp = _q1_temp;
-        }
-        else
-        {
+
+//         if (_q1_min <= _q1_max)
+//         {
+//             cond_q = (sense_q1() >= _q1_max);
+//         }
+//         else if (_q1_min > _q1_max)
+//         {
+//             cond_q = (sense_q1() <= _q1_max);
+//         }
+//         if (cond_q)
+//         {
+//             _q1_temp = _q1_temp;
+//         }
+//         else
+//         {
 //         _q1_temp = _q1_start + _steep_coeff*(_internal_time - _start_walk); // basically q = a*t
             _q1_temp = _q1_temp + _steep_coeff*(dt); // basically q = a*t//ver2
-        }
+//         }
     }
-//         _q1_temp = _q1_temp + _steep_coeff*(dt); // basically q = a*t//ver2
+    
+    if (_q1_temp > _q1_max)
+    {
+        
+        _q1_temp = - _q1_max;
+        _q1_min = - _q1_max;
+        _current_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
+        _steep_coeff = 2 * (_q1_max - _q1_min);  
+        
+    }
 
 }
 
