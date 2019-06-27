@@ -428,7 +428,7 @@ protected:
     bool _cmd_switch = 0;
     
     double _vel_q1;
-    
+    double _time_fake = 0;
     Eigen::VectorXd _com_max;
     
     Eigen::VectorXd _zmp_t;

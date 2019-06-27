@@ -985,11 +985,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
         spatial_zmp(_current_spatial_zmp_y, _spatial_window_preview, length_preview_window, dx, _step_type); // spatial zmp
         _zmp_window_y.resize(_spatial_window_preview.size());
         _zmp_window_y = _spatial_window_preview;
-        
-        if (time > 2.5)
-        {
-            _zmp_window_y.setZero();
-        }
+
         
         if (_current_state == State::STARTING)
         {
@@ -1020,11 +1016,20 @@ void virtualConstraintsNode::commander(double time)
         
         
         delta_com(0) = fabs(com_to_ankle_distance.z()) * tan(_q1);
-        delta_com(1) = lateral_com(time).coeff(0);
+//         delta_com(1) = lateral_com(time).coeff(0);
         delta_com(2) = 0;
         
         
         delta_com(0) = 0;
+        if (_current_state != State::IDLE)
+        {
+            _time_fake = _time_fake + _dt*2;
+            delta_com(1) = 0.04*sin(_time_fake);
+        }
+        else
+        {
+            delta_com(0) = 0;
+        }
        /* ------------------------------------- steer -------------------------------------------------- */
        /* TODO refactor: this is needed for the steering */
        Eigen::Matrix2d R_steer_local;
