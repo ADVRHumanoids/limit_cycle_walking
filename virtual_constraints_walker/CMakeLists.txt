@@ -62,7 +62,9 @@ include_directories(include/)
 
 add_library(virtual_constraints_walker STATIC
               src/virtualConstraintsNode.cpp
-              src/robot_interface_ROS.cpp)
+              src/robot_interface_ROS.cpp
+              src/zmp_sensor/measureZMP.cpp
+              src/zmp_sensor/zmpSensor.cpp)
 
 
 
@@ -74,8 +76,8 @@ target_link_libraries(virtual_constraints_walker ${catkin_LIBRARIES} ${XBotInter
 
 
 add_executable(VC_run src/VC_run.cpp)
-add_executable(kajitaTest src/kajitaTraj.cpp)
 
+add_executable(measureZMP src/zmp_sensor/measureZMP.cpp)
 
 #target_link_libraries(VC_publisher ${catkin_LIBRARIES})
 #target_link_libraries(VC_subscriber ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
@@ -83,7 +85,7 @@ add_executable(kajitaTest src/kajitaTraj.cpp)
 
 target_link_libraries(VC_run virtual_constraints_walker ${catkin_LIBRARIES})
 
-target_link_libraries(kajitaTest ${OpenMpC_LIBRARIES})
+target_link_libraries(measureZMP virtual_constraints_walker ${catkin_LIBRARIES})
  
 #add_dependencies(VC_publisher)
 #add_dependencies(VC_subscriber)
@@ -101,6 +103,7 @@ target_link_libraries(kajitaTest ${OpenMpC_LIBRARIES})
 #         LIBRARY DESTINATION lib/${PROJECT_NAME})
 
 install(TARGETS VC_run RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
+
 
 
 #install(TARGETS virtualConstraintsNode RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
