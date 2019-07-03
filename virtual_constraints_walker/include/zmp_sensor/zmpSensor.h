@@ -26,8 +26,8 @@ public:
     
     void update(Eigen::Affine3d w_T_Lfoot, Eigen::Affine3d w_T_Rfoot);
     
-    Eigen::Vector3d getZMP_L() {return _ZMP_L;};
-    Eigen::Vector3d getZMP_R() {return _ZMP_R;};
+    Eigen::Vector3d getZMP_L() {return L_T_ZMP_L;};
+    Eigen::Vector3d getZMP_R() {return R_T_ZMP_R;};
     Eigen::Vector3d getZMP() {return _ZMP;};
       
 //     void setFootSize(double foot_lenght, double foot_width) {_foot_lenght = foot_lenght;
@@ -51,7 +51,7 @@ private:
     double _foot_lenght, _foot_width;
     double _Fz_min;
     
-    Eigen::Vector3d _ZMP_R, _ZMP_L;
+    Eigen::Vector3d L_T_ZMP_L, R_T_ZMP_R;
     Eigen::Vector3d _ZMP;
     
     XBot::ForceTorqueSensor::ConstPtr _ftSensorL;

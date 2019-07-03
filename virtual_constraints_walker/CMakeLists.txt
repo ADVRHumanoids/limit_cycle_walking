@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   tf_conversions
   eigen_conversions
+  cartesian_interface
 )
 
 find_package(XBotInterface REQUIRED)

@@ -10,23 +10,23 @@ inline Eigen::Vector3d computeFootZMP(Eigen::Matrix<double, 6, 1> FT_foot,
                                Eigen::Vector3d ankle_T_foot)
 {
     
-        /**
-     * @brief compute ZMP in a foot w.r.t. the foot
-     * 
-     * from an FT sensor. The formula used is based on:
-     *      "Introduction to Humanoid Robots" by Shuuji Kajita et al., pag. 79-80
-     *
-     *              ZMPx = (-tau_y -fx*d)/fz
-     *              ZMPy = (tau_x - fy*d)/fz
-     *              ZMPz = -d
-     *
-     * where d is the height of the sensor w.r.t. the sole.
-     * NOTE: The ZMP position is computed w.r.t. the sensor frame, then transformed into the foot frame.
-     *
-     * @param FT_foot wrench measured from the FT sensor
-     * @param ankle_T_foot T of foot w.r.t. ankle
-     * @return a vector with the ZMP position w.r.t. the foot frame
-     */
+    /**
+    * @brief compute ZMP in a foot w.r.t. the foot
+    * 
+    * from an FT sensor. The formula used is based on:
+    *      "Introduction to Humanoid Robots" by Shuuji Kajita et al., pag. 79-80
+    *
+    *              ZMPx = (-tau_y -fx*d)/fz
+    *              ZMPy = (tau_x - fy*d)/fz
+    *              ZMPz = -d
+    *
+    * where d is the height of the sensor w.r.t. the sole.
+    * NOTE: The ZMP position is computed w.r.t. the sensor frame, then transformed into the foot frame.
+    *
+    * @param FT_foot wrench measured from the FT sensor
+    * @param ankle_T_foot T of foot w.r.t. ankle
+    * @return a vector with the ZMP position w.r.t. the foot frame
+    */
         
     Eigen::Vector3d ZMP_sns;
     ZMP_sns.setZero();
@@ -53,6 +53,15 @@ inline Eigen::Vector3d computeZMP(const Eigen::Vector3d ZMP_L,
                            Eigen::Matrix<double, 6, 1> FT_foot_L,
                            Eigen::Matrix<double, 6, 1> FT_foot_R)     
 {
+    /**
+    * @brief compute total ZMP given left and right ZMP, weighting it with the sensors of left and right foot
+    
+    * @param ZMP_L left foot ZMP
+    * @param ZMP_R left foot ZMP
+    * @param FT_foot wrench measured from the FT sensor
+    * @return a vector with the ZMP position
+     **/
+    
     Eigen::Vector3d ZMP;
     ZMP.setZero();
     
