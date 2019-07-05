@@ -72,7 +72,7 @@ bool virtualConstraintsNode::get_param_ros()
         double default_clearance_heigth = 0.1;
         double default_duration_step = 2;
         std::string default_first_side = "Left";
-        int default_max_steps = 10;
+        int default_max_steps = 100;
         double default_indentation_zmp = 0;
         double default_duration_double_stance = 0;
         double default_start_time = 1;
@@ -395,13 +395,14 @@ double virtualConstraintsNode::sense_q1()
     /* TODO refactor: this is needed for the lenght of the step */
     /* take care of the lenght of the step*/
     double offset_q1 = 0.05;
+    
 //     if (_step_counter >= 4+1  && _step_counter < 5+1) /*Left*/
 //     {
-//         offset_q1 = 0.001;
+//         offset_q1 = 0.05;
 //     }
 //     else if (_step_counter >= 5+1 && _step_counter < 6+1) /*Right*/
 //     {
-//         offset_q1 = 0.02;
+//         offset_q1 = 0.05;
 //     }
 //     else if (_step_counter >= 6+1 && _step_counter < 7+1) /*Left*/
 //     {
@@ -425,7 +426,7 @@ double virtualConstraintsNode::sense_q1()
 //     }    
 //     else       
 //     {
-//         offset_q1 = - 0.05;
+//         offset_q1 = 0.05;
 //     }
 //     
         q1 = atan(dist_com(0)/ fabs(stance_ankle_to_com(2))) - offset_q1; // HACK
@@ -1016,36 +1017,36 @@ void virtualConstraintsNode::commander(double time)
         
         
         delta_com(0) = fabs(com_to_ankle_distance.z()) * tan(_q1);
-//         delta_com(1) = lateral_com(time).coeff(0);
+        delta_com(1) = lateral_com(time).coeff(0);
         delta_com(2) = 0;
         
-        
-        delta_com(0) = 0;
-        if (_current_state != State::IDLE)
-        {
-            _time_fake = _time_fake + _dt*2;
-            delta_com(1) = 0.04*sin(_time_fake);
-        }
-        else
-        {
-            delta_com(0) = 0;
-        }
+        /* FOR EXPERIMENT OSCILLATING */
+//         delta_com(0) = 0;
+//         if (_current_state != State::IDLE)
+//         {
+//             _time_fake = _time_fake + _dt*2;
+//             delta_com(1) = 0.04*sin(_time_fake);
+//         }
+//         else
+//         {
+//             delta_com(0) = 0;
+//         }
        /* ------------------------------------- steer -------------------------------------------------- */
        /* TODO refactor: this is needed for the steering */
        Eigen::Matrix2d R_steer_local;
        
-        if (_step_counter >= 4 && _step_counter < 15)
-        {
-            double theta = _theta_steer;
-                R_steer_local << cos(theta), -sin(theta),
-                                sin(theta), cos(theta);
-        }
-        else
-        {
+//         if (_step_counter >= 4 && _step_counter < 15)
+//         {
+//             double theta = _theta_steer;
+//                 R_steer_local << cos(theta), -sin(theta),
+//                                 sin(theta), cos(theta);
+//         }
+//         else
+//         {
                 double theta = 0;
                 R_steer_local << cos(theta), -sin(theta),
                                 sin(theta), cos(theta);
-        }
+//         }
 
         delta_com_rot.head(2) = R_steer_local * delta_com.head(2);
         /* ---------------------------------------------------------------------------------------------- */
@@ -1066,21 +1067,22 @@ void virtualConstraintsNode::commander(double time)
 
         
         /* for stabilizer */
-        double zmp_sag_ref, zmp_lat_ref;
-        zmp_sag_ref = _com_trajectory.coeff(0);
+//         double zmp_sag_ref, zmp_lat_ref;
+//         zmp_sag_ref = _com_trajectory.coeff(0);
         
         /* send ZMP ref before kajita */
 //         int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
 //         zmp_lat_ref = _current_pose_ROS.get_sole_tot(_other_side).translation().coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
-        /* send ZMP ref after kajita */
-        zmp_lat_ref = _MpC_lat->_C_zmp*_com_y;
-        _zmp_ref << zmp_sag_ref, zmp_lat_ref, 0;
-
-        if (_started == 0 || (_started == 1 && _internal_time < _start_walk))
-        {
-            _zmp_ref << _first_com_pos.coeff(0), 0, 0;
-        }
-        
+       
+       /* send ZMP ref after kajita */
+//         zmp_lat_ref = _MpC_lat->_C_zmp*_com_y;
+//         _zmp_ref << zmp_sag_ref, zmp_lat_ref, 0;
+// 
+//         if (_started == 0 || (_started == 1 && _internal_time < _start_walk))
+//         {
+//             _zmp_ref << _first_com_pos.coeff(0), 0, 0;
+//         }
+//         
         /* send waist*/
         
         _waist_trajectory = _final_waist_pose;
@@ -1203,7 +1205,7 @@ void virtualConstraintsNode::commander(double time)
         
         
         send_com(_com_trajectory);
-//         send_step(_foot_trajectory);
+        send_step(_foot_trajectory);
         send_zmp(_zmp_ref);
         send_waist(_waist_trajectory);
         
@@ -1320,12 +1322,12 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 
                 /* TODO refactor: this is needed for the steering and the length step */
                 
-                double theta = _theta_steer; // change heading
-                R_steer << cos(theta), -sin(theta),
-                                sin(theta), cos(theta);
+//                 double theta = _theta_steer; // change heading
+//                 R_steer << cos(theta), -sin(theta),
+//                                 sin(theta), cos(theta);
 //                 if (_step_counter >= 4 && _step_counter < 5)       /*Left*/
 //                 {
-//                     _q1_max = 0.001;
+//                     _q1_max = 0.05;
 //                     q1_max_new = _q1_max; // change step length
 //                     double theta = _theta_steer; // change heading
 //                     R_steer << cos(theta), -sin(theta),
@@ -1333,7 +1335,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
 //                 }
 //                 else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
 //                 {
-//                     _q1_max = 0.02;
+//                     _q1_max = 0.05;
 //                     q1_max_new = _q1_max; // change step length
 //                     double theta = _theta_steer; // change heading
 //                     R_steer << cos(theta), -sin(theta),
@@ -1381,11 +1383,11 @@ bool virtualConstraintsNode::compute_step(Step step_type)
 //                 }
 //                 else
 //                 {
-//                     _q1_max = - 0.05;
-//                     q1_max_new = _q1_max;
-//                     double theta = 0;
-//                     R_steer << cos(theta), -sin(theta),
-//                                 sin(theta), cos(theta); 
+                    _q1_max = 0.05;
+                    q1_max_new = _q1_max;
+                    double theta = 0;
+                    R_steer << cos(theta), -sin(theta),
+                                sin(theta), cos(theta); 
 //                 }
                 /*----------------generate q1-------------------------*/
                 double q1 = (q1_max_new - _q1_min);
@@ -1722,8 +1724,8 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
     double dt = _dt;
     
     _q1_sensed_old = _q1_sensed;
-//     _q1_sensed = sense_q1();
-    _q1_sensed = _q1_temp;
+    _q1_sensed = sense_q1();
+//     _q1_sensed = _q1_temp; // THIS IS FOR OSCILLATING FAKE!!!!!!!
     
     double alpha_old = (_q1_sensed_old - _q1_min)/(_q1_max - _q1_min);
     double alpha = (_q1_sensed - _q1_min)/(_q1_max - _q1_min);
@@ -1975,36 +1977,37 @@ double virtualConstraintsNode::q_handler()
     
     if (_started == 1 && _internal_time >= +_start_walk)
     {
-double cond_q;
-
-//         if (_q1_min <= _q1_max)
-//         {
-//             cond_q = (sense_q1() >= _q1_max);
-//         }
-//         else if (_q1_min > _q1_max)
-//         {
-//             cond_q = (sense_q1() <= _q1_max);
-//         }
-//         if (cond_q)
-//         {
-//             _q1_temp = _q1_temp;
-//         }
-//         else
-//         {
+        double cond_q;
+        /* take it out if OSCILLATING*/
+        if (_q1_min <= _q1_max)
+        {
+            cond_q = (sense_q1() >= _q1_max);
+        }
+        else if (_q1_min > _q1_max)
+        {
+            cond_q = (sense_q1() <= _q1_max);
+        }
+        if (cond_q)
+        {
+            _q1_temp = _q1_temp;
+        }
+        else
+        {
 //         _q1_temp = _q1_start + _steep_coeff*(_internal_time - _start_walk); // basically q = a*t
             _q1_temp = _q1_temp + _steep_coeff*(dt); // basically q = a*t//ver2
-//         }
+        }
     }
     
-    if (_q1_temp > _q1_max)
-    {
-        
-        _q1_temp = - _q1_max;
-        _q1_min = - _q1_max;
-        _current_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
-        _steep_coeff = 2 * (_q1_max - _q1_min);  
-        
-    }
+    
+//     if (_q1_temp > _q1_max)
+//     {
+//         
+//         _q1_temp = - _q1_max;
+//         _q1_min = - _q1_max;
+//         _current_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
+//         _steep_coeff = 2 * (_q1_max - _q1_min);  
+//         
+//     }
 
 }
 

@@ -41,6 +41,11 @@ void zmpSensor::update(Eigen::Affine3d w_T_Lfoot, Eigen::Affine3d w_T_Rfoot)
     _ftSensorL->getWrench(_FT_foot_L);
     _ftSensorR->getWrench(_FT_foot_R);
     
+//     necessary for real robot
+//         _FT_foot_L *= -1;
+//         _FT_foot_R *= -1;
+
+    
     /* get ZMP w.r.t. foot */
     if (_FT_foot_L(2) >= _Fz_min)
     {
@@ -52,10 +57,10 @@ void zmpSensor::update(Eigen::Affine3d w_T_Lfoot, Eigen::Affine3d w_T_Rfoot)
         R_T_ZMP_R = computeFootZMP(_FT_foot_R, _ankle_T_foot_R.translation());
     }
     
-    std::cout << "w_T_Lfoot: " << _w_T_Lfoot.translation().transpose() << std::endl;
-    std::cout << "w_T_Rfoot: " << _w_T_Rfoot.translation().transpose()  << std::endl;
-    std::cout << "ZMP_L: " <<L_T_ZMP_L.transpose() << std::endl;
-    std::cout << "ZMP_R: " <<R_T_ZMP_R.transpose()  << std::endl;
+//     std::cout << "w_T_Lfoot: " << _w_T_Lfoot.translation().transpose() << std::endl;
+//     std::cout << "w_T_Rfoot: " << _w_T_Rfoot.translation().transpose()  << std::endl;
+//     std::cout << "ZMP_L: " <<L_T_ZMP_L.transpose() << std::endl;
+//     std::cout << "ZMP_R: " <<R_T_ZMP_R.transpose()  << std::endl;
     
     /* get ZMP w.r.t. world */
     Eigen::Vector3d w_T_ZMP_L = L_T_ZMP_L + _w_T_Lfoot.translation();
@@ -70,8 +75,8 @@ void zmpSensor::update(Eigen::Affine3d w_T_Lfoot, Eigen::Affine3d w_T_Rfoot)
     
 //     _ZMP = computeZMP(R_T_ZMP_L, R_T_ZMP_R, _FT_foot_L, _FT_foot_R);
     
-    std::cout << "ZMP: " << _ZMP.transpose() << std::endl;
-    std::cout << "------" << std::endl;
+//     std::cout << "ZMP: " << _ZMP.transpose() << std::endl;
+//     std::cout << "------" << std::endl;
     
     // log 
     _logger->add("ZMP", _ZMP);

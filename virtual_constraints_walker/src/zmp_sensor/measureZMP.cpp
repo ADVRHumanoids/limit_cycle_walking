@@ -80,13 +80,13 @@ int main(int argc, char **argv)
         zmp_sensor->update(w_T_sole_L, w_T_sole_R);
         
         
-//         geometry_msgs::PoseStamped zmp_l_measured;
-//         tf::pointEigenToMsg(zmp_sensor->getZMP_L(), zmp_l_measured.pose.position);
-//         _zmp_l_pub.publish(zmp_l_measured);
-//         
-//         geometry_msgs::PoseStamped zmp_r_measured;
-//         tf::pointEigenToMsg(zmp_sensor->getZMP_R(), zmp_r_measured.pose.position);
-//         _zmp_r_pub.publish(zmp_r_measured);
+        geometry_msgs::PoseStamped zmp_l_measured;
+        tf::pointEigenToMsg(zmp_sensor->getZMP_L(), zmp_l_measured.pose.position);
+        _zmp_l_pub.publish(zmp_l_measured);
+        
+        geometry_msgs::PoseStamped zmp_r_measured;
+        tf::pointEigenToMsg(zmp_sensor->getZMP_R(), zmp_r_measured.pose.position);
+        _zmp_r_pub.publish(zmp_r_measured);
         
         geometry_msgs::PoseStamped zmp_measured;
         tf::pointEigenToMsg(zmp_sensor->getZMP(), zmp_measured.pose.position);
