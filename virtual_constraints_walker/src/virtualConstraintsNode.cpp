@@ -264,7 +264,7 @@ int virtualConstraintsNode::straighten_up_action() /*if I just setted a publishe
         _current_world_to_com(0) = _current_pose_ROS.get_world_to_com().coeff(0) + _current_pose_ROS.get_distance_ankle_to_com(_current_side).coeff(2)*tan(_initial_param.get_max_inclination()) - _initial_param.get_lean_forward();
         _initial_q1 = sense_q1();
         
-        std::cout << _initial_param.get_lean_forward() << std::endl;
+//         std::cout << _initial_param.get_lean_forward() << std::endl;
 //         std::cout << sense_q1() << std::endl;
         //exit
         return 0;
@@ -1085,7 +1085,7 @@ void virtualConstraintsNode::commander(double time)
 //         
         /* send waist*/
         
-        _waist_trajectory = _final_waist_pose;
+//         _waist_trajectory = _final_waist_pose;
         
         
         _logger->add("com_vel", sense_com_velocity());
@@ -1207,7 +1207,7 @@ void virtualConstraintsNode::commander(double time)
         send_com(_com_trajectory);
         send_step(_foot_trajectory);
         send_zmp(_zmp_ref);
-        send_waist(_waist_trajectory);
+//         send_waist(_waist_trajectory);
         
 //     }
     
@@ -1602,10 +1602,10 @@ bool virtualConstraintsNode::initialize(double time)
     _initial_sole_y_right = _current_pose_ROS.get_sole(robot_interface::Side::Right).coeff(1);
     _initial_sole_y_left = _current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1);
     
-    int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
-
-    _initial_zmp_y_right = _initial_sole_y_right - sign_first_stance_step * _initial_param.get_indent_zmp();
-    _initial_zmp_y_left =  _initial_sole_y_left - sign_first_stance_step * _initial_param.get_indent_zmp();
+    
+    _initial_zmp_y_right = _initial_sole_y_right + _initial_param.get_indent_zmp();
+    _initial_zmp_y_left =  _initial_sole_y_left - _initial_param.get_indent_zmp();
+    
     
     _initial_com_position = _current_pose_ROS.get_com();
     _initial_sole_pose = _current_pose_ROS.get_sole_tot(_current_side);
@@ -1648,6 +1648,7 @@ bool virtualConstraintsNode::initialize(double time)
 //     std::cout << "Position foot LEFT: "  << "x: " << _current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(0) 
 //                                          << "y: " << _current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1) 
 //                                          << "z: " << _current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(2) << std::endl;
+    
     std::cout << "Start walk time: " << _initial_param.get_start_time() << " s" <<  std::endl;
     std::cout << "Lean forward: " << _initial_param.get_lean_forward() << " m (Initial angle: " << _initial_q1 << " rad)" << std::endl;
     std::cout << "Step length: " << _nominal_full_step << " m (Max angle of inclination: " << _q1_max << " rad)" <<  std::endl;
@@ -1655,12 +1656,11 @@ bool virtualConstraintsNode::initialize(double time)
     std::cout << "Double stance: " <<  _initial_param.get_double_stance() << " s" << std::endl;
     std::cout << "Steepness: " << _steep_coeff <<  std::endl;
     std::cout << "Real impacts: " << _initial_param.get_switch_real_impact() <<  std::endl;
-    
+    std::cout << "ZMP width correction: " << - _initial_param.get_indent_zmp() << " --> ZMP Right: " << _initial_zmp_y_right << " and ZMP Left: " << _initial_zmp_y_right << std::endl;
 
     _com_y << _initial_com_position(1), 0, 0; /*com trajectory used by mpc: pos, vel, acc*/
 
 
-    _first_stance_step = _current_pose_ROS.get_sole(_other_side).coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
 
     //MpC
 
@@ -1978,7 +1978,7 @@ double virtualConstraintsNode::q_handler()
     if (_started == 1 && _internal_time >= +_start_walk)
     {
         double cond_q;
-        /* take it out if OSCILLATING*/
+
         if (_q1_min <= _q1_max)
         {
             cond_q = (sense_q1() >= _q1_max);
@@ -1997,7 +1997,6 @@ double virtualConstraintsNode::q_handler()
             _q1_temp = _q1_temp + _steep_coeff*(dt); // basically q = a*t//ver2
         }
     }
-    
     
 //     if (_q1_temp > _q1_max)
 //     {
@@ -2026,6 +2025,7 @@ void virtualConstraintsNode::generate_starting_zmp()
     
     double initial_step_value;
     double dt = _dt;
+    
     if (_current_side == robot_interface::Side::Right)
     {
         initial_step_value = _foot_pos_y_left - _initial_param.get_indent_zmp();
@@ -2034,7 +2034,7 @@ void virtualConstraintsNode::generate_starting_zmp()
     {
         initial_step_value = _foot_pos_y_right + _initial_param.get_indent_zmp();
     }
-        
+    
 //     int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0);
      //_current_pose_ROS.get_sole(_other_side).coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
     int window_size = round(_MpC_lat->_window_length / dt);

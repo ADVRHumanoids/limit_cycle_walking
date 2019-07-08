@@ -42,8 +42,8 @@ void zmpSensor::update(Eigen::Affine3d w_T_Lfoot, Eigen::Affine3d w_T_Rfoot)
     _ftSensorR->getWrench(_FT_foot_R);
     
 //     necessary for real robot
-//         _FT_foot_L *= -1;
-//         _FT_foot_R *= -1;
+        _FT_foot_L *= -1;
+        _FT_foot_R *= -1;
 
     
     /* get ZMP w.r.t. foot */
