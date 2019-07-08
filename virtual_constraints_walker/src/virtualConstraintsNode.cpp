@@ -1587,10 +1587,8 @@ bool virtualConstraintsNode::initialize(double time)
     _initial_sole_y_right = _current_pose_ROS.get_sole(robot_interface::Side::Right).coeff(1);
     _initial_sole_y_left = _current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1);
     
-    int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
-
-    _initial_zmp_y_right = _initial_sole_y_right - sign_first_stance_step * _initial_param.get_indent_zmp();
-    _initial_zmp_y_left =  _initial_sole_y_left - sign_first_stance_step * _initial_param.get_indent_zmp();
+    _initial_zmp_y_right = _initial_sole_y_right + _initial_param.get_indent_zmp();
+    _initial_zmp_y_left =  _initial_sole_y_left - _initial_param.get_indent_zmp();
     
     _initial_com_position = _current_pose_ROS.get_com();
     _initial_sole_pose = _current_pose_ROS.get_sole_tot(_current_side);
@@ -1643,9 +1641,6 @@ bool virtualConstraintsNode::initialize(double time)
     
 
     _com_y << _initial_com_position(1), 0, 0; /*com trajectory used by mpc: pos, vel, acc*/
-
-
-    _first_stance_step = _current_pose_ROS.get_sole(_other_side).coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
 
     //MpC
 
