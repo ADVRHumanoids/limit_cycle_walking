@@ -1638,7 +1638,7 @@ bool virtualConstraintsNode::initialize(double time)
     std::cout << "Double stance: " <<  _initial_param.get_double_stance() << " s" << std::endl;
     std::cout << "Steepness: " << _steep_coeff <<  std::endl;
     std::cout << "Real impacts: " << _initial_param.get_switch_real_impact() <<  std::endl;
-    
+    std::cout << "ZMP width correction: " << - _initial_param.get_indent_zmp() << " --> ZMP Right: " << _initial_zmp_y_right << " and ZMP Left: " << _initial_zmp_y_right << std::endl;
 
     _com_y << _initial_com_position(1), 0, 0; /*com trajectory used by mpc: pos, vel, acc*/
 
