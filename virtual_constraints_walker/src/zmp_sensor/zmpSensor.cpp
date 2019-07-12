@@ -7,8 +7,8 @@ zmpSensor::zmpSensor(XBot::ForceTorqueSensor::ConstPtr ftSensorL,
                      XBot::ForceTorqueSensor::ConstPtr ftSensorR,
                      Eigen::Affine3d w_T_Lfoot,
                      Eigen::Affine3d w_T_Rfoot,
-                     Eigen::Affine3d w_T_Lankle,
-                     Eigen::Affine3d w_T_Rankle,
+                     Eigen::Affine3d w_T_Lsensor,
+                     Eigen::Affine3d w_T_Rsensor,
                      const double dt) :
 _ftSensorL(ftSensorL),
 _ftSensorR(ftSensorR),
@@ -16,8 +16,8 @@ _dt(dt),
 _Fz_min(DEFAULT_Fzmin),
 _w_T_Lfoot(w_T_Lfoot),
 _w_T_Rfoot(w_T_Rfoot),
-_w_T_Lankle(w_T_Lankle),  
-_w_T_Rankle(w_T_Rankle)
+_w_T_Lsensor(w_T_Lsensor),  
+_w_T_Rsensor(w_T_Rsensor)
 {
     _logger = XBot::MatLogger::getLogger("/tmp/zmp_sensor_log");
     
@@ -26,8 +26,8 @@ _w_T_Rankle(w_T_Rankle)
     _ZMP.setZero();
     
     /* get T feet w.r.t. ankle */
-    _ankle_T_foot_L = _w_T_Lankle.inverse() * _w_T_Lfoot;
-    _ankle_T_foot_R = _w_T_Rankle.inverse() * _w_T_Rfoot;
+    _sensor_T_foot_L = _w_T_Lsensor.inverse() * _w_T_Lfoot;
+    _sensor_T_foot_R = _w_T_Rsensor.inverse() * _w_T_Rfoot;
 }
 
 void zmpSensor::update(Eigen::Affine3d w_T_Lfoot, Eigen::Affine3d w_T_Rfoot)
@@ -37,19 +37,24 @@ void zmpSensor::update(Eigen::Affine3d w_T_Lfoot, Eigen::Affine3d w_T_Rfoot)
     _w_T_Rfoot = w_T_Rfoot;
     
     
-    
     _ftSensorL->getWrench(_FT_foot_L);
     _ftSensorR->getWrench(_FT_foot_R);
+    
+
+//     necessary for real robot
+//         _FT_foot_L *= -1;
+//         _FT_foot_R *= -1;
+
     
     /* get ZMP w.r.t. foot */
     if (_FT_foot_L(2) >= _Fz_min)
     {
-        L_T_ZMP_L = computeFootZMP(_FT_foot_L, _ankle_T_foot_L.translation());
+        L_T_ZMP_L = computeFootZMP(_FT_foot_L, _sensor_T_foot_L.translation());
     }
     
     if (_FT_foot_R(2) >= _Fz_min)
     {
-        R_T_ZMP_R = computeFootZMP(_FT_foot_R, _ankle_T_foot_R.translation());
+        R_T_ZMP_R = computeFootZMP(_FT_foot_R, _sensor_T_foot_R.translation());
     }
     
     std::cout << "w_T_Lfoot: " << _w_T_Lfoot.translation().transpose() << std::endl;
