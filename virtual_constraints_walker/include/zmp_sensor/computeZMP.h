@@ -7,7 +7,7 @@
 
 
 inline Eigen::Vector3d computeFootZMP(Eigen::Matrix<double, 6, 1> FT_foot, 
-                               Eigen::Vector3d ankle_T_foot)
+                               Eigen::Vector3d sensor_T_foot)
 {
     
     /**
@@ -24,26 +24,26 @@ inline Eigen::Vector3d computeFootZMP(Eigen::Matrix<double, 6, 1> FT_foot,
     * NOTE: The ZMP position is computed w.r.t. the sensor frame, then transformed into the foot frame.
     *
     * @param FT_foot wrench measured from the FT sensor
-    * @param ankle_T_foot T of foot w.r.t. ankle
+    * @param sensor_T_foot T of foot w.r.t. sensor
     * @return a vector with the ZMP position w.r.t. the foot frame
     */
         
     Eigen::Vector3d ZMP_sns;
     ZMP_sns.setZero();
     
-    double ankle_height = fabs(ankle_T_foot(2));
-    
+    double d = fabs(sensor_T_foot(2)); /* height of the sensor w.r.t the sole frame*/
+
     /* ZMP w.r.t. the FT sensor frame (ankle)*/
     if ( FT_foot(2) > 0.0)
     {
-        ZMP_sns(0) = (- FT_foot(4) - ankle_height* FT_foot(0))/ FT_foot[2];
-        ZMP_sns(1) = (  FT_foot(3) - ankle_height* FT_foot(1))/ FT_foot[2];
-        ZMP_sns(2) = - ankle_height;
+        ZMP_sns(0) = (- FT_foot(4) - d * FT_foot(0))/ FT_foot[2];
+        ZMP_sns(1) = (  FT_foot(3) - d * FT_foot(1))/ FT_foot[2];
+        ZMP_sns(2) = - d;
     }
     
     /* ZMP w.r.t. the foot frame */
     Eigen::Vector3d ZMP_foot;
-    ZMP_foot = ZMP_sns - ankle_T_foot;
+    ZMP_foot = ZMP_sns - sensor_T_foot;
     
     return ZMP_foot;
 }

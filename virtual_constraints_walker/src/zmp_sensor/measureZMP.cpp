@@ -31,6 +31,7 @@ int main(int argc, char **argv)
     XBot::ForceTorqueSensor::ConstPtr FT_sensor_L;
     XBot::ForceTorqueSensor::ConstPtr FT_sensor_R;
     
+    
     try 
     {
         FT_sensor_L = robot->getForceTorque().at("l_leg_ft");
@@ -40,18 +41,22 @@ int main(int argc, char **argv)
     {
         throw std::runtime_error("Force/Torque sensor does not exist, specify a valid one.");
     }
-    
+  
     Eigen::Matrix<double, 6, 1> FT_foot_L;
     Eigen::Matrix<double, 6, 1> FT_foot_R;
+    
+    Eigen::Affine3d w_T_sensor_L, w_T_sensor_R;
+    model->getPose("l_leg_ft", w_T_sensor_L);
+    model->getPose("r_leg_ft", w_T_sensor_R);  
+
+    Eigen::Affine3d w_T_ankle_L, w_T_ankle_R;
+    model->getPose("l_ankle", w_T_ankle_L);
+    model->getPose("r_ankle", w_T_ankle_R); 
     
     Eigen::Affine3d w_T_sole_L, w_T_sole_R;
     model->getPose("l_sole", w_T_sole_L);
     model->getPose("r_sole", w_T_sole_R);
     
-    
-    Eigen::Affine3d w_T_ankle_L, w_T_ankle_R;
-    model->getPose("l_ankle", w_T_ankle_L);
-    model->getPose("r_ankle", w_T_ankle_R);
     
     zmp_sensor = std::make_shared<zmpSensor>
                     (
@@ -59,8 +64,8 @@ int main(int argc, char **argv)
                         FT_sensor_R,
                         w_T_sole_L,
                         w_T_sole_R, 
-                        w_T_ankle_L, 
-                        w_T_ankle_R,
+                        w_T_sensor_L, 
+                        w_T_sensor_R,
                         dt
                     );
     
@@ -71,6 +76,7 @@ int main(int argc, char **argv)
         
         model->syncFrom(*robot);
         
+        // with reference to what?
 //         model->getPose("l_sole", w_T_sole_L);
 //         model->getPose("r_sole", w_T_sole_R);
         

@@ -43,10 +43,10 @@ private:
     Eigen::Matrix<double, 6, 1> _FT_foot_R, _FT_foot_L; 
     
     Eigen::Affine3d _w_T_Lfoot, _w_T_Rfoot;
-    Eigen::Affine3d _w_T_Lankle, _w_T_Rankle;
+    Eigen::Affine3d _w_T_Lsensor, _w_T_Rsensor;
     
-    Eigen::Affine3d _ankle_T_foot_R;
-    Eigen::Affine3d _ankle_T_foot_L;
+    Eigen::Affine3d _sensor_T_foot_R;
+    Eigen::Affine3d _sensor_T_foot_L;
     
     double _foot_lenght, _foot_width;
     double _Fz_min;
