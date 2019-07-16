@@ -4,38 +4,39 @@
 #include <iostream>
 #include <XBotInterface/MatLogger.hpp>
 
+# define grav 9.80665
+
 class footStabilizer
 {
 public:
-    footStabilizer();
+    
+    footStabilizer(double dt);
     ~footStabilizer() {_logger->flush();};
     
-    void update(const Eigen::VectorXd& com_velocity,
-                const Eigen::VectorXd& com_pose);
+    Eigen::Vector3d getPos() const;
+    Eigen::Vector3d getOmega() const;
+    Eigen::Vector3d getCP() const;
+    
+    void setCPRef(Eigen::Vector3d cp_ref) {_cp_ref = cp_ref;};
+    void update(const Eigen::Vector3d& com_velocity,
+                const Eigen::Vector3d& com_pose);
     
     
+    Eigen::Vector3d computeCapturePoint(const Eigen::Vector3d& com_pos, const Eigen::Vector3d& com_velocity);
     
 private:
     
+
+    Eigen::Vector3d _omega, _pos;
     
+    Eigen::Vector3d _kp, _kd;
+    double _dt;
+    
+    Eigen::Vector3d _cp, _cp_previous, _cp_ref;
     
     XBot::MatLogger::Ptr _logger;
 };
 
 
 
-Eigen::VectorXd computeCapturePoint(const Eigen::VectorXd& com_velocity,
-                                                     const Eigen::VectorXd& com_pose)
-{
-    Eigen::VectorXd cp(3); cp.setZero(3);
-
-    Eigen::VectorXd com_velocity_ = com_velocity;
-
-    double g = 9.81;
-
-    cp[0] = com_pose[0] + com_velocity_[0]*sqrt(com_pose[2]/g);
-    cp[1] = com_pose[1] + com_velocity_[1]*sqrt(com_pose[2]/g);
-    cp[2] = 0.0;
-
-    return cp;
-}
+#endif

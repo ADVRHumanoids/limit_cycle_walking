@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   tf_conversions
   eigen_conversions
+  cartesian_interface
 )
 
 find_package(XBotInterface REQUIRED)
@@ -62,7 +63,9 @@ include_directories(include/)
 
 add_library(virtual_constraints_walker STATIC
               src/virtualConstraintsNode.cpp
-              src/robot_interface_ROS.cpp)
+              src/robot_interface_ROS.cpp
+              src/footStabilizer/footStabilizer.cpp
+              src/footStabilizer/compute_cp)
 
 
 
@@ -74,7 +77,8 @@ target_link_libraries(virtual_constraints_walker ${catkin_LIBRARIES} ${XBotInter
 
 
 add_executable(VC_run src/VC_run.cpp)
-add_executable(kajitaTest src/kajitaTraj.cpp)
+
+add_executable(compute_cp src/footStabilizer/compute_cp.cpp)
 
 
 #target_link_libraries(VC_publisher ${catkin_LIBRARIES})
@@ -83,7 +87,7 @@ add_executable(kajitaTest src/kajitaTraj.cpp)
 
 target_link_libraries(VC_run virtual_constraints_walker ${catkin_LIBRARIES})
 
-target_link_libraries(kajitaTest ${OpenMpC_LIBRARIES})
+target_link_libraries(compute_cp virtual_constraints_walker ${catkin_LIBRARIES})
  
 #add_dependencies(VC_publisher)
 #add_dependencies(VC_subscriber)
