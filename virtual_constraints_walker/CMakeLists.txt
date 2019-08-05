@@ -12,7 +12,9 @@ add_compile_options(-std=c++11)
 #find_package(Eigen3 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
+  dynamic_reconfigure
   roscpp
+  rospy
   std_msgs
   message_generation
   genmsg
@@ -44,6 +46,11 @@ find_package(OpenMpC REQUIRED)
 #  std_msgs
 #
 # )
+
+generate_dynamic_reconfigure_options(
+  cfg/gains.cfg
+)
+
 
 
 catkin_package(
@@ -92,6 +99,10 @@ target_link_libraries(compute_cp virtual_constraints_walker ${catkin_LIBRARIES})
 #add_dependencies(VC_publisher)
 #add_dependencies(VC_subscriber)
 #add_dependencies(VC_listener)
+add_dependencies(compute_cp ${PROJECT_NAME}_gencfg)
+
+
+
 
 
 #install(TARGETS VC_publisher 
@@ -105,7 +116,4 @@ target_link_libraries(compute_cp virtual_constraints_walker ${catkin_LIBRARIES})
 #         LIBRARY DESTINATION lib/${PROJECT_NAME})
 
 install(TARGETS VC_run RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
-
-
-#install(TARGETS virtualConstraintsNode RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
-#install(TARGETS mainNode RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}
+install(TARGETS compute_cp RUNTIME DESTINATION lib/${PROJECT_NAME}) #${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -1,0 +1,3 @@
+using_com_from_odometry: 0
+using_cartesio: true
+using_instantaneous_cp: true

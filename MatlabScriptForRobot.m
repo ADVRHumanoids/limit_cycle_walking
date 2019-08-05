@@ -19,6 +19,12 @@ plot(foot_pos_left(1,:), foot_pos_left(2,:));hold on; % actual
 plot(foot_pos_right(1,:), foot_pos_right(2,:));hold on; % actual
 
 
+plot(time, cp(2,:)); hold on;
+plot(time, com_trajectory(2,:)); hold on;
+
+plot(time, cp(1,:)); hold on;
+plot(time, com_trajectory(1,:)); hold on;
+
 %% 
 plot(time, com_trajectory(1,:)); hold on;
 plot(time, final_com_position(1,:)'); hold on;
