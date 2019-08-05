@@ -4,6 +4,9 @@
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
 
+#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <XBotInterface/RobotInterface.h>
+
 #include <Eigen/Dense>
 #include <geometry_msgs/PoseStamped.h>
 #include <XBotCore/CommandAdvr.h>
@@ -28,6 +31,9 @@
 
 #include <robot_interface.h>
 #include <robot_interface_ROS.h>
+#include <cartesian_interface/ros/RosImpl.h>
+
+#include <footStabilizer/footStabilizer.h>
 
 #define PI 3.141592653589793238463
 # define grav 9.80665 
@@ -253,16 +259,20 @@ public:
     void send_step(Eigen::Affine3d foot_command);
     void send_step_right(Eigen::Affine3d foot_command);
     void send_step_left(Eigen::Affine3d foot_command);
+    
+    
     void send_waist(Eigen::Affine3d waist_command);
     
     void send_zmp(Eigen::Vector3d zmp_command);
     
-    void update_com();
-    void update_step();
+    /* publish stuff */
+    void send_cp_ref(Eigen::Vector3d cp_ref);
+    void send_cp_real (Eigen::Vector3d cp_real);
     
+    void send_footstab(Eigen::Vector3d footstab_state);
+    void send_real_com(Eigen::Vector3d real_com_state);
     
-    
-    void run_walk();
+
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     Eigen::Affine3d compute_trajectory(Eigen::Affine3d T_i, Eigen::Affine3d T_f,
@@ -393,6 +403,13 @@ protected:
     ros::Publisher _waist_pub;
 
     ros::Publisher _switch_walk_pub;
+    ros::Publisher _cp_ref_pub;
+    ros::Publisher _cp_real_pub;
+    
+    ros::Publisher _footstab_pub;
+    ros::Publisher _real_com_pub;
+    
+    
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
     
     ros::ServiceServer _switch_srv;
@@ -400,12 +417,16 @@ protected:
     ros::Subscriber _cmd_switch_sub;
     ros::Subscriber _q1_sub;
     
+    ros::Subscriber _com_sub, _fb_pos_sub, _fb_vel_sub;
+    
     ros::Publisher _q1_pub;
     
     robot_interface _initial_pose;
 //     robot_interface _initial_pose_fake;
     
     robot_interface_ROS _current_pose_ROS;
+    
+    
     
     double _q1_cmd;
     double _q1_state;
@@ -481,11 +502,19 @@ protected:
     data_com_poly _poly_com;
     std::shared_ptr<item_MpC> _MpC_lat;
     
+    std::shared_ptr<footStabilizer> _stab;
+    
+    XBot::RobotInterface::Ptr _robot;
+    XBot::ModelInterface::Ptr _model;
+    
+    XBot::Cartesian::RosImpl::Ptr _ci;
     
     robot_interface_ROS::Side _current_side = robot_interface::Side::Double;
     robot_interface::Side _other_side;
     
     XBot::MatLogger::Ptr _logger;
+    
+
     
     double _terrain_heigth;
     double _first_stance_step;
@@ -540,7 +569,40 @@ protected:
     bool _started = 0;
     
 
-    
+class item_fb {
+        
+    public:
+        
+        item_fb() 
+        {
+            _pos.matrix().setZero(); 
+            _vel.setZero(); 
+            _check_1 = 0;
+            _check_2 = 0;
+        }
+
+        Eigen::Affine3d getPose() {return _pos;};
+        Eigen::Matrix<double, 6, 1> getVelocity() {return _vel;};
+        
+        void pos_callback(const geometry_msgs::PoseStamped msg_rcv)
+        {
+            tf::poseMsgToEigen(msg_rcv.pose, _pos);
+            _check_1 = 1;
+        }
+        
+        void vel_callback(const geometry_msgs::TwistStamped msg_rcv)
+        {
+            tf::twistMsgToEigen(msg_rcv.twist, _vel);
+            _check_2 = 1;
+        }
+        
+        bool isReady() {return (_check_1 && _check_2);};
+    private:
+        Eigen::Affine3d _pos;
+        Eigen::Matrix<double, 6, 1> _vel;
+        bool _check_1, _check_2;
+} _fb;
+
     class param
     {
     public:
@@ -627,6 +689,10 @@ protected:
     
     Eigen::Affine3d _initial_sole_pose, _final_sole_pose, _initial_waist_pose, _final_waist_pose;
     
+    Eigen::Vector3d _kp_foot_stab, _kd_foot_stab;
+    
+    Eigen::Matrix3d _base_R_l_sole, _base_R_r_sole;
+    
     void planner(double time);
     void core(double time);
     void commander(double time);
@@ -647,8 +713,8 @@ protected:
     
     bool _stopped_received = 0;
     double _q1_start;
-    
-
+   
+    Eigen::Vector3d _real_com_pos, _real_com_vel;
 
     
         friend std::ostream& operator<<(std::ostream& os, Event s)
@@ -697,7 +763,7 @@ protected:
             default : return os << "wrong step type";
         }
     };
-    
+   
 };
 
 

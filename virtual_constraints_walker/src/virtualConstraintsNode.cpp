@@ -23,6 +23,19 @@ virtualConstraintsNode::virtualConstraintsNode()
         std::string this_node_name = ros::this_node::getName();
         _logger = XBot::MatLogger::getLogger("/tmp/" + this_node_name);
         ros::NodeHandle n;
+//         ros::NodeHandle nh("xbotcore");
+        
+        _real_com_pos.setZero();
+        _real_com_vel.setZero();
+        
+        /* model and robot */
+        auto cfg = XBot::ConfigOptionsFromParamServer(n);
+        _robot = XBot::RobotInterface::getRobot(cfg);
+        _model = XBot::ModelInterface::getModel(cfg);
+        
+        /* cartesian interface */
+        _ci = std::make_shared<XBot::Cartesian::RosImpl>();
+//         
         
         _dt = 0.01;
         _step_counter = 0;
@@ -31,11 +44,29 @@ virtualConstraintsNode::virtualConstraintsNode()
         _initial_pose = _current_pose_ROS;
         _initial_step_y = _current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1);
         
+        /* build foot stabilizer */
+        _stab = std::make_shared<footStabilizer>(_dt);
+        
+        /* get position com */
         _poly_com.set_com_initial_position(_current_pose_ROS.get_com());
+
+        Eigen::Affine3d cartesioWorld_T_com;
+        _ci->getPoseReference("com", cartesioWorld_T_com);
+        
+//         _poly_com.set_com_initial_position();
+        
+//         std::cout << _current_pose_ROS.get_com().transpose() << std::endl;
+//         std::cout << base_T_com.translation().transpose() << std::endl;
+        
         _q1_state = sense_q1();
         
         _terrain_heigth =  _current_pose_ROS.get_sole(_current_side).coeff(2);
 
+        /* prepare subscriber for position and velocity of the FLOATING BASE from gazebo */
+        _fb_pos_sub = n.subscribe("/xbotcore/floating_base_position", 10, &item_fb::pos_callback, &_fb);
+        _fb_vel_sub = n.subscribe("/xbotcore/floating_base_velocity", 10, &item_fb::vel_callback, &_fb);
+   
+    
 //      prepare subscriber node for commands
         _switch_srv = n.advertiseService("/virtual_constraints/walk_switch", &virtualConstraintsNode::cmd_switch, this);
              
@@ -50,9 +81,21 @@ virtualConstraintsNode::virtualConstraintsNode()
         
         _waist_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian//Waist/reference", 10);
         
-//        // required for STABILIZER
+//        // required for com STABILIZER
         _zmp_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com_stabilizer/zmp/reference", 10);
-  
+    
+        /* publish cp reference */
+        _cp_ref_pub = n.advertise<geometry_msgs::PoseStamped>("/virtual_constraints/cp_ref", 10);
+        
+        /* publish cp real */
+        _cp_real_pub = n.advertise<geometry_msgs::PoseStamped>("/virtual_constraints/cp_real", 10);
+        
+        /* publish foot stabilizer angle */
+        _footstab_pub = n.advertise<geometry_msgs::PoseStamped>("/virtual_constraints/foot_stab", 10);
+        
+        /* publish real com from gazebo */
+        _real_com_pub = n.advertise<geometry_msgs::PoseStamped>("/virtual_constraints/real_com", 10);
+        
         /* publish bool walking switch */
         _switch_walk_pub = n.advertise<std_msgs::Bool>("/virtual_constraints/bool_walking", 10);
     }
@@ -350,11 +393,11 @@ double virtualConstraintsNode::sense_q1()
     double offset_q1;
     if (_step_counter >= 4+1  && _step_counter < 5+1) /*Left*/
     {
-        offset_q1 = 0.001;
+        offset_q1 = 0.05; /* 0.001 */
     }
     else if (_step_counter >= 5+1 && _step_counter < 6+1) /*Right*/
     {
-        offset_q1 = 0.02;
+        offset_q1 = 0.05; /* 0.02 */ 
     }
     else if (_step_counter >= 6+1 && _step_counter < 7+1) /*Left*/
     {
@@ -378,7 +421,7 @@ double virtualConstraintsNode::sense_q1()
     }    
     else       
     {
-        offset_q1 = - 0.05;
+        offset_q1 = 0.05;
     }
     
     
@@ -780,8 +823,39 @@ void virtualConstraintsNode::send_waist(Eigen::Affine3d waist_command)
         
         _waist_pub.publish(cmd_waist);
     }
-    
-    
+
+void virtualConstraintsNode::send_cp_ref(Eigen::Vector3d cp_ref)
+{
+        geometry_msgs::PoseStamped state_cp_ref;
+        tf::pointEigenToMsg(cp_ref, state_cp_ref.pose.position);
+        
+        _cp_ref_pub.publish(state_cp_ref);
+}
+
+void virtualConstraintsNode::send_cp_real(Eigen::Vector3d cp_real)
+{
+        geometry_msgs::PoseStamped state_cp_real;
+        tf::pointEigenToMsg(cp_real, state_cp_real.pose.position);
+        
+        _cp_real_pub.publish(state_cp_real);
+}
+void virtualConstraintsNode::send_footstab(Eigen::Vector3d footstab_command)
+{
+        geometry_msgs::PoseStamped state_footstab;
+        tf::pointEigenToMsg(footstab_command, state_footstab.pose.position);
+        
+        _footstab_pub.publish(state_footstab);
+}
+
+void virtualConstraintsNode::send_real_com(Eigen::Vector3d real_com_state)
+{
+        geometry_msgs::PoseStamped state_com_real;
+        tf::pointEigenToMsg(real_com_state, state_com_real.pose.position);
+        
+        _real_com_pub.publish(state_com_real);
+}
+
+
 Eigen::Affine3d virtualConstraintsNode::compute_trajectory(Eigen::Affine3d T_i, Eigen::Affine3d T_f,
                                                 double clearance,
                                                 double start_time, double end_time, 
@@ -1068,8 +1142,58 @@ void virtualConstraintsNode::commander(double time)
         _com_trajectory_fake = _initial_com_position_fake + delta_com;
         /* ---------------------------------------------------------------------------------------------- */
   
+        /* UPDATE ROBOT AND MODEL FROM XBOTCORE */
+        _robot->sense();
+        _model->syncFrom(*_robot);
+        _model->setFloatingBaseState(_fb.getPose(), _fb.getVelocity());
+        _model->update();
         
+        _model->getCOM(_real_com_pos);
+        _model->getCOMVelocity(_real_com_vel);
         
+        /* send real com from gazebo */
+        send_real_com(_real_com_pos);
+        
+        /* UPDATE FOOT CONTROLLER */
+        Eigen::Vector3d cp_inst_ref;
+        cp_inst_ref[0] = get_com_velocity()[0]*sqrt(_initial_height/grav);
+        cp_inst_ref[1] = get_com_velocity()[1]*sqrt(_initial_height/grav);
+        cp_inst_ref[2] = 0.0;
+       
+        /* set CP ref from robot commands (com pos and vel commanded) */
+        _stab->setInstantaneousCPRef(cp_inst_ref);
+        send_cp_ref(cp_inst_ref);
+        
+        /* update stabilizer with com position and velocity REAL from gazebo */
+        _stab->update(_real_com_pos[2], _real_com_vel);
+        
+        /* get CP from real com position and velocity */
+        Eigen::Vector3d cp_real = _stab->getInstantaneousCP();
+        send_cp_real(cp_real);
+        
+        /* get stabilizer action */
+        Eigen::Vector3d foot_stab = _stab->getTheta();
+        send_footstab(foot_stab);
+        
+        /* from stabilizer ankle angle to affine matrix */
+        _base_R_l_sole *= (Eigen::AngleAxisd(foot_stab[0], Eigen::Vector3d::UnitY())).toRotationMatrix();
+        _base_R_r_sole *= (Eigen::AngleAxisd(foot_stab[0], Eigen::Vector3d::UnitY())).toRotationMatrix();
+        
+//         if (_current_side == robot_interface::Side::Right)
+//         {
+//             right_foot_trajectory.linear() *= _base_R_r_sole;
+//         }
+//         else if (_current_side == robot_interface::Side::Left)
+//         {
+//             left_foot_trajectory.linear() *= _base_R_l_sole;
+//         }
+//         else if (_current_side == robot_interface::Side::Double)
+//         {
+//             right_foot_trajectory.linear() *= _base_R_r_sole;
+//             left_foot_trajectory.linear() *= _base_R_l_sole;
+//         }
+            
+
         /* send foot */
         
         _previous_foot_trajectory = _foot_trajectory;
@@ -1079,15 +1203,20 @@ void virtualConstraintsNode::commander(double time)
         if (_current_side == robot_interface::Side::Right)
         {
             right_foot_trajectory = _foot_trajectory;
+//             right_foot_trajectory.linear() *= _base_R_r_sole;
         }
         else if (_current_side == robot_interface::Side::Left)
         {
             left_foot_trajectory = _foot_trajectory;
+//             left_foot_trajectory.linear() *= _base_R_l_sole;
         } 
         else if (_current_side == robot_interface::Side::Double)
         {
             right_foot_trajectory = _right_foot_position;
+//             right_foot_trajectory.linear() *= _base_R_r_sole;
+            
             left_foot_trajectory = _left_foot_position;
+//             left_foot_trajectory.linear() *= _base_R_l_sole;
         }
         /* ------------------------------------------------------------ */
         /* for stabilizer */
@@ -1226,6 +1355,7 @@ void virtualConstraintsNode::commander(double time)
         _logger->add("cond_q", _cond_q);
         _logger->add("cond_step", _cond_step);
         
+//         _logger->add("cp", cp);
         
         send_com(_com_trajectory);
         
@@ -1362,7 +1492,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                                 sin(theta), cos(theta);
                 if (_step_counter >= 4 && _step_counter < 5)       /*Left*/
                 {
-                    _q1_max = 0.001;
+                    _q1_max = 0.05; /*0.001*/ 
                     q1_max_new = _q1_max; // change step length
                     double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),
@@ -1370,7 +1500,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 }
                 else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
                 {
-                    _q1_max = 0.02;
+                    _q1_max = 0.05; /*0.02*/ 
                     q1_max_new = _q1_max; // change step length
                     double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),
@@ -1418,7 +1548,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 }
                 else
                 {
-                    _q1_max = - 0.05;
+                    _q1_max = 0.05;
                     q1_max_new = _q1_max;
                     double theta = 0;
                     R_steer << cos(theta), -sin(theta),
@@ -1625,6 +1755,32 @@ bool virtualConstraintsNode::initialize(double time)
 {
     straighten_up_action();
     
+    /* wait for floating base from gazebo */
+    while (!_fb.isReady())
+    {
+        ros::spinOnce();
+        _fb.getPose();
+        _fb.getVelocity();
+    }
+    
+    /* add model and robot for foot stabilizer */
+    XBot::JointNameMap mapCogimon;
+    
+    _robot->sense();
+    _model->syncFrom(*_robot);
+    
+    _model->setFloatingBaseState(_fb.getPose(), _fb.getVelocity());
+    _model->update();
+        
+
+    
+    _model->getJointPosition(mapCogimon);
+    _model->getCOM(_real_com_pos);
+    _model->getCOMVelocity(_real_com_vel);
+    
+    std::cout << "real com_pos: " << _real_com_pos.transpose() << std::endl;
+    std::cout << "cartesio com_pos: " <<_current_pose_ROS.get_com().transpose() << std::endl;
+    
     double clearance = _initial_param.get_clearance_step();
     _reset_condition = 0; /*needed for resetting q1*/
     
@@ -1740,7 +1896,19 @@ bool virtualConstraintsNode::initialize(double time)
 //     _last_step_steer = 5;
     
     
-
+    /* set gains of foot stabilizer */
+    
+    _kp_foot_stab << 0.0001, 0.0, 0.0;
+    _kd_foot_stab << 0.015, 0.0, 0.0;
+    
+    _stab->setKp(_kp_foot_stab);
+    _stab->setKd(_kd_foot_stab);
+    
+    /* get ORIENTATION soles */
+    _base_R_l_sole = (_current_pose_ROS.get_sole_tot(robot_interface::Side::Right)).linear();
+    _base_R_r_sole = (_current_pose_ROS.get_sole_tot(robot_interface::Side::Left)).linear();
+        
+    
        /*fake cycle*/
 //     planner(0);
 //     impact_routine();
