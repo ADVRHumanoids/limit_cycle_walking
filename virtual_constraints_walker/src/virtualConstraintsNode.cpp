@@ -54,7 +54,6 @@ virtualConstraintsNode::virtualConstraintsNode()
         /* build foot stabilizer */
         _stab = std::make_shared<footStabilizer>(_dt);
         
-
         /* get position com */
         _poly_com.set_com_initial_position(_current_pose_ROS.get_com());
 
@@ -92,8 +91,8 @@ virtualConstraintsNode::virtualConstraintsNode()
 //        // required for com STABILIZER
         _zmp_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com_stabilizer/zmp/reference", 10);
     
-        /* publish cp reference */
-        _cp_ref_pub = n.advertise<geometry_msgs::PoseStamped>("/virtual_constraints/cp_ref", 10);
+        /* publish bool walking switch */
+        _switch_walk_pub = n.advertise<std_msgs::Bool>("/virtual_constraints/bool_walking", 10);
         
         /* publish cp real */
         _cp_real_pub = n.advertise<geometry_msgs::PoseStamped>("/virtual_constraints/cp_real", 10);
@@ -1234,7 +1233,7 @@ void virtualConstraintsNode::commander(double time)
         {
             right_foot_trajectory = _right_foot_position;
             right_foot_trajectory.linear() *= _base_R_r_sole;
-            
+        
             left_foot_trajectory = _left_foot_position;
             left_foot_trajectory.linear() *= _base_R_l_sole;
         }
