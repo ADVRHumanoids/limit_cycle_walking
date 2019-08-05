@@ -15,6 +15,10 @@
 
 #include<robot_interface.h>
 
+/**
+ * @brief robot_interface getting data from CARTESIO and XBOTCORE (force sensors)
+ * 
+ **/
 class robot_interface_ROS: public robot_interface
     {
     public:

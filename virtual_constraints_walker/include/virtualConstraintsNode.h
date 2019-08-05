@@ -251,6 +251,8 @@ public:
     void send_step(Eigen::Vector3d foot_command);
     
     void send_step(Eigen::Affine3d foot_command);
+    void send_step_right(Eigen::Affine3d foot_command);
+    void send_step_left(Eigen::Affine3d foot_command);
     void send_waist(Eigen::Affine3d waist_command);
     
     void send_zmp(Eigen::Vector3d zmp_command);
@@ -390,6 +392,7 @@ protected:
     ros::Publisher _zmp_pub;
     ros::Publisher _waist_pub;
 
+    ros::Publisher _switch_walk_pub;
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
     
     ros::ServiceServer _switch_srv;
@@ -414,6 +417,7 @@ protected:
     Eigen::Affine3d _foot_trajectory;
     Eigen::Affine3d _previous_foot_trajectory;
     
+    Eigen::Affine3d _right_foot_position, _left_foot_position;
     Eigen::Affine3d _waist_trajectory;
     
     Eigen::Vector3d _previous_com_pos;

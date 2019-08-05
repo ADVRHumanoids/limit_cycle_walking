@@ -31,7 +31,6 @@ virtualConstraintsNode::virtualConstraintsNode()
         _initial_pose = _current_pose_ROS;
         _initial_step_y = _current_pose_ROS.get_sole(robot_interface::Side::Left).coeff(1);
         
-
         _poly_com.set_com_initial_position(_current_pose_ROS.get_com());
         _q1_state = sense_q1();
         
@@ -54,6 +53,8 @@ virtualConstraintsNode::virtualConstraintsNode()
 //        // required for STABILIZER
         _zmp_pub = n.advertise<geometry_msgs::PoseStamped>("/cartesian/com_stabilizer/zmp/reference", 10);
   
+        /* publish bool walking switch */
+        _switch_walk_pub = n.advertise<std_msgs::Bool>("/virtual_constraints/bool_walking", 10);
     }
 
 bool virtualConstraintsNode::get_param_ros()
@@ -344,53 +345,6 @@ double virtualConstraintsNode::sense_q1()
     }
         
     
-
-    
-    
-    if (_current_side == robot_interface::Side::Double)
-    {
-        Eigen::Vector3d left_ankle_to_com, right_ankle_to_com, world_to_com;
-        Eigen::Vector3d dist_com;
-        
-        left_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left);
-        right_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right);
-        
-        world_to_com = _current_pose_ROS.get_world_to_com(); //current world to CoM
-        
-//         std::cout << "world_to_com: " << world_to_com.transpose() << std::endl;
-        
-        dist_com = world_to_com - _current_world_to_com; // current - initial (resetted at each step) CoM
-               
-        dist_com.head(2) = _R_steer_local * dist_com.head(2); // rotate back CoM
-
-        
-//         std::cout << "theta: " << theta << std::endl;
-//         double theta_calc = atan2(world_to_com(1) - _current_world_to_com(1), world_to_com(0) - _current_world_to_com(0));
-//         std::cout << "theta_calc: " << theta_calc << std::endl;
-    
-//         q1 = atan(dist_com(0)/ - left_ankle_to_com(2)) - _initial_param.get_max_inclination(); // HACK
-        q1 = atan(dist_com(0)/ fabs(left_ankle_to_com(2))) - _q1_max; // HACK
-        
-
-    }
-    else
-    {
-    Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com, world_to_com;
-    Eigen::Vector3d dist_com;
-    
-    robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
-    swing_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
-    stance_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(other_side);
-    
-    
-        
-        world_to_com = _current_pose_ROS.get_world_to_com(); //current world to CoM
-        
-        
-        dist_com =  world_to_com - _current_world_to_com; // current CoM - initial CoM(resetted at each step) 
-               
-        dist_com.head(2) = _R_steer_local * dist_com.head(2); // rotate back CoM
-        
     /* TODO refactor: this is needed for the lenght of the step */
     /* take care of the lenght of the step*/
     double offset_q1;
@@ -426,6 +380,52 @@ double virtualConstraintsNode::sense_q1()
     {
         offset_q1 = - 0.05;
     }
+    
+    
+    if (_current_side == robot_interface::Side::Double)
+    {
+        Eigen::Vector3d left_ankle_to_com, right_ankle_to_com, world_to_com;
+        Eigen::Vector3d dist_com;
+        
+        left_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Left);
+        right_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(robot_interface::Side::Right);
+        
+        world_to_com = _current_pose_ROS.get_world_to_com(); //current world to CoM
+        
+//         std::cout << "world_to_com: " << world_to_com.transpose() << std::endl;
+        
+        dist_com = world_to_com - _current_world_to_com; // current - initial (resetted at each step) CoM
+               
+        dist_com.head(2) = _R_steer_local * dist_com.head(2); // rotate back CoM
+
+        
+//         std::cout << "theta: " << theta << std::endl;
+//         double theta_calc = atan2(world_to_com(1) - _current_world_to_com(1), world_to_com(0) - _current_world_to_com(0));
+//         std::cout << "theta_calc: " << theta_calc << std::endl;
+    
+//         q1 = atan(dist_com(0)/ - left_ankle_to_com(2)) - _initial_param.get_max_inclination(); // HACK
+
+        q1 = atan(dist_com(0)/ fabs(left_ankle_to_com(2))) - offset_q1; // HACK
+        
+
+    }
+    else
+    {
+    Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com, world_to_com;
+    Eigen::Vector3d dist_com;
+    
+    robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
+    swing_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(_current_side);
+    stance_ankle_to_com = _current_pose_ROS.get_distance_ankle_to_com(other_side);
+    
+    
+        
+        world_to_com = _current_pose_ROS.get_world_to_com(); //current world to CoM
+        
+        
+        dist_com =  world_to_com - _current_world_to_com; // current CoM - initial CoM(resetted at each step) 
+               
+        dist_com.head(2) = _R_steer_local * dist_com.head(2); // rotate back CoM
     
         q1 = atan(dist_com(0)/ fabs(stance_ankle_to_com(2))) - offset_q1; // HACK
 //         q1 = atan(dist_com(0)/- stance_ankle_to_com(2)) - _q1_max; // HACK
@@ -587,7 +587,9 @@ int virtualConstraintsNode::impact_routine()
 
                 std::cout << "Impact! Current side: " << _current_side << std::endl;
                 
-//                 _current_pose_ROS.get_sole(_current_side);
+                /* get position of BOTH foot */
+                _right_foot_position = _current_pose_ROS.get_sole_tot(robot_interface::Side::Right);
+                _left_foot_position = _current_pose_ROS.get_sole_tot(robot_interface::Side::Left);
                 // ---------------------------------------------------- 
 //                 _poly_com.set_com_initial_position(_initial_pose.get_com());
                 
@@ -736,7 +738,6 @@ void virtualConstraintsNode::send_step(Eigen::Vector3d foot_command)
     {
         geometry_msgs::PoseStamped cmd_sole;
         tf::pointEigenToMsg(foot_command, cmd_sole.pose.position);
-        
         _sole_pubs[_current_side].publish(cmd_sole);
     }
 
@@ -744,7 +745,24 @@ void virtualConstraintsNode::send_step(Eigen::Affine3d foot_command)
     {
         geometry_msgs::PoseStamped cmd_sole;
         tf::poseEigenToMsg(foot_command, cmd_sole.pose);
+
         _sole_pubs[_current_side].publish(cmd_sole);
+    }
+    
+void virtualConstraintsNode::send_step_right(Eigen::Affine3d foot_command)
+    {
+        geometry_msgs::PoseStamped cmd_sole_r;
+        tf::poseEigenToMsg(foot_command, cmd_sole_r.pose);
+
+        _sole_pubs[robot_interface::Side::Right].publish(cmd_sole_r);
+    }
+
+void virtualConstraintsNode::send_step_left(Eigen::Affine3d foot_command)
+    {
+        geometry_msgs::PoseStamped cmd_sole_l;
+        tf::poseEigenToMsg(foot_command, cmd_sole_l.pose);
+
+        _sole_pubs[robot_interface::Side::Left].publish(cmd_sole_l);
     }
     
 void virtualConstraintsNode::send_zmp(Eigen::Vector3d zmp_command)
@@ -987,7 +1005,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 
         if (_current_state == State::STARTING)
         {
-// //             this is for the beginning, to move the com before the step
+            /* this is for the beginning, to move the com before the step */
             if (_internal_time < _start_walk)
             {
                 _zmp_starting.head(_zmp_starting.size()-1) = _zmp_starting.tail(_zmp_starting.size()-1);
@@ -1005,14 +1023,19 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
 void virtualConstraintsNode::commander(double time)
 {
   
-        //// send com sagittal and lateral
+        /* send com sagittal and lateral */ 
         Eigen::Vector3d delta_com, delta_com_rot;
         _previous_com_trajectory = _com_trajectory;
         robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
         Eigen::Vector3d com_to_ankle_distance = _current_pose_ROS.get_distance_ankle_to_com(other_side);
         
+        Eigen::Affine3d right_foot_trajectory, left_foot_trajectory;
         
+        /* set right and left position of foot */
+        right_foot_trajectory = _right_foot_position;
+        left_foot_trajectory = _left_foot_position;
         
+        /* com displacement */
         delta_com(0) = fabs(com_to_ankle_distance.z()) * tan(_q1);
         delta_com(1) = lateral_com(time).coeff(0);
         delta_com(2) = 0;
@@ -1039,6 +1062,7 @@ void virtualConstraintsNode::commander(double time)
         
         _com_trajectory = _poly_com.get_com_initial_position() + delta_com_rot;
         
+
         /* -------------------------------------- fake com ---------------------------------------------- */
         
         _com_trajectory_fake = _initial_com_position_fake + delta_com;
@@ -1051,7 +1075,21 @@ void virtualConstraintsNode::commander(double time)
         _previous_foot_trajectory = _foot_trajectory;
         _foot_trajectory = compute_trajectory(_poly_step.get_foot_initial_pose(), _poly_step.get_foot_final_pose(), _poly_step.get_step_clearing(), _poly_step.get_starTime(), _poly_step.get_endTime(), time);
 
-        
+        /* ------------------- send always both feet ------------------ */
+        if (_current_side == robot_interface::Side::Right)
+        {
+            right_foot_trajectory = _foot_trajectory;
+        }
+        else if (_current_side == robot_interface::Side::Left)
+        {
+            left_foot_trajectory = _foot_trajectory;
+        } 
+        else if (_current_side == robot_interface::Side::Double)
+        {
+            right_foot_trajectory = _right_foot_position;
+            left_foot_trajectory = _left_foot_position;
+        }
+        /* ------------------------------------------------------------ */
         /* for stabilizer */
         double zmp_sag_ref, zmp_lat_ref;
         zmp_sag_ref = _com_trajectory.coeff(0);
@@ -1190,9 +1228,21 @@ void virtualConstraintsNode::commander(double time)
         
         
         send_com(_com_trajectory);
-        send_step(_foot_trajectory);
+        
+//         send_step(_foot_trajectory);
+//         
+        send_step_right(right_foot_trajectory);
+        send_step_left(left_foot_trajectory);
+        
         send_zmp(_zmp_ref);
-        send_waist(_waist_trajectory);
+//         send_waist(_waist_trajectory);
+        
+//         std::cout << "current_side: " << _current_side << std::endl;
+        
+        /* publish starting message */
+        std_msgs::Bool _started_cmd;
+        _started_cmd.data = _started;
+        _switch_walk_pub.publish(_started_cmd);
         
 //     }
     
@@ -1396,7 +1446,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 _final_com_position_fake.head(2) = _initial_com_position_fake.head(2) + disp_com;
 
                 
-
+                
                 _final_sole_pose.translation() = _current_pose_ROS.get_sole_tot(_other_side).translation() + 2 * (_final_com_position - _current_pose_ROS.get_sole_tot(_other_side).translation());  // get final step given the displacement vector
 
                 /* TODO refactor: this is needed for the steering (orientation) */
@@ -1416,7 +1466,6 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 _final_sole_pose.linear() = (Eigen::AngleAxisd(theta_heading, Eigen::Vector3d::UnitZ())).toRotationMatrix();
                 
                 /* Waist */
-                
                 _final_waist_pose.linear() = (Eigen::AngleAxisd(theta_heading, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 }
 
@@ -1513,6 +1562,7 @@ void virtualConstraintsNode::core(double time)
                 case State::IDLE :
                     _previous_state = _current_state;
                     _current_state = State::STARTING;
+                    _current_side = _initial_param.get_first_step_side();                    
                     _q1_max = _initial_param.get_max_inclination();
                     _step_counter++;
                     _cycle_counter++;
@@ -1579,9 +1629,15 @@ bool virtualConstraintsNode::initialize(double time)
     _reset_condition = 0; /*needed for resetting q1*/
     
     _delay_start = 1.5; /*time between instant that received START command is received and instant where robot starts walking. Required for initial lateral shift of the CoM*/
-    _current_side = _initial_param.get_first_step_side();
-    std::cout << "First step: " << _current_side << std::endl;
-    _other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
+    
+    /* current side of the robot */
+    _current_side = robot_interface::Side::Double;
+//     _current_side = _initial_param.get_first_step_side();
+    
+    std::cout << "First step: " << _initial_param.get_first_step_side() << std::endl;
+    
+    /* get stance foot */
+    _other_side = (robot_interface::Side)(1 - static_cast<int>(_initial_param.get_first_step_side()));
     
 
     _initial_sole_y_right = _current_pose_ROS.get_sole(robot_interface::Side::Right).coeff(1);
@@ -1593,7 +1649,7 @@ bool virtualConstraintsNode::initialize(double time)
     _initial_zmp_y_left =  _initial_sole_y_left - sign_first_stance_step * _initial_param.get_indent_zmp();
     
     _initial_com_position = _current_pose_ROS.get_com();
-    _initial_sole_pose = _current_pose_ROS.get_sole_tot(_current_side);
+    _initial_sole_pose = _current_pose_ROS.get_sole_tot(_initial_param.get_first_step_side());
     _final_sole_pose = _initial_sole_pose;
     _final_com_position = _initial_com_position;
 
@@ -1601,6 +1657,11 @@ bool virtualConstraintsNode::initialize(double time)
     _final_com_position_fake = _final_com_position;
     
     _com_trajectory  = _initial_com_position;
+    
+    /* GET RIGHT AND LEFT POSITION OF FOOT */
+    _right_foot_position = _current_pose_ROS.get_sole_tot(robot_interface::Side::Right);
+    _left_foot_position = _current_pose_ROS.get_sole_tot(robot_interface::Side::Left);
+    
     /*just to run it once, heat up the process*/
     planner(time); /*void run of planner*/
     Eigen::Vector3d foot_trajectory;
@@ -1624,8 +1685,8 @@ bool virtualConstraintsNode::initialize(double time)
 
     _steep_coeff = 0; //(_q1_max - _q1_min)/_step_duration; /*at first is 0, setted when START command is received*/
 
-    _nominal_full_step = fabs(4* fabs(_current_pose_ROS.get_distance_ankle_to_com(_current_side).z()) * tan(_q1_max));
-    _nominal_half_step = fabs(2* fabs(_current_pose_ROS.get_distance_ankle_to_com(_current_side).z()) * tan(_q1_max));
+    _nominal_full_step = fabs(4* fabs(_current_pose_ROS.get_distance_ankle_to_com(_initial_param.get_first_step_side()).z()) * tan(_q1_max));
+    _nominal_half_step = fabs(2* fabs(_current_pose_ROS.get_distance_ankle_to_com(_initial_param.get_first_step_side()).z()) * tan(_q1_max));
     
 //     std::cout << "Position foot RIGHT: " << "x: " << _current_pose_ROS.get_sole(robot_interface::Side::Right).coeff(0) 
 //                                          << "y: " << _current_pose_ROS.get_sole(robot_interface::Side::Right).coeff(1) 
@@ -2000,11 +2061,12 @@ void virtualConstraintsNode::generate_starting_zmp()
     
     double initial_step_value;
     double dt = _dt;
-    if (_current_side == robot_interface::Side::Right)
+    /* get first step size to choose the side of initial swing */
+    if (_initial_param.get_first_step_side() == robot_interface::Side::Right)
     {
         initial_step_value = _foot_pos_y_left - _initial_param.get_indent_zmp();
     }
-    else if (_current_side == robot_interface::Side::Left)
+    else if (_initial_param.get_first_step_side() == robot_interface::Side::Left)
     {
         initial_step_value = _foot_pos_y_right + _initial_param.get_indent_zmp();
     }
