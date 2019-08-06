@@ -1033,7 +1033,8 @@ void virtualConstraintsNode::commander(double time)
                 R_steer_local << cos(theta), -sin(theta),
                                 sin(theta), cos(theta);
         }
-
+        
+        delta_com_rot.setZero();
         delta_com_rot.head(2) = R_steer_local * delta_com.head(2);
         /* ---------------------------------------------------------------------------------------------- */
         
