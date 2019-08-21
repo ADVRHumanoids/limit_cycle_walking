@@ -35,6 +35,13 @@
 
 #include <footStabilizer/footStabilizer.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <virtual_constraints_walker/walkingGainsConfig.h>
+
+
+#include <nav_msgs/Odometry.h>
+
+
 #define PI 3.141592653589793238463
 # define grav 9.80665 
 
@@ -270,8 +277,7 @@ public:
     void send_cp_real (Eigen::Vector3d cp_real);
     
     void send_footstab(Eigen::Vector3d footstab_state);
-    void send_real_com(Eigen::Vector3d real_com_state);
-    
+    void send_real_com(Eigen::Vector3d real_com_state, Eigen::Vector3d real_com_velocity);
 
 //~~~~~~~~~~~~~~~~~~~~~~~~ compute trajectory ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
@@ -409,7 +415,6 @@ protected:
     ros::Publisher _footstab_pub;
     ros::Publisher _real_com_pub;
     
-    
     std::map<robot_interface::Side, ros::Publisher> _sole_pubs;
     
     ros::ServiceServer _switch_srv;
@@ -427,7 +432,10 @@ protected:
     robot_interface_ROS _current_pose_ROS;
     
     
-    
+    /* adding dynamic reconfigurable gains */
+    dynamic_reconfigure::Server<VC_run::walkingGainsConfig> _dyn_rec_server;
+    dynamic_reconfigure::Server<VC_run::walkingGainsConfig>::CallbackType f_callback;
+        
     double _q1_cmd;
     double _q1_state;
     
@@ -603,6 +611,62 @@ class item_fb {
         bool _check_1, _check_2;
 } _fb;
 
+class item_gains {
+    
+    public:
+    
+        item_gains() 
+        {
+            _kp.setZero(); 
+            _kd.setZero(); 
+            _old_kp.setZero();
+            _old_kd.setZero();
+            flag_called = 0;
+            
+        };
+        
+        Eigen::Vector3d getKp() 
+        {
+            return _kp;
+
+        };
+        Eigen::Vector3d getKd() 
+        {
+            return _kd;
+
+        };
+        
+        bool areChanged()
+        {
+            if (flag_called)
+            {
+                flag_called = 0;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        
+        void callback(VC_run::walkingGainsConfig &config, uint32_t level) 
+        {    
+            std::cout << "Gains changed." << std::endl;
+            _kp(0) = config.kp_x;
+            _kp(1) = config.kp_y;
+            std::cout << "Kp = " << _kp.transpose() << std::endl;
+            _kd(0) = config.kd_x;
+            _kd(1) = config.kd_y;
+            std::cout << "Kd = " << _kd.transpose() << std::endl;
+            flag_called = 1;
+        }
+    
+    private:
+        Eigen::Vector3d _old_kp, _old_kd;
+        Eigen::Vector3d _kp, _kd;
+        
+        bool flag_called;
+} controller_gains;
     class param
     {
     public:

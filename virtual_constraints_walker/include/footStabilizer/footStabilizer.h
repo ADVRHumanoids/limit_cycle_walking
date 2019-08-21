@@ -26,9 +26,14 @@ public:
     void setKd(Eigen::Vector3d kd) {_kd = kd; /* std::cout << "K_d gain set to: " << _kd.transpose() << std::endl; */ };
     void setCPRef(Eigen::Vector3d cp_ref) {_cp_ref = cp_ref; /* std::cout << "CP reference set to: " << _cp_ref.transpose() << std::endl; */};
     void setInstantaneousCPRef(Eigen::Vector3d cp_instantaneous_ref) {_cp_instantaneous_ref = cp_instantaneous_ref;};
+    
+    Eigen::Vector3d controller(const Eigen::Vector3d cp, const Eigen::Vector3d cp_dot, const Eigen::Vector3d cp_ref);
+    
+    /* update stabilizer using CP */
     void update(const Eigen::Vector3d& com_pose,
                 const Eigen::Vector3d& com_velocity);
     
+    /* update stabilizer using instantaneous CP */
     void update(const double height_com, 
                 const Eigen::Vector3d& com_velocity);
     

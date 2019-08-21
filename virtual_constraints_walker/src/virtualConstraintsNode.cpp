@@ -28,6 +28,13 @@ virtualConstraintsNode::virtualConstraintsNode()
         _real_com_pos.setZero();
         _real_com_vel.setZero();
         
+        
+
+    
+        f_callback = boost::bind(&item_gains::callback, &controller_gains, _1, _2);
+        _dyn_rec_server.setCallback(f_callback);
+    
+    
         /* model and robot */
         auto cfg = XBot::ConfigOptionsFromParamServer(n);
         _robot = XBot::RobotInterface::getRobot(cfg);
@@ -47,6 +54,7 @@ virtualConstraintsNode::virtualConstraintsNode()
         /* build foot stabilizer */
         _stab = std::make_shared<footStabilizer>(_dt);
         
+
         /* get position com */
         _poly_com.set_com_initial_position(_current_pose_ROS.get_com());
 
@@ -94,7 +102,7 @@ virtualConstraintsNode::virtualConstraintsNode()
         _footstab_pub = n.advertise<geometry_msgs::PoseStamped>("/virtual_constraints/foot_stab", 10);
         
         /* publish real com from gazebo */
-        _real_com_pub = n.advertise<geometry_msgs::PoseStamped>("/virtual_constraints/real_com", 10);
+        _real_com_pub = n.advertise<nav_msgs::Odometry>("/virtual_constraints/real_com", 10);
         
         /* publish bool walking switch */
         _switch_walk_pub = n.advertise<std_msgs::Bool>("/virtual_constraints/bool_walking", 10);
@@ -847,10 +855,19 @@ void virtualConstraintsNode::send_footstab(Eigen::Vector3d footstab_command)
         _footstab_pub.publish(state_footstab);
 }
 
-void virtualConstraintsNode::send_real_com(Eigen::Vector3d real_com_state)
+void virtualConstraintsNode::send_real_com(Eigen::Vector3d real_com_state, Eigen::Vector3d real_com_velocity)
 {
-        geometry_msgs::PoseStamped state_com_real;
-        tf::pointEigenToMsg(real_com_state, state_com_real.pose.position);
+        nav_msgs::Odometry state_com_real;
+        
+        /* there is no angular velocity, only linear */
+        Eigen::Matrix<double, 6, 1> twist_velocity;
+        twist_velocity.setZero();
+        twist_velocity[0] = real_com_velocity[0];
+        twist_velocity[1] = real_com_velocity[1];
+        twist_velocity[2] = real_com_velocity[2];
+
+        tf::pointEigenToMsg(real_com_state, state_com_real.pose.pose.position);
+        tf::twistEigenToMsg(twist_velocity, state_com_real.twist.twist);
         
         _real_com_pub.publish(state_com_real);
 }
@@ -1153,7 +1170,7 @@ void virtualConstraintsNode::commander(double time)
         _model->getCOMVelocity(_real_com_vel);
         
         /* send real com from gazebo */
-        send_real_com(_real_com_pos);
+        send_real_com(_real_com_pos, _real_com_vel);
         
         /* UPDATE FOOT CONTROLLER */
         Eigen::Vector3d cp_inst_ref;
@@ -1164,6 +1181,13 @@ void virtualConstraintsNode::commander(double time)
         /* set CP ref from robot commands (com pos and vel commanded) */
         _stab->setInstantaneousCPRef(cp_inst_ref);
         send_cp_ref(cp_inst_ref);
+        
+        /* set reconfigurable gains for foot controller */
+        if (controller_gains.areChanged())
+        {
+            _stab->setKp(controller_gains.getKp());
+            _stab->setKd(controller_gains.getKd());
+        }
         
         /* update stabilizer with com position and velocity REAL from gazebo */
         _stab->update(_real_com_pos[2], _real_com_vel);
@@ -1177,22 +1201,14 @@ void virtualConstraintsNode::commander(double time)
         send_footstab(foot_stab);
         
         /* from stabilizer ankle angle to affine matrix */
+        /* pitch */
         _base_R_l_sole *= (Eigen::AngleAxisd(foot_stab[0], Eigen::Vector3d::UnitY())).toRotationMatrix();
         _base_R_r_sole *= (Eigen::AngleAxisd(foot_stab[0], Eigen::Vector3d::UnitY())).toRotationMatrix();
+        /* roll */
+        _base_R_l_sole *= (Eigen::AngleAxisd(foot_stab[1], Eigen::Vector3d::UnitX())).toRotationMatrix();
+        _base_R_r_sole *= (Eigen::AngleAxisd(foot_stab[1], Eigen::Vector3d::UnitX())).toRotationMatrix();
+
         
-//         if (_current_side == robot_interface::Side::Right)
-//         {
-//             right_foot_trajectory.linear() *= _base_R_r_sole;
-//         }
-//         else if (_current_side == robot_interface::Side::Left)
-//         {
-//             left_foot_trajectory.linear() *= _base_R_l_sole;
-//         }
-//         else if (_current_side == robot_interface::Side::Double)
-//         {
-//             right_foot_trajectory.linear() *= _base_R_r_sole;
-//             left_foot_trajectory.linear() *= _base_R_l_sole;
-//         }
             
 
         /* send foot */
@@ -1204,20 +1220,20 @@ void virtualConstraintsNode::commander(double time)
         if (_current_side == robot_interface::Side::Right)
         {
             right_foot_trajectory = _foot_trajectory;
-//             right_foot_trajectory.linear() *= _base_R_r_sole;
+            right_foot_trajectory.linear() *= _base_R_r_sole;
         }
         else if (_current_side == robot_interface::Side::Left)
         {
             left_foot_trajectory = _foot_trajectory;
-//             left_foot_trajectory.linear() *= _base_R_l_sole;
+            left_foot_trajectory.linear() *= _base_R_l_sole;
         } 
         else if (_current_side == robot_interface::Side::Double)
         {
             right_foot_trajectory = _right_foot_position;
-//             right_foot_trajectory.linear() *= _base_R_r_sole;
+            right_foot_trajectory.linear() *= _base_R_r_sole;
             
             left_foot_trajectory = _left_foot_position;
-//             left_foot_trajectory.linear() *= _base_R_l_sole;
+            left_foot_trajectory.linear() *= _base_R_l_sole;
         }
         /* ------------------------------------------------------------ */
         /* for stabilizer */
@@ -1899,11 +1915,11 @@ bool virtualConstraintsNode::initialize(double time)
     
     /* set gains of foot stabilizer */
     
-    _kp_foot_stab << 0.0001, 0.0, 0.0;
-    _kd_foot_stab << 0.015, 0.0, 0.0;
+//     _kp_foot_stab << 0.0001, 0.0, 0.0;
+//     _kd_foot_stab << 0.015, 0.0, 0.0;
     
-    _stab->setKp(_kp_foot_stab);
-    _stab->setKd(_kd_foot_stab);
+    _stab->setKp(controller_gains.getKp());
+    _stab->setKd(controller_gains.getKd());
     
     /* get ORIENTATION soles */
     _base_R_l_sole = (_current_pose_ROS.get_sole_tot(robot_interface::Side::Right)).linear();

@@ -349,6 +349,7 @@ int main(int argc, char **argv)
             
             stab.setCPRef(initial_cp);
             stab.update(com_pos, com_vel);
+            std::cout << "CP reference set to: " << initial_cp.transpose() << std::endl;
         }
         else if (use_instantaneous_cp)
         {
@@ -360,7 +361,10 @@ int main(int argc, char **argv)
             
             stab.setInstantaneousCPRef(initial_inst_cp);
             stab.update(com_pos[2], com_vel);
+            std::cout << "CP reference set to: " << initial_inst_cp.transpose() << std::endl;
         }
+        
+
         
     }    
     else if (use_odom == 1)
@@ -374,6 +378,7 @@ int main(int argc, char **argv)
             
             stab.setCPRef(initial_cp);
             stab.update(com.getPosition(), com.getVelocity());
+            std::cout << "CP reference set to: " << initial_cp.transpose() << std::endl;
         }
         else if (use_instantaneous_cp)
         {
@@ -383,6 +388,7 @@ int main(int argc, char **argv)
             
             stab.setInstantaneousCPRef(initial_inst_cp);
             stab.update((com.getPosition())[2], com.getVelocity());
+            std::cout << "CP reference set to: " << initial_inst_cp.transpose() << std::endl;
         }
         
     }
@@ -490,6 +496,9 @@ int main(int argc, char **argv)
             {
                 mapCogimon["LAnklePitch"] += pos_ankle[0];
                 mapCogimon["RAnklePitch"] += pos_ankle[0];
+                
+                mapCogimon["LAnkleRoll"] += pos_ankle[1]; /* remember the minus here! */
+                mapCogimon["RAnkleRoll"] += pos_ankle[1];
 //                 std::cout << "angle:" << pos_ankle[0] << std::endl;
 //                 std::cout << "angle in degrees: " << pos_ankle[0] / M_PI  * 180 << std::endl;
                 robot->setPositionReference(mapCogimon);

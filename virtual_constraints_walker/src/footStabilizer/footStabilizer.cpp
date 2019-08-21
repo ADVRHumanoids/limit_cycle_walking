@@ -44,30 +44,32 @@ void footStabilizer::update(const Eigen::Vector3d& com_pos, const Eigen::Vector3
     _cp = computeCapturePoint(com_pos, com_velocity);
     
     Eigen::Vector3d cp_dot = (_cp - _cp_previous)/_dt; 
-    
-//     std::cout << "Kp: " << _kp.transpose() << std::endl;
-//     std::cout << "Kd: " << _kd.transpose() << std::endl;
-    
-    _theta = Eigen::Matrix3d(_kp.asDiagonal()) * (_cp - _cp_ref) + Eigen::Matrix3d(_kd.asDiagonal()) * cp_dot;
-    
-//     std::cout << "cp error: " << (_cp - _cp_ref).transpose() << std::endl;
+
+    _theta = controller(_cp, cp_dot, _cp_ref);
 }
 
 void footStabilizer::update(const double height_com, const Eigen::Vector3d& com_velocity)
 {
     _cp_instantaneous_previous = _cp_instantaneous;
     _cp_instantaneous = computeInstantaneousCapturePoint(height_com, com_velocity);
-    
+
     Eigen::Vector3d cp_instantaneous_dot = (_cp_instantaneous - _cp_instantaneous_previous)/_dt; 
     
-//     std::cout << "Kp: " << _kp.transpose() << std::endl;
-//     std::cout << "Kd: " << _kd.transpose() << std::endl;
-    
-    _theta = Eigen::Matrix3d(_kp.asDiagonal()) * (_cp_instantaneous - _cp_instantaneous_ref) + Eigen::Matrix3d(_kd.asDiagonal()) * cp_instantaneous_dot;
-    
-//     std::cout << "cp error: " << (_cp - _cp_ref).transpose() << std::endl;
+    _theta = controller(_cp_instantaneous, cp_instantaneous_dot, _cp_instantaneous_ref);
 }
 
+Eigen::Vector3d footStabilizer::controller(const Eigen::Vector3d cp, const Eigen::Vector3d cp_dot, const Eigen::Vector3d cp_ref)
+{
+    
+    //     std::cout << "Kp: " << _kp.transpose() << std::endl;
+    //     std::cout << "Kd: " << _kd.transpose() << std::endl;
+
+    Eigen::Vector3d theta; theta.setZero();
+    theta = Eigen::Matrix3d(_kp.asDiagonal()) * (cp - cp_ref) + Eigen::Matrix3d(_kd.asDiagonal()) * cp_dot;
+    return theta;
+    
+    //     std::cout << "cp error: " << (cp - cp_ref).transpose() << std::endl;
+}
 
 Eigen::Vector3d footStabilizer::getTheta() const
 {

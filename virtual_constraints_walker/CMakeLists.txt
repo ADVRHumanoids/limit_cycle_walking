@@ -49,6 +49,7 @@ find_package(OpenMpC REQUIRED)
 
 generate_dynamic_reconfigure_options(
   cfg/gains.cfg
+  cfg/walkingGains.cfg
 )
 
 
@@ -100,6 +101,7 @@ target_link_libraries(compute_cp virtual_constraints_walker ${catkin_LIBRARIES})
 #add_dependencies(VC_subscriber)
 #add_dependencies(VC_listener)
 add_dependencies(compute_cp ${PROJECT_NAME}_gencfg)
+add_dependencies(VC_run ${PROJECT_NAME}_gencfg)
 
 
 
