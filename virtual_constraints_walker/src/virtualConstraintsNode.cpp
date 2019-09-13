@@ -329,19 +329,79 @@ double virtualConstraintsNode::sense_q1()
     Eigen::Matrix2d _R_steer_local;
     double theta;
     
+       /* PARAMETER OF STEPS (ADD HERE USED THETA BUT WITH A MINUS)*/
        /* TODO refactor: this is needed for the steering */
-    if (_step_counter >= 4  && _step_counter < 15)
-    {
-        theta = - _theta_steer;
-        _R_steer_local << cos(theta), -sin(theta),
-                          sin(theta), cos(theta);
-    }
-    else
-    {
-        theta = 0;
-        _R_steer_local << cos(theta), -sin(theta),
-                          sin(theta), cos(theta);
-    }
+                if (_step_counter >= 4 && _step_counter < 5)  
+                {
+                    theta = - _theta_steer; // change heading
+                    _R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
+                {
+                    theta = - _theta_steer; // change heading
+                    _R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 6 && _step_counter < 7)   /*Left*/
+                {
+                    theta = - _theta_steer; // change heading
+                    _R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 7 && _step_counter < 8)  /*Right*/
+                {
+                    theta = - _theta_steer; // change heading
+                    _R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 8 && _step_counter < 9)   /*Left*/
+                {
+                    theta = - _theta_steer; // change heading
+                    _R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 9 && _step_counter < 10) /*Right*/
+                {
+
+                    theta = - _theta_steer; // change heading
+                    _R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 10 && _step_counter < 11) /*Right*/
+                {
+
+                    theta = - _theta_steer; // change heading
+                    _R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 14 && _step_counter < 18) /*Right*/
+                {
+
+                    theta = - M_PI/4; // change heading
+                    _R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 18 && _step_counter < 19) /*Right*/
+                {
+
+                    theta = 0; // change heading
+                    _R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 19 && _step_counter < 30) /*Right*/
+                {
+
+                    theta = 0; // change heading
+                    _R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else
+                {
+                    theta = 0;
+                    _R_steer_local << cos(theta), -sin(theta),
+                                sin(theta), cos(theta); 
+                }
         
     
 
@@ -391,6 +451,7 @@ double virtualConstraintsNode::sense_q1()
                
         dist_com.head(2) = _R_steer_local * dist_com.head(2); // rotate back CoM
         
+        /* PARAMETER OF STEPS (ADD HERE OFFSET)*/
     /* TODO refactor: this is needed for the lenght of the step */
     /* take care of the lenght of the step*/
     double offset_q1;
@@ -404,7 +465,7 @@ double virtualConstraintsNode::sense_q1()
     }
     else if (_step_counter >= 6+1 && _step_counter < 7+1) /*Left*/
     {
-        offset_q1 = 0.05;
+        offset_q1 = 0.02;
     }
     else if (_step_counter >= 7+1 && _step_counter < 8+1) /*Right*/
     {
@@ -418,13 +479,25 @@ double virtualConstraintsNode::sense_q1()
     {
         offset_q1 = 0.05;
     }
-    else if (_step_counter >= 10+1 && _step_counter < 15+1) /*Left*/
+    else if (_step_counter >= 10+1 && _step_counter < 11+1) /*Right*/
     {
         offset_q1 = 0.05;
-    }    
-    else       
+    }
+    else if (_step_counter >= 14+1 && _step_counter < 18+1) /*Right*/
+    {
+        offset_q1 = 0.03;
+    }
+    else if (_step_counter >= 18+1 && _step_counter < 19+1) /*Right*/
+    {
+        offset_q1 = 0.01;
+    }
+    else if (_step_counter >= 19+1 && _step_counter < 30+1) /*Right*/
     {
         offset_q1 = - 0.05;
+    }
+    else       
+    {
+        offset_q1 = 0.05;
     }
     
         q1 = atan(dist_com(0)/ fabs(stance_ankle_to_com(2))) - offset_q1; // HACK
@@ -1018,21 +1091,76 @@ void virtualConstraintsNode::commander(double time)
         delta_com(2) = 0;
         
        /* ------------------------------------- steer -------------------------------------------------- */
+       /* PARAMETER OF STEPS (ADD HERE OFFSET)*/
        /* TODO refactor: this is needed for the steering */
        Eigen::Matrix2d R_steer_local;
        
-        if (_step_counter >= 4 && _step_counter < 15)
-        {
-            double theta = _theta_steer;
-                R_steer_local << cos(theta), -sin(theta),
-                                sin(theta), cos(theta);
-        }
-        else
-        {
-                double theta = 0;
-                R_steer_local << cos(theta), -sin(theta),
-                                sin(theta), cos(theta);
-        }
+                if (_step_counter >= 4 && _step_counter < 5)  
+                {
+                    double theta = _theta_steer; // change heading
+                    R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
+                {
+                    double theta = _theta_steer; // change heading
+                    R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 6 && _step_counter < 7)   /*Left*/
+                {
+                    double theta = _theta_steer; // change heading
+                    R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 7 && _step_counter < 8)  /*Right*/
+                {
+                    double theta =  _theta_steer; // change heading
+                    R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 8 && _step_counter < 9)   /*Left*/
+                {
+                    double theta = _theta_steer; // change heading
+                    R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 9 && _step_counter < 10) /*Right*/
+                {
+                    double theta =_theta_steer; // change heading
+                    R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 10 && _step_counter < 11) /*Right*/
+                {
+                    double theta =_theta_steer; // change heading
+                    R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 14 && _step_counter < 18) /*Right*/
+                {
+                    double theta =M_PI/4; // change heading
+                    R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 18 && _step_counter < 19) /*Right*/
+                {
+                    double theta = 0; // change heading
+                    R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 19 && _step_counter < 30) /*Right*/
+                {
+                    double theta = 0; // change heading
+                    R_steer_local << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else
+                {
+                    double theta = 0;
+                    R_steer_local << cos(theta), -sin(theta),
+                                sin(theta), cos(theta); 
+                }
         
         delta_com_rot.setZero();
         delta_com_rot.head(2) = R_steer_local * delta_com.head(2);
@@ -1329,7 +1457,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 }
                 else if (_step_counter >= 6 && _step_counter < 7)   /*Left*/
                 {
-                    _q1_max = 0.05;
+                    _q1_max = 0.02;
                     q1_max_new = _q1_max; // change step length
                     double theta = _theta_steer; // change heading
                     R_steer << cos(theta), -sin(theta),
@@ -1359,7 +1487,7 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                     R_steer << cos(theta), -sin(theta),
                                     sin(theta), cos(theta);
                 }
-                else if (_step_counter >= 10 && _step_counter < 15)
+                else if (_step_counter >= 10 && _step_counter < 11) /*Right*/
                 {
                     _q1_max = 0.05;
                     q1_max_new = _q1_max; // change step length
@@ -1367,9 +1495,33 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                     R_steer << cos(theta), -sin(theta),
                                     sin(theta), cos(theta);
                 }
-                else
+                else if (_step_counter >= 14 && _step_counter < 18) /*Right*/
+                {
+                    _q1_max = 0.03;
+                    q1_max_new = _q1_max; // change step length
+                    double theta = M_PI/4; // change heading
+                    R_steer << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 18 && _step_counter < 19) /*Right*/
+                {
+                    _q1_max = 0.01;
+                    q1_max_new = _q1_max; // change step length
+                    double theta = 0; // change heading
+                    R_steer << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else if (_step_counter >= 19 && _step_counter < 30) /*Right*/
                 {
                     _q1_max = - 0.05;
+                    q1_max_new = _q1_max; // change step length
+                    double theta = 0; // change heading
+                    R_steer << cos(theta), -sin(theta),
+                                    sin(theta), cos(theta);
+                }
+                else
+                {
+                    _q1_max = 0.05;
                     q1_max_new = _q1_max;
                     double theta = 0;
                     R_steer << cos(theta), -sin(theta),
@@ -1404,9 +1556,45 @@ bool virtualConstraintsNode::compute_step(Step step_type)
                 double theta_heading;
                 /* orientation */
                 
-                if (_step_counter >= 4 && _step_counter < 15)
+                if (_step_counter >= 4 && _step_counter < 5)
                 {
                     theta_heading = _theta_steer;
+                }
+                else if (_step_counter >= 5 && _step_counter < 6)
+                {
+                    theta_heading = _theta_steer;
+                }
+                else if (_step_counter >= 6 && _step_counter < 7)
+                {
+                    theta_heading = _theta_steer;
+                }
+                else if (_step_counter >= 7 && _step_counter < 8)
+                {
+                    theta_heading = _theta_steer;
+                }
+                else if (_step_counter >= 8 && _step_counter < 9)
+                {
+                    theta_heading = _theta_steer;
+                }
+                else if (_step_counter >= 9 && _step_counter < 10)
+                {
+                    theta_heading = _theta_steer;
+                }
+                else if (_step_counter >= 10 && _step_counter < 11)
+                {
+                    theta_heading = _theta_steer;
+                }
+                else if (_step_counter >= 14 && _step_counter < 18)
+                {
+                    theta_heading = 0;
+                }
+                else if (_step_counter >= 18 && _step_counter < 19)
+                {
+                    theta_heading = 0;
+                }
+                else if (_step_counter >= 19 && _step_counter < 30)
+                {
+                    theta_heading = 0;
                 }
                 else
                 {
@@ -1670,7 +1858,7 @@ bool virtualConstraintsNode::initialize(double time)
 
     
     /* steer */
-    _theta_steer = 0; //M_PI/10 // M_PI/3//M_PI/8;
+    _theta_steer = M_PI/10; //M_PI/10 // M_PI/3//M_PI/8;
 //     _first_step_steer = 3;
 //     _last_step_steer = 5;
     
