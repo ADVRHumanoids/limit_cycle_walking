@@ -558,12 +558,12 @@ bool virtualConstraintsNode::impact_detector()
 {
     if (_initial_param.get_switch_real_impact())
     {
-        real_impacts();
+        return real_impacts();
     }
     else
     {
 //         _flag_impact =  real_impacts();
-        fake_impacts();
+        return fake_impacts();
     }
 }
 
@@ -644,6 +644,7 @@ int virtualConstraintsNode::impact_routine()
     
 void virtualConstraintsNode::exe(double time)
 {       
+
     double dt = _dt;
     if (_init_completed == 0)
     {
