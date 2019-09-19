@@ -18,7 +18,7 @@ LFoot:
     type: "Cartesian"
     distal_link: "l_sole"
     base_link: "world"
-    lamda: 1
+    lambda: 1
 
 RFoot:
     type: "Cartesian"
