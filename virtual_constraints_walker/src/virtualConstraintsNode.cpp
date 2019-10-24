@@ -686,9 +686,7 @@ void virtualConstraintsNode::exe(double time)
 //     };
 
         if (impact_routine())
-        {    
-            std::cout<<"impact routine"<<std::endl;
-
+        {
             _reset_condition = _q1_temp;
 //             _q1_temp = 0; //ver2
             
