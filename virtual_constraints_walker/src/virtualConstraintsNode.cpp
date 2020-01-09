@@ -63,7 +63,7 @@ bool virtualConstraintsNode::get_param_ros()
         double clearance_heigth, duration_step, drop, indentation_zmp, duration_double_stance, start_time, lean_forward, max_inclination, mpc_Q, mpc_R, duration_preview_window;
         std::vector<double> thresholds_impact_right(2), thresholds_impact_left(2);
         
-        bool real_impacts, walking_forward, use_poly_com, manage_delay; 
+        bool real_impacts, walking_forward, use_poly_com;
         
         std::string first_side;
 
@@ -85,7 +85,6 @@ bool virtualConstraintsNode::get_param_ros()
         double default_mpc_Q = 1000000;
         double default_mpc_R = 1;
         bool default_use_poly_com = 0;
-        bool default_manage_delay = 1;
         double default_duration_preview_window = 5; //sec
         
         drop = nh_priv.param("initial_crouch", default_drop);
@@ -312,17 +311,10 @@ void virtualConstraintsNode::q1_callback(const std_msgs::Float64 msg_rcv) //this
     _check_received = true;
 }
 
-double virtualConstraintsNode::get_q1()
-{       
-    return _q1_cmd;
-    ROS_INFO("%f", _q1_state);
-        
-}
-
 double virtualConstraintsNode::sense_q1()
 {   
 //         _current_pose_ROS.sense(); // TODO put back?
-    double q1, q2;
+    double q1;
     Eigen::Vector3d swing_ankle_to_com, stance_ankle_to_com;
 //     std::cout << "_current_world_to_com: " << _current_world_to_com.transpose() << std::endl;
 //     std::cout << "get_world_to_com: " << _current_pose_ROS.get_world_to_com().transpose() << std::endl;
@@ -436,22 +428,6 @@ double virtualConstraintsNode::sense_q1()
     return q1;
 }  
 
-bool virtualConstraintsNode::new_q1()
-{
-    bool flag_q1 = false;
-    double last_q1_step = 0;
-    last_q1_step = _q1_step;
-    _q1_step = get_q1();
-    
-    if (fabs(last_q1_step - _q1_step) >= 1e-10) /* TODO this is very sad*/ /*it's a problem of initialization*/
-    {
-        flag_q1 = true;
-    }
-
-    return flag_q1;
-}
-    
-
 void virtualConstraintsNode::left_sole_phase()
 {
     Eigen::Matrix<double, 6 ,1> ft_left = _current_pose_ROS.get_ft_sole(robot_interface::Side::Left);
@@ -473,7 +449,6 @@ void virtualConstraintsNode::left_sole_phase()
             break;
         default : 
             throw std::runtime_error(std::string("Phase not recognized (left sole)!"));
-            break;
     }
 }
 
@@ -499,7 +474,6 @@ void virtualConstraintsNode::right_sole_phase()
             break;
         default : 
             throw std::runtime_error(std::string("Phase not recognized (right sole)!"));
-            break;
     }
 }
 
@@ -646,8 +620,6 @@ int virtualConstraintsNode::impact_routine()
     
 void virtualConstraintsNode::exe(double time)
 {       
-
-    double dt = _dt;
     if (_init_completed == 0)
     {
         initialize(time);
@@ -665,25 +637,9 @@ void virtualConstraintsNode::exe(double time)
     
     _impact_cond = _internal_time - _reset_time;
     
-//     val_getter();
-//  // -------------for q1--------------------------------------
+
     q_handler();
-//     q_max_handler(); /* TODO _q1_max it's already setted inside core */
-//  // ---------------------------------------------------------  
-    
-//     if (_internal_time >= _initial_param.get_start_time() && _cycle_counter == 0)
-//     {
-//         _last_event = _event;
-//         _event = Event::START;
-//     };
-//     
-//     if (_cycle_counter == 2)
-//     {
-//         _last_event = _event;
-//         _event = Event::STOP;
-//         _stopped_received = 1;
-//         
-//     };
+
 
         if (impact_routine())
         {    
@@ -819,10 +775,7 @@ Eigen::Vector3d virtualConstraintsNode::compute_swing_trajectory(const Eigen::Ve
                                                                  double clearance,
                                                                  double t_start, 
                                                                  double t_end, 
-                                                                 double time,
-                                                                 Eigen::Vector3d* vel,
-                                                                 Eigen::Vector3d* acc
-                                                                )
+                                                                 double time)
 {
     Eigen::Vector3d ret;
 
@@ -929,7 +882,7 @@ void virtualConstraintsNode::lSpline(Eigen::VectorXd times, Eigen::VectorXd y, d
     for(int i=0; i<n-1; i++)
     { 
         N = N + (times.coeff(i+1)-times.coeff(i))/dt;
-        N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);   ; //round((times.coeff(i+1)-times.coeff(i))/dt);      
+        N_chunks(i) = round((times.coeff(i+1)-times.coeff(i))/dt);   //round((times.coeff(i+1)-times.coeff(i))/dt);
     }
     
 //     std::cout << "N: " << N << std::endl;
@@ -972,7 +925,7 @@ Eigen::Vector3d virtualConstraintsNode::lateral_com(double time)
      
         // algorithm to choose from T (duration of window prev for _item_MpC) the spatial pattern
         
-        double velocity_step;
+        double velocity_step = 0;
 // 
         if (_step_type == Step::HALF)
         {
@@ -1483,7 +1436,6 @@ void virtualConstraintsNode::core(double time)
             {
                 case State::IDLE :
                     throw std::runtime_error(std::string("Something wrong. Impact during IDLE"));
-                    break;
                    
                 case State::WALK :
                     _step_counter++;
@@ -1578,7 +1530,6 @@ void virtualConstraintsNode::core(double time)
              
         default : 
             throw std::runtime_error(std::string("Event not recognized"));
-            break;
     }
 }
 
@@ -1587,8 +1538,7 @@ void virtualConstraintsNode::core(double time)
 bool virtualConstraintsNode::initialize(double time) 
 {
     straighten_up_action();
-    
-    double clearance = _initial_param.get_clearance_step();
+
     _reset_condition = 0; /*needed for resetting q1*/
     
     _delay_start = 1.5; /*time between instant that received START command is received and instant where robot starts walking. Required for initial lateral shift of the CoM*/
@@ -1744,7 +1694,7 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
     
     
     robot_interface::Side other_side = (robot_interface::Side)(1 - static_cast<int>(_current_side));
-    double zmp_y;
+    double zmp_y = 0;
     
     if (other_side == robot_interface::Side::Right)
     {
@@ -1783,15 +1733,14 @@ void virtualConstraintsNode::spatial_zmp(double& current_spatial_zmp_y, Eigen::V
     
     double velocity_step_F = _nominal_full_step / _initial_param.get_duration_step();
     double velocity_step_H = _nominal_half_step / _initial_param.get_duration_step();
-    double length_preview_window_H = _initial_param.get_duration_step() * velocity_step_H; //_steep_coeff
-    double length_preview_window_F = _initial_param.get_duration_step() * velocity_step_F; //_steep_coeff
+
     double dx_H =  velocity_step_H * dt;
     double dx_F =  velocity_step_F * dt;
     
     double first_max_space;
     double n_steps_future;
     int size_step;
-    double length_step;
+    double length_step = 0;
     Eigen::VectorXd max_spaces;
     
     
@@ -1970,7 +1919,8 @@ double virtualConstraintsNode::q_handler()
     
     if (_started == 1 && _internal_time >= +_start_walk)
     {
-double cond_q;
+        bool cond_q = false;
+
         if (_q1_min <= _q1_max)
         {
             cond_q = (sense_q1() >= _q1_max);
@@ -1981,7 +1931,7 @@ double cond_q;
         }
         if (cond_q)
         {
-            _q1_temp = _q1_temp;
+            /*_q1_temp = _q1_temp;*/
         }
         else
         {

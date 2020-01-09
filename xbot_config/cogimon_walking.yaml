@@ -1,0 +1,36 @@
+XBotCore:
+  config_path: "configs/ADVR_shared/cogimon/configs/cogimon.yaml"
+
+XBotInterface:
+  urdf_path: "robots/iit-cogimon-ros-pkg/cogimon_urdf/urdf/cogimon.urdf"    
+  srdf_path: "robots/iit-cogimon-ros-pkg/cogimon_srdf/srdf/cogimon.srdf"
+  joint_map_path: "configs/ADVR_shared/cogimon/joint_map/cogimon_joint_map.yaml"
+
+RobotInterface:
+  framework_name: "ROS"
+
+ModelInterface:
+  model_type: "RBDL"
+  is_model_floating_base: "true"
+  
+MasterCommunicationInterface:
+  framework_name: "ROS"
+
+XBotRTPlugins:
+  plugins: ["HomingExample"] #simpleIK""#, "HokuyoRotation", "chengxu_walking", "IkRosSMPub", "Grasp"] #, "chengxu_walking" "XBotRTCommunication"] 
+  io_plugins: []
+  
+NRTPlugins:
+  plugins: [] 
+  
+TransmissionPlugins:
+  plugins: [] #CogimonImpedanceAnkles CogimonAnkles
+  
+WebServer:
+  enable: "false"
+  address: "10.24.5.100"
+  port: "8081"
+
+SimulationOptions:
+  verbose_mode: "true"
+
