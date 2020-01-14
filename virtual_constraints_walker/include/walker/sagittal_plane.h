@@ -6,23 +6,51 @@
 class SagittalPlane {
 public:
 
-    SagittalPlane();
+    typedef std::shared_ptr< SagittalPlane > Ptr;
 
-    void update(/* . q_fake . */);
+    SagittalPlane(double dt);
 
-    Eigen::Vector3d getDeltaComSag(){return _delta_com_sag;}
-    Eigen::Affine3d getDeltaFoot(){return _delta_foot;}
+    void update(double q, double height_com);
+
+    double getDeltaCom(){return _delta_com;}
+    
+    Eigen::Affine3d getFootStart() const;
+    Eigen::Affine3d getFootEnd() const;
+    
+    Eigen::Vector3d getComStart() const;
+    Eigen::Vector3d getComEnd() const;
 
 private:
+    
+    
+    double computeCom(double q,
+                     double height);
 
-    void virtualConstraints(/* ... */);
+    bool computeStep(double q_min,
+                     double q_max,
+                     double theta,
+                     double step_duration,
+                     double height_com,
+                     double& steep_coeff,
+                     Eigen::Vector3d inital_com,
+                     Eigen::Vector3d& final_com,
+                     Eigen::Affine3d initial_swing_foot,
+                     Eigen::Affine3d initial_stance_foot,
+                     Eigen::Affine3d& final_swing_foot,
+                     Eigen::Affine3d& final_stance_foot,
+                     Eigen::Affine3d& final_waist);
 
+    double _delta_com;
+    
+//    Eigen::Affine3d _delta_foot;
+    
+    Eigen::Affine3d _foot_start;
+    Eigen::Affine3d _foot_end;
+    
+    Eigen::Vector3d _com_start;
+    Eigen::Vector3d _com_end;
 
-    bool computeStep();
-
-
-    Eigen::Vector3d _delta_com_sag;
-    Eigen::Affine3d _delta_foot;
+    double _q;
 
 
 

@@ -1,56 +1,147 @@
 #include <step_machine/step_machine.h>
 #include <stdexcept>
 
-StepMachine::StepMachine(mdof::RobotState * state) :
+StepMachine::StepMachine(double dt, Param * par) :
     _current_state(State::Idle),
-    _current_event(Event::Empty),
-    _step(), /* TODO */
-    _state(state),
-    _time(0)
+    _current_event(Event::Empty), /* TODO */
+    _step_counter(0),
+    _cycle_counter(0),
+    _steep_q(0),
+    _time_impact(0),
+    _theta(0),
+    _param(par),
+    _time(0),
+    _new_event_time(0),
+    _started(false),
+    _start_walk(0),
+    _q(0),
+    _q_min(0),
+    _q_max(0),
+    _q_fake(0),
+    _dt(dt),
+    _current_swing_leg(0)
 {
 
 }
 
-bool StepMachine::setEvent(Event event)
+bool StepMachine::initialize(const mdof::RobotState *state)
 {
-    _previous_event = _current_event;
-    _current_event = event;
+    _terrain_height = state->getFoot()[_current_swing_leg].translation()(2);
+    _current_swing_leg = _param->getFirstSide();
+//    _q = state->getQ();
+
+
 
     return true;
 }
 
-bool StepMachine::update(const mdof::RobotState * state,
+bool StepMachine::start()
+{
+    _previous_event = _current_event;
+    _current_event = Event::Start;
+
+    return true;
+}
+
+bool StepMachine::stop()
+{
+    _previous_event = _current_event;
+    _current_event = Event::Stop;
+
+    return true;
+}
+
+bool StepMachine::setQMax(std::vector<double> q_max)
+{
+    /* sanity check? */
+    for (auto i : q_max)
+    {
+        _q_buffer.push_back(i);
+    }
+
+    return true;
+}
+
+bool StepMachine::setTheta(std::vector<double> theta)
+{
+    /* sanity check? */
+    for (auto i : theta)
+    {
+        _theta_buffer.push_back(i);
+    }
+
+    return true;
+}
+
+bool StepMachine::updateStep(mdof::RobotState * ref)
+{
+    if (_q_buffer.empty())
+    {
+        ref->setQMax(_param->getMaxInclination());
+    }
+    else
+    {
+        ref->setQMax(_q_buffer.front());
+        _q_buffer.pop_front();
+    }
+
+    return true;
+}
+
+bool StepMachine::update(double time,
+                         double q_fake,
+                         const mdof::RobotState * state,
                          mdof::RobotState * ref)
 {
 
-    impactHandler(mdof::StepState& step);
+    landingHandler(time, _terrain_height, state, ref);
 
-    qHandler();
-    core();
+    qFake();
 
+    core(time, q_fake, ref);
 
+    _walker->compute(time, *state, *ref);
+
+    /*TODO sanity check? */
+    return true;
 
 }
 
-bool StepMachine::impactDetector()
+StepMachine::Param *StepMachine::getDefaultParam()
 {
-//     std::cout << "_q1_max: " << _q1_max << std::endl;
-//     std::cout << "sense_q1: " << sense_q1() << std::endl;
+    Param * par = nullptr;
+    *par = Param();
+    return par;
+}
 
-    if (_q1_min <= _q1_max)
+bool StepMachine::impactDetector(double time,
+                                 double q, /* fake or not? */
+                                 double q_min,
+                                 double q_max,
+                                 double swing_leg_heigth,
+                                 double terrain_heigth)
+{
+    //     std::cout << "_q1_max: " << _q1_max << std::endl;
+    //     std::cout << "sense_q1: " << sense_q1() << std::endl;
+    bool flag_q(false);
+    bool flag_step(false);
+
+    /* first condition of impact: q reaches q_max */
+    if (q_min <= q_max)
     {
-        _cond_q = (sense_q1() >= _q1_max);
+        flag_q = (q >= q_max);
     }
-    else if (_q1_min > _q1_max)
+    else if (q_min > q_max)
     {
-        _cond_q = (sense_q1() <= _q1_max);
+        flag_q = (q <= q_max);
     }
 
-    _cond_step = fabs(fabs(_current_pose_ROS.get_sole(_current_side).coeff(2)) - fabs(_terrain_heigth)) <= 1e-3;
+    /* second condition of impact: sole impacts ground (a certain treshold is reached) */
+    flag_step = fabs(fabs(swing_leg_heigth) - fabs(terrain_heigth)) <= 1e-3;
 
-    if (_cond_step && _cond_q)
+    if (flag_step && flag_q)
     {
-        _time_fake_impact = _internal_time;
+        _time_impact = time;
         return true;
     }
 
@@ -58,46 +149,63 @@ bool StepMachine::impactDetector()
 }
 
 
-bool StepMachine::landingHandler()
+bool StepMachine::landingHandler(double time,
+                                 double terrain_heigth,
+                                 const mdof::RobotState * state,
+                                 mdof::RobotState * ref)
 {
-    if (impactDetector())
+    if (impactDetector(time, state->getQ(), state->getQMin(), state->getQMax(), state->getFoot()[_current_swing_leg].translation()(2), terrain_heigth))
     {
         _previous_event = _current_event;
         _current_event = Event::Impact;
-//                 _current_pose_ROS.sense();
 
-        Walker::Side last_side = _current_side;
-//                 std::cout << "Last side: " << last_side << std::endl;
-        _initial_pose = _current_pose_ROS;
-    // ----------------------------------
-        _q1_min = -sense_q1(); /*HACK*/
-    // -------------------------------
-        _current_side = robot_interface::Side::Double;
 
-        std::cout << "Impact! Current side: " << _current_side << std::endl;
 
-//                 _current_pose_ROS.get_sole(_current_side);
-        // ----------------------------------------------------
-//                 _poly_com.set_com_initial_position(_initial_pose.get_com());
-
-        _current_world_to_com = _current_pose_ROS.get_world_to_com();
-        // ----------------------------------------------------
-//
-
-        if (last_side == robot_interface::Side::Left)
+        //        _initial_pose = _current_pose_ROS; /* probably not needed */
+        // ----------------------------------
+        ref->setQMin(state->getQ()); /* HACK ALERT */
+        // -------------------------------
+        //        _current_side = robot_interface::Side::Double;
+        std::string side;
+        if (_current_swing_leg == 1)
         {
-            _current_side = robot_interface::Side::Right;
-            _other_side = robot_interface::Side::Left;
+            side = "LEFT";
         }
-        else if (last_side == robot_interface::Side::Right)
+        else
         {
-            _current_side = robot_interface::Side::Left;
-            _other_side = robot_interface::Side::Right;
+            side = "RIGHT";
         }
-        else ROS_INFO("wrong side");
+        std::cout << "Impact! Current side: " << side << std::endl;
 
-//                 _q1_min = sense_q1(); /*HACK*/
-        std::cout << "State changed. Current side: " << _current_side << std::endl;
+        ref->setComStart(state->getCom());
+
+        _current_swing_leg = 1 - _current_swing_leg;
+        // ----------------------------------------------------
+        //
+
+        //        if (last_side == robot_interface::Side::Left)
+        //        {
+        //            _current_side = robot_interface::Side::Right;
+        //            _other_side = robot_interface::Side::Left;
+        //        }
+        //        else if (last_side == robot_interface::Side::Right)
+        //        {
+        //            _current_side = robot_interface::Side::Left;
+        //            _other_side = robot_interface::Side::Right;
+        //        }
+        //        else ROS_INFO("wrong side");
+
+        //                 _q1_min = sense_q1(); /*HACK*/
+
+        if (_current_swing_leg == 1)
+        {
+            side = "LEFT";
+        }
+        else
+        {
+            side = "RIGHT";
+        }
+        std::cout << "State changed. Current side: " << side << std::endl;
 
         return 1;
     }
@@ -112,7 +220,7 @@ double StepMachine::qFake()
 
     if (_started == 1 && _time >= +_start_walk)
     {
-        bool cond_q = false;
+        bool cond_q(false);
 
         if (_q_min <= _q_max)
         {
@@ -128,16 +236,32 @@ double StepMachine::qFake()
         }
         else
         {
-            _q_temp = _q_temp + _steep_q*(_dt); // basically q = a*t
+            _q_fake = _q_fake + _steep_q*(_dt); // basically q = a*t
         }
     }
 
+    /* TODO sanity check? */
+    return true;
+
+
 }
 
-bool StepMachine::core()
-{
 
-     std::cout << "Entering step machine with event: " << _current_event << " during state: " << _current_state << std::endl;
+//bool StepMachine::resetter(const mdof::RobotState * state,
+//                           mdof::RobotState * ref)
+//{
+////     generate_starting_zmp();
+
+//    Eigen::Vector3d new_com(state->getCom());
+//    new_com(0) = state->getCom()(0) - state->getAnkleCom()[_current_swing_leg].coeff(2) * tan(_initial_param.get_max_inclination());
+//    ref->setCom(new_com);
+//}
+
+bool StepMachine::core(double time,
+                       double q_fake,
+                       mdof::RobotState * ref)
+{
+    std::cout << "Entering step machine with event: " << _current_event << " during state: " << _current_state << std::endl;
 
     if (_previous_event != _current_event)
     {
@@ -146,107 +270,124 @@ bool StepMachine::core()
 
     switch (_current_event)
     {
-        case Event::Impact :
-            switch (_current_state)
-            {
-                case State::Idle :
-                    throw std::runtime_error(std::string("Something is wrong. Impact during IDLE"));
+    case Event::Impact :
+        switch (_current_state)
+        {
+        case State::Idle :
+            throw std::runtime_error(std::string("Something is wrong. Impact during IDLE"));
 
-                case State::Walking :
-                    _step_counter++;
-                    _walker->walk(/* ... */);
-                    break;
+        case State::Walking :
+            _step_counter++;
+            updateStep(ref);
 
-                case State::Starting :
-                    _step_counter++;
-                    _previous_state = _current_state;
-                    _current_state = State::Walking;
-                    
-                    _walker->start(/* ... */);
-                    break;
-
-                case State::Stopping :
-                    _step_counter++;
-                    _previous_state = _current_state;
-                    _current_state = State::LastStep;
-                    _q1_max = 0;
-                    
-                    _walker->stop();
-                    break;
-
-                case State::LastStep :
-                    _step_counter++;
-                    _started = 0;
-                    _q1_start = _q1_temp;
-                    _previous_state = _current_state;
-                    _current_state = State::Idle;
-                    
-                    _walker->lastStep();
-                    _steep_coeff = 0;
-                    resetter();
-                    break;
-            }
             break;
 
-        case Event::START :
-        {
-            switch (_current_state)
-            {
+        case State::Starting :
+            _step_counter++;
+            _previous_state = _current_state;
+            _current_state = State::Walking;
 
-                case State::Idle :
-                    _previous_state = _current_state;
-                    _current_state = State::Starting;
-                    _q1_max = _initial_param.get_max_inclination();
-                    _step_counter++;
-                    _cycle_counter++;
-                    _started = 1;
-                    _start_walk = _internal_time + _delay_start;
-                    _steep_coeff = (_q1_max - _q1_min)/_step_duration;
-                    planner(time + _delay_start); //_t_before_first_step
-                    break;
+            /* starting with the half step */
+            updateStep(ref);
 
-                default : /*std::cout << "Ignored starting event. Already WALKING" << std::endl; */
-                    break;
-            }
+            break;
+
+        case State::Stopping :
+            _step_counter++;
+            _previous_state = _current_state;
+            _current_state = State::LastStep;
+
+            /* set q_max to zero (is this enough to make it half step?)*/
+            ref->setQMax(0);
+            break;
+
+        case State::LastStep :
+            _step_counter++;
+
+            /* 'started' flag set to False */
+            _started = 0;
+
+            ref->setQMin(q_fake);
+
+            _previous_state = _current_state;
+            _current_state = State::Idle;
+            ref->setSteepQ(0);
+            resetter();
             break;
         }
-        case Event::Stop :
+        break;
+
+    case Event::Start :
+    {
+        switch (_current_state)
         {
-//             _started = 0;
-            switch (_current_state)
-            {
-                case State::Idle :
-                    /* std::cout << "Ignored stopping event. Already in IDLE" << std::endl; */
-                    break;
 
-                case State::Walking :
-                case State::Starting :
-                    _end_walk = time;
-                    _previous_state = _current_state;
-                    _current_state = State::Stopping;
-//                     planner(time); //replan as soon as I get the message?
-                    break;
+        case State::Idle :
+            _previous_state = _current_state;
+            _current_state = State::Starting;
 
-                case State::Stopping :
-                    /* std::cout << "Ignored stopping event. Already STOPPING" << std::endl; */
-                    break;
-            }
+            /* put it somewhere else */
+            ref->setQMax(_param->getMaxInclination());
+            _step_counter++;
+            _cycle_counter++;
+
+            /* 'started' flag set to True */
+            _started = 1;
+
+            /* this is neeeded to allow the robot to swing before stepping. 'start_time' is the time when the stepping begins, not when the overall walking begin */
+            ref->setStartTime(time + _delay_start);
+
+            /* this plan a step at time 'time + delay' so to allow the robot to swing before stepping */
+            updateStep(ref);
+            planner(time + _delay_start); //_t_before_first_step
+            break;
+
+        default : /*std::cout << "Ignored starting event. Already WALKING" << std::endl; */
             break;
         }
-        case Event::Empty :
-
-            switch (_current_state)
-            {
-                case State::Idle :
-                    planner(time);
-                    break;
-                default :
-                    break;
-            }
-
+        break;
+    }
+    case Event::Stop :
+    {
+        //             _started = 0;
+        switch (_current_state)
+        {
+        case State::Idle :
+            /* std::cout << "Ignored stopping event. Already in IDLE" << std::endl; */
             break;
 
+        case State::Walking :
+        case State::Starting :
+            //                    _end_walk = time; /*probably not used*/
+            _previous_state = _current_state;
+            _current_state = State::Stopping; //replan as soon as I get the message?
+            updateStep(ref);
+            break;
+
+        case State::Stopping :
+            /* std::cout << "Ignored stopping event. Already STOPPING" << std::endl; */
+            break;
+
+        case State::LastStep :
+            /* std::cout << "Ignored stopping event. Already LASTSTEP" << std::endl; */
+            break;
+
+        }
+        break;
+    }
+    case Event::Empty :
+
+        switch (_current_state)
+        {
+        case State::Idle :
+            updateStep(ref);
+            //                    computeStep(/* time */);
+            break;
         default :
-            throw std::runtime_error(std::string("Event not recognized"));
+            break;
+        }
+
+        break;
+
     }
 }

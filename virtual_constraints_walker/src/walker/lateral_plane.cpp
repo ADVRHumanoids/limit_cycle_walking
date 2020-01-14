@@ -1,36 +1,28 @@
 #include <walker/lateral_plane.h>
 
-LateralPlane::LateralPlane()
+LateralPlane::LateralPlane(double dt, Options opt) :
+    _q_sns(0),
+    _q_sns_prev(0),
+    _alpha_old(0),
+    _alpha(0),
+    _zmp_val(0),
+    _switch_side_zmp(1),
+    _size_window(0),
+    _size_step(0),
+    _dt(dt),
+    _opt(opt)
 {
-    MpcSolver::Options opt;
-
-    _mpc_solver = std::make_shared<MpcSolver>(opt);
-
-    _q_sns_prev = 0;
-    _q_sns = 0;
-
-    _alpha_old = 0;
-    _alpha = 0;
-
-    _zmp = 0;
-
-    _switch_side_zmp = 1;
-
-    _size_window = 0;
-    _size_step = 0;
-
-    _n_step_future = 0;
-
-
+    _mpc_solver = std::make_shared<MpcSolver>(_opt.h, _opt.Ts, _opt.T, _opt.Q, _opt.R);
 }
 
-void LateralPlane::update(double q_sns,
-                          double q_max,
-                          double q_min,
-                          double zmp_val,
-                          double duration_preview_window, /* should be constant, equal to size of _K_prev form MPC = duration_preview_window/dt */
-                          double duration_step,
-                          double dt)
+void LateralPlane::computePreviewWindow(double q_sns,
+                                        double q_max,
+                                        double q_min,
+                                        double zmp_val,
+                                        double duration_preview_window, /* should be constant, equal to size of _K_prev form MPC = duration_preview_window/dt */
+                                        double duration_step,
+                                        double middle_zmp,
+                                        double offset)
 {
     _q_sns_prev = _q_sns;
     _q_sns = q_sns;
@@ -48,17 +40,14 @@ void LateralPlane::update(double q_sns,
     /* zmp to track */
     if (_alpha <= 1)
     {
-        _zmp = zmp_val;
+        _zmp_val = zmp_val;
     }
 
-    /* (double) number of step in the preview window */
-    _n_step_future = duration_preview_window / duration_step;
-
     /* size of the window */
-    _size_window = static_cast<int>( duration_preview_window / dt );
+    _size_window = static_cast<int>( duration_preview_window / _dt );
 
     /* size of the step */
-    _size_step = static_cast<int>( duration_step / dt );
+    _size_step = static_cast<int>( duration_step / _dt );
 
     /* size of current step (depending on alpha) */
     int size_current = static_cast<int>((1 - _alpha) * _size_step);
@@ -67,68 +56,78 @@ void LateralPlane::update(double q_sns,
     double time = _alpha * fabs( duration_step );
 
     /* fill first segment (zmp value in a single step) of zmp_window with current zmp */
-    _zmp_window.segment(0, size_current) << zmp_val;
-    std::cout << _zmp_window << std::endl;
+    _zmp_window.head(size_current) << zmp_val;
+    std::cout << "first_segment_zmp: " << _zmp_window << std::endl;
 
     int size_remaining = _size_window - size_current;
+
     /* fill all the other segment (zmp value of all the step after the current) */
-    for (int n = 1; n < _n_step_future; n++)
+
+    while (size_remaining > 0)
     {
-        _zmp_window.segment()
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}
-
-Eigen::VectorXd LateralPlane::computePreviewWindow() {
-
-    /**
-      * double dt, double q, double q_max, double q_min,
-                          pose,
-                          duration_preview_window,
-                          duration_step
-                          t_impact
-      *
-      * */
-    Eigen::VectorXd preview_window;
-    return preview_window;
-}
-
-Eigen::Vector3d LateralPlane::updateCom() {
-
-    /* enters current_time, state, start_walk*/
-    updatePreviewWindow();
-
-    if (_current_state == State::STARTING)
-    {
-// //             this is for the beginning, to move the com before the step
-        if (_internal_time < _start_walk)
+        if (_size_step >= size_remaining)
         {
-            _zmp_starting.head(_zmp_starting.size()-1) = _zmp_starting.tail(_zmp_starting.size()-1);
-            _logger->add("zmp_start", _zmp_starting);
-            _zmp_window_y = _zmp_starting;
+            addSegment(_zmp_window, _size_step, _zmp_val);
+            size_remaining = size_remaining - _size_step;
+            /* switch _zmp side symmetric to middle_zmp */
+            _zmp_val = 2 * middle_zmp - _zmp_val;
+            /* add offset if needed */
+            _zmp_val = _zmp_val + ( ( (_zmp_val - middle_zmp) > 0) - ( (_zmp_val - middle_zmp) < 0) ) * offset ;
+        }
+        else
+        {
+            addSegment(_zmp_window, size_remaining, _zmp_val);
+            size_remaining = 0;
+            /* switch _zmp side symmetric to middle_zmp */
+            _zmp_val = 2 * middle_zmp - _zmp_val;
+            /* add offset if needed */
+            _zmp_val = _zmp_val + ( ( (_zmp_val - middle_zmp) > 0) - ( (_zmp_val - middle_zmp) < 0) ) * offset ;
         }
     }
 
-    _u = _mpc_solver->_K_fb * _com_y + _mpc_solver->_K_prev * _zmp_window_y;
-    _mpc_solver->_integrator->integrate(_com_y, _u, dt, _com_y);
+    std::cout << "full_zmp: "<< _zmp_window << std::endl;
+}
 
-    return _com_y;
+void LateralPlane::addSegment(Eigen::VectorXd& vector, long size, double value)
+{
+    Eigen::VectorXd segment(size);
+    segment = value * segment.setOnes();
+
+
+    long initial_size = vector.size();
+    Eigen::VectorXd new_vector(initial_size + size);
+    new_vector.setZero();
+
+    new_vector.head(initial_size) << vector;
+    new_vector.tail(size) << segment;
+}
+
+void LateralPlane::update(double q_sns,
+                          double q_max,
+                          double q_min,
+                          double zmp_val,
+                          double duration_preview_window, /* should be constant, equal to size of _K_prev form MPC = duration_preview_window/dt */
+                          double duration_step,
+                          double middle_zmp = 0.,
+                          double offset = 0.)
+{
+
+    /* enters current_time, state, start_walk*/
+
+
+//    if (_internal_time < _delay_start)
+//    {
+
+//        computePreviewWindow(/* .... */);
+//        _zmp_starting.head(_zmp_starting.size()-1) = _zmp_starting.tail(_zmp_starting.size()-1);
+//        _zmp_window_y = _zmp_starting;
+//    }
+
+    computePreviewWindow(q_sns,q_max, q_min,zmp_val, duration_preview_window, duration_step, middle_zmp, offset);
+    _u = _mpc_solver->getKfb() * _delta_com + _mpc_solver->getKprev() * _zmp_window;
+    _mpc_solver->getIntegrator()->integrate(_delta_com, _u, _dt, _delta_com);
+
+//    return _delta_com;
 
 
 }

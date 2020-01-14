@@ -11,17 +11,6 @@ public:
 
     struct Options {
 
-        Options() :
-            h(1.0),
-            Ts(0.01),
-            T(1),
-            dt(0.01),
-            Q(1,1),
-            R(1,1)
-        {
-            Q << 1000000;
-            R << 1;
-        };
         /* height of inverted pendulum (m) */
         double h;
 
@@ -40,43 +29,67 @@ public:
 
     };
 
-    MpcSolver(Options opt = Options());
+    MpcSolver(double h,
+              double Ts,
+              double T,
+              double dt,
+              Eigen::MatrixXd Q,
+              Eigen::MatrixXd R);
+
 
     /* set new parameters for MpC solver */
-    bool setOptions(Options new_opt);
+//    bool setOptions(Options new_opt);
 
     bool update();
 
     Eigen::MatrixXd getKfb() {return _K_fb;}
     Eigen::MatrixXd getKprev() {return _K_prev;}
 
+    OpenMpC::dynamics::LtiDynamics::Ptr getIntegrator() {return _integrator;}
+
 private:
 
     Eigen::MatrixXd _K_fb;
     Eigen::MatrixXd _K_prev;
-    Options _opt;
     Eigen::Matrix<double, 1,3> _C_zmp;
     OpenMpC::dynamics::LtiDynamics::Ptr _integrator;
     OpenMpC::UnconstrainedMpc::Ptr _lqr;
 
+    const double _h;
+    const double _Ts;
+    const double _T;
+    const double _dt;
+    const Eigen::MatrixXd _Q;
+    const Eigen::MatrixXd _R;
+
 };
 
 
-LateralPlane::MpcSolver::MpcSolver(Options opt) :
-    _opt(opt)
+LateralPlane::MpcSolver::MpcSolver(double h,
+                                   double Ts,
+                                   double T,
+                                   double dt,
+                                   Eigen::MatrixXd Q,
+                                   Eigen::MatrixXd R) :
+    _h(h),
+    _Ts(Ts),
+    _T(T),
+    _dt(dt),
+    _Q(Q),
+    _R(R)
 {
     /* inverted pendulum */
-    double w = sqrt(9.8/_opt.h);
+    double w = sqrt(9.8/_h);
     _integrator = OpenMpC::dynamics::LtiDynamics::Integrator(3,1);
 
     _C_zmp << 1 ,0, -1.0/std::pow(w, 2.0);
     _integrator->addOutput("zmp", _C_zmp);
 
-    int N = round(_opt.T/_opt.dt);
-    _lqr = boost::make_shared<OpenMpC::UnconstrainedMpc>(_integrator, _opt.Ts, N); //+1
+    int N = round(_T/_dt);
+    _lqr = boost::make_shared<OpenMpC::UnconstrainedMpc>(_integrator, _Ts, N); //+1
 
-    _lqr->addInputTask(_opt.R);
-    _lqr->addOutputTask("zmp", _opt.Q);
+    _lqr->addInputTask(_R);
+    _lqr->addOutputTask("zmp", _Q);
 
     _lqr->compute();
 

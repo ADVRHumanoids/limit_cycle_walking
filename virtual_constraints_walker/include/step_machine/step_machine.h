@@ -10,30 +10,55 @@ public:
 
     class Param;
 
-    StepMachine(mdof::RobotState * state); /* TODO */
+    StepMachine(double dt, Param * par = getDefaultParam()); /* TODO */
 
     enum class Event { Impact = 0, Start = 1, Stop = 2, Empty = 3 }; /* some private (Impact), some public ? */
     enum class State { Idle = 0, Walking = 1, Starting = 2, Stopping = 4, LastStep = 5 };
 
+    bool initialize(const mdof::RobotState * state);
 
-    bool setEvent(Event event);
-    bool setParameters(double q_max, double theta) {_q_max = q_max; _theta = theta;};
+    bool start();
+    bool stop();
+
+    /* parametrization a la Bennewitz */
+    bool setStep(double delta_x, double delta_y, double delta_theta);
+
+    bool setQMax(std::vector<double> q_max);
+    bool setTheta(std::vector<double> theta);
 
     friend std::ostream& operator<<(std::ostream& os, Event s);
     friend std::ostream& operator<<(std::ostream& os, State s);
 
-    bool update(const mdof::RobotState * state,
+    bool update(double time,
+                double q_fake,
+                const mdof::RobotState * state,
                 mdof::RobotState * ref);
 
 private:
 
+    static Param * getDefaultParam();
 
-    bool core();
-    bool impactDetector();
-    bool landingHandler();
+    bool core(double time,
+              double q_fake,
+              mdof::RobotState * ref);
+
+    bool impactDetector(double time,
+                        double q,
+                        double q_min,
+                        double q_max,
+                        double swing_leg_heigth,
+                        double terrain_heigth);
+
+    bool landingHandler(double time,
+                        double terrain_heigth,
+                        const mdof::RobotState * state,
+                        mdof::RobotState * ref);
+
     double qFake();
 
+    bool updateStep( mdof::RobotState * ref);
 
+    bool resetter();
 
     State _current_state, _previous_state;
     Event _current_event, _previous_event;
@@ -41,10 +66,10 @@ private:
     /* parameters of the stepping motion */
     mdof::StepState * _step;
 
-    mdof::RobotState * _state;
+    int _step_counter, _cycle_counter;
+    double _steep_q;
 
-    int _step_counter;
-    int _steep_q;
+    double _time_impact;
 
     double _theta;
 
@@ -62,9 +87,6 @@ private:
     /* starting time */
     double _start_walk;
 
-    /* time between instant that received START command is received and instant where robot starts walking. Required for initial lateral shift of the CoM */
-    double _delay_start = 1.5;
-
     /* phase variable */
     double _q;
 
@@ -74,12 +96,20 @@ private:
     /* current maximum q */
     double _q_max;
 
-    /* temporary q */
-    double _q_temp;
+    /* fake q */
+    double _q_fake;
 
     /* dt of the control */
     double _dt;
 
+    /* swinging leg (0 -> left, 1 -> right) */
+    bool _current_swing_leg;
+
+    std::deque<double> _q_buffer;
+    std::deque<double> _theta_buffer;
+
+
+    double _terrain_height;
 
 
 };

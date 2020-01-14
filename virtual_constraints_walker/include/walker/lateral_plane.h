@@ -4,38 +4,10 @@
 #include <XBotLogger/Logger.hpp>
 
 class LateralPlane {
-private:
-
-    struct Options
-    {
-
-    };
-
-    class MpcSolver;
-
-    std::shared_ptr< MpcSolver > _mpc_solver;
-
-    Eigen::VectorXd computePreviewWindow();
-
-    Eigen::Vector3d getDeltaComLat(){return _delta_com_lat;};
-
-    Eigen::Vector3d _delta_com_lat;
-    double _q_sns, _q_sns_prev;
-
-    double _alpha_old, _alpha;
-
-    double _zmp;
-
-    bool _switch_side_zmp;
-
-    Eigen::VectorXd max_;
-
-    int _size_window, _size_step;
-
-
-
 
 public:
+
+    typedef std::shared_ptr< LateralPlane > Ptr;
 
     /* ask for:
 
@@ -48,15 +20,79 @@ public:
 
     */
 
-    LateralPlane();
+    struct MpcOptions
+    {
+        MpcOptions()
+        {
+            Q << 1000000;
+            R << 1;
+        }
+
+        /* height linear inverted pendulum */
+        double h = 1.0;
+        /* preview window resolution */
+        double Ts = 0.01;
+        /* horizon length */
+        double T = 1.0;
+        /* gains for mpc */
+        Eigen::MatrixXd Q;
+        Eigen::MatrixXd R;
+    };
+
+    LateralPlane(double dt, MpcOptions opt = MpcOptions());
 
     void update(double q_sns,
                 double q_max,
                 double q_min,
                 double zmp_val,
-                double duration_preview_window,
+                double duration_preview_window, /* should be constant, equal to size of _K_prev form MPC = duration_preview_window/dt */
                 double duration_step,
-                double dt);
+                double middle_zmp,
+                double offset);
+
+private:
+
+
+
+    class MpcSolver;
+
+    std::shared_ptr< MpcSolver > _mpc_solver;
+
+    Eigen::Vector3d getDeltaCom(){return _delta_com;}
+
+    void addSegment(Eigen::VectorXd& vector, long size, double value);
+
+    void computePreviewWindow(double q_sns,
+                             double q_max,
+                             double q_min,
+                             double zmp_val,
+                             double duration_preview_window,
+                             double duration_step,
+                             double middle_zmp,
+                             double offset);
+
+    Eigen::Vector3d _delta_com;
+
+    double _q_sns, _q_sns_prev;
+
+    double _alpha_old, _alpha;
+
+    double _zmp_val;
+
+    bool _switch_side_zmp;
+
+    int _size_window, _size_step;
+
+    double _delay_start;
+
+    double _dt;
+
+    Eigen::Matrix<double,1,1> _u;
+
+    Eigen::VectorXd _zmp_window;
+
+    Options _opt;
+
 
 };
 

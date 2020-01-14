@@ -1,137 +1,83 @@
 #include <walker/sagittal_plane.h>
 
-//bool StepMachine::update()
-//{
-//    _step_state->com_start = _step_state->com_goal;
-//    _step_state->foot_start = _step_state->foot_pos;
-
-//    robot_state.com_goal =
-
-
-//    double q1_max_new = _step_state->
-
-//    q1_max_new = _q1_max;
-//    Eigen::Matrix2d R_steer;
+void SagittalPlane::update()
+{
 
 
 
 
-//            /* TODO refactor: this is needed for the steering and the length step */
+}
 
-//    double theta = _theta_steer; // change heading
-//    R_steer << cos(theta), -sin(theta),
-//            sin(theta), cos(theta);
+double SagittalPlane::computeCom(double q,
+                  double height_com)
+{
+    /* compute com displacement */
+    double delta_com = fabs(height_com) * tan(q);
+    return delta_com;
+}
 
-//    _q1_max = 0.05;
-//            //                q1_max_new = _q1_max;
-//            //                if (_step_counter >= 4 && _step_counter < 5)       /*Left*/
-//            //                {
-//            //                    _q1_max = 0.001;
-//            //                    q1_max_new = _q1_max; // change step length
-//            //                    double theta = _theta_steer; // change heading
-//            //                    R_steer << cos(theta), -sin(theta),
-//            //                                    sin(theta), cos(theta);
-//            //                }
-//            //                else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
-//            //                {
-//            //                    _q1_max = 0.02;
-//            //                    q1_max_new = _q1_max; // change step length
-//            //                    double theta = _theta_steer; // change heading
-//            //                    R_steer << cos(theta), -sin(theta),
-//            //                                    sin(theta), cos(theta);
-//            //                }
-//            //                else if (_step_counter >= 6 && _step_counter < 7)   /*Left*/
-//            //                {
-//            //                    _q1_max = 0.05;
-//            //                    q1_max_new = _q1_max; // change step length
-//            //                    double theta = _theta_steer; // change heading
-//            //                    R_steer << cos(theta), -sin(theta),
-//            //                                    sin(theta), cos(theta);
-//            //                }
-//            //                else if (_step_counter >= 7 && _step_counter < 8)  /*Right*/
-//            //                {
-//            //                    _q1_max = 0.05;
-//            //                    q1_max_new = _q1_max; // change step length
-//            //                    double theta = _theta_steer; // change heading
-//            //                    R_steer << cos(theta), -sin(theta),
-//            //                                    sin(theta), cos(theta);
-//            //                }
-//            //                else if (_step_counter >= 8 && _step_counter < 9)   /*Left*/
-//            //                {
-//            //                    _q1_max = 0.05;
-//            //                    q1_max_new = _q1_max; // change step length
-//            //                    double theta = _theta_steer; // change heading
-//            //                    R_steer << cos(theta), -sin(theta),
-//            //                                    sin(theta), cos(theta);
-//            //                }
-//            //                else if (_step_counter >= 9 && _step_counter < 10) /*Right*/
-//            //                {
-//            //                    _q1_max = 0.05;
-//            //                    q1_max_new = _q1_max; // change step length
-//            //                    double theta = _theta_steer; // change heading
-//            //                    R_steer << cos(theta), -sin(theta),
-//            //                                    sin(theta), cos(theta);
-//            //                }
-//            //                else if (_step_counter >= 10 && _step_counter < 15)
-//            //                {
-//            //                    _q1_max = 0.05;
-//            //                    q1_max_new = _q1_max; // change step length
-//            //                    double theta = _theta_steer; // change heading
-//            //                    R_steer << cos(theta), -sin(theta),
-//            //                                    sin(theta), cos(theta);
-//            //                }
-//            //                else
-//            //                {
-//            //                    _q1_max = - 0.05;
-//            //                    q1_max_new = _q1_max;
-//            //                    double theta = 0;
-//            //                    R_steer << cos(theta), -sin(theta),
-//            //                                sin(theta), cos(theta);
-//            //                }
-//            /*----------------generate q1-------------------------*/
-//            double q1 = (q1_max_new - _q1_min);
+bool SagittalPlane::computeStep(double q_min,
+                                double q_max,
+                                double theta,
+                                double step_duration,
+                                double height_com,
+                                double& steep_coeff,
+                                Eigen::Vector3d inital_com,
+                                Eigen::Vector3d& final_com,
+                                Eigen::Affine3d initial_swing_foot,
+                                Eigen::Affine3d initial_stance_foot,
+                                Eigen::Affine3d& final_swing_foot,
+                                Eigen::Affine3d& final_stance_foot,
+                                Eigen::Affine3d& final_waist)
+{
+    Eigen::Vector2d disp_com;
+    Eigen::Rotation2Dd rot2(theta);
+
+    /* total q angle in one step */
+    double q_tot = q_max - q_min;
+
+    steep_coeff = (q_max - q_min)/ step_duration;
+
+    /* displacement in the xy plane */
+    double delta_com = fabs(height_com) * tan(q_tot);
 
 
-//            _steep_coeff = (q1_max_new - _q1_min)/_step_duration;
-//            /*----------------------------------------------------*/
+    std::cout << "disp_com_before_rot: " << disp_com.transpose() << std::endl;
 
-//            std::cout << "q1_max: " << q1_max_new << std::endl;
-//            std::cout << "q1_min: " << _q1_min << std::endl;
-//            std::cout << "angle: " << q1 << std::endl;
+    disp_com = rot2.toRotationMatrix() * disp_com;
 
-//            Eigen::Vector2d disp_com; // displacement in the xy plane
-//            Eigen::Vector2d disp_com_rot; // displacement in the xy plane
-//            disp_com << fabs(_current_pose_ROS.get_distance_ankle_to_com(_current_side).z()) * tan(q1), 0; // displacement of com in x
+    std::cout << "disp_com_after_rot: " << disp_com.transpose() << std::endl;
 
-//            disp_com_rot = R_steer * disp_com; // angle steering
-//            std::cout << "disp_com_rot: " << disp_com_rot.transpose() << std::endl;
+    /* compute com final pose */
+    final_com.head(2) = inital_com.head(2) + disp_com;
 
-//            _final_com_position.head(2) = _initial_com_position.head(2) + disp_com_rot;
-//            _final_com_position_fake.head(2) = _initial_com_position_fake.head(2) + disp_com;
+    /* compute step final pose */
+    final_stance_foot = initial_stance_foot;
+    final_swing_foot.translation() = - initial_stance_foot.translation()  + 2 * final_com;  // get final step given the displacement vector
 
+    /*rotate, if needed, sole */
+    final_swing_foot.linear() = (Eigen::AngleAxisd(theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
+    /* rotate, if needed, waist */
+    final_waist.linear() = (Eigen::AngleAxisd(theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+}
 
-//            _final_sole_pose.translation() = _current_pose_ROS.get_sole_tot(_other_side).translation() + 2 * (_final_com_position - _current_pose_ROS.get_sole_tot(_other_side).translation());  // get final step given the displacement vector
+Eigen::Affine3d SagittalPlane::getFootStart() const
+{
+    return _foot_start;
+}
 
-//            /* TODO refactor: this is needed for the steering (orientation) */
-//            double theta_heading;
-//            /* orientation */
+Eigen::Affine3d SagittalPlane::getFootEnd() const
+{
+    return _foot_end;
+}
 
-//            //                if (_step_counter >= 4 && _step_counter < 15)
-//            //                {
-//            //                    theta_heading = _theta_steer;
-//            //                }
-//            //                else
-//            //                {
-//            theta_heading = 0;
-//            //                }
+Eigen::Vector3d SagittalPlane::getComStart() const
+{
+    return _com_start;
+}
 
-//            /* Sole */
-//            _final_sole_pose.linear() = (Eigen::AngleAxisd(theta_heading, Eigen::Vector3d::UnitZ())).toRotationMatrix();
-
-//            /* Waist */
-
-//            _final_waist_pose.linear() = (Eigen::AngleAxisd(theta_heading, Eigen::Vector3d::UnitZ())).toRotationMatrix();
-//}
-
-//}
+Eigen::Vector3d SagittalPlane::getComEnd() const
+{
+    return _com_end;
+}
