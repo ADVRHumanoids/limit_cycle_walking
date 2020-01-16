@@ -46,7 +46,7 @@ add_library(virtual_constraints_walker STATIC
               src/walker/walker.cpp
               src/walker/lateral_plane.cpp
               src/walker/sagittal_plane.cpp
-              src/walker/foot_trajectory.cpp
+              src/step_machine/foot_trajectory.cpp
               src/step_machine/step_machine.cpp
               src/robot_interface_ROS.cpp)
 

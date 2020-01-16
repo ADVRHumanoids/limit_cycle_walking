@@ -1,26 +1,26 @@
 #include <walker/sagittal_plane.h>
 
-//void SagittalPlane::update(double q,
-//                           double height_com,
-//                           double q_min,
-//                           double q_max,
-//                           double theta,
-//                           double step_duration,
-//                           double& steep_coeff,
-//                           Eigen::Vector3d inital_com,
-//                           Eigen::Vector3d& final_com,
-//                           Eigen::Affine3d initial_swing_foot,
-//                           Eigen::Affine3d initial_stance_foot,
-//                           Eigen::Affine3d& final_swing_foot,
-//                           Eigen::Affine3d& final_stance_foot)
-//{
+void SagittalPlane::update(double q,
+                           double height_com,
+                           double q_min,
+                           double q_max,
+                           double theta,
+                           double step_duration,
+                           double& steep_coeff,
+                           Eigen::Vector3d inital_com,
+                           Eigen::Vector3d& final_com,
+                           Eigen::Affine3d initial_swing_foot,
+                           Eigen::Affine3d initial_stance_foot,
+                           Eigen::Affine3d& final_swing_foot,
+                           Eigen::Affine3d& final_stance_foot)
+{
 
 
-//    computeStep(q_min,q_max, theta, step_duration, height_com, steep_coeff, inital_com, final_com, initial_swing_foot, initial_stance_foot, final_swing_foot);
-//    computeCom(q, height_com);
+    computeStep(q_min,q_max, theta, step_duration, height_com, steep_coeff, inital_com, final_com, initial_swing_foot, initial_stance_foot, final_swing_foot);
+    computeCom(q, height_com);
 
 
-//}
+}
 
 double SagittalPlane::computeCom(double q,
                   double height_com)
@@ -34,7 +34,7 @@ bool SagittalPlane::computeStep(double q_min,
                                 double q_max,
                                 double theta,
                                 double height_com,
-                                Eigen::Vector3d inital_com,
+                                Eigen::Vector3d initial_com,
                                 Eigen::Affine3d initial_stance_foot,
                                 Eigen::Vector3d& final_com,
                                 Eigen::Affine3d& final_swing_foot)
@@ -45,11 +45,12 @@ bool SagittalPlane::computeStep(double q_min,
     /* total q angle in one step */
     double q_tot = q_max - q_min;
 
-//    steep_coeff = (q_max - q_min)/ step_duration;
+    /* steep_coeff = (q_max - q_min)/ step_duration; */
 
     /* displacement in the xy plane */
     disp_com << computeCom(q_tot, height_com), 0;
 
+    /* TODO all of this can be done outside of here ?? */
     std::cout << "disp_com_before_rot: " << disp_com.transpose() << std::endl;
 
     disp_com = rot2.toRotationMatrix() * disp_com;
@@ -57,7 +58,7 @@ bool SagittalPlane::computeStep(double q_min,
     std::cout << "disp_com_after_rot: " << disp_com.transpose() << std::endl;
 
     /* compute com final pose */
-    final_com.head(2) = inital_com.head(2) + disp_com;
+    final_com.head(2) = initial_com.head(2) + disp_com;
 
     /* compute step final pose */
     final_swing_foot.translation() = - initial_stance_foot.translation()  + 2 * final_com;  // get final step given the displacement vector

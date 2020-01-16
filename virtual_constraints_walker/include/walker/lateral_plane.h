@@ -44,7 +44,8 @@ public:
     void update(double q_sns,
                 double q_max,
                 double q_min,
-                double zmp_val,
+                double zmp_val_current,
+                double zmp_val_next,
                 double duration_preview_window, /* should be constant, equal to size of _K_prev form MPC = duration_preview_window/dt */
                 double duration_step,
                 double middle_zmp  = 0., /* should be constant */
@@ -64,13 +65,14 @@ private:
 
     /* compute preview window */
     void computePreviewWindow(double q_sns,
-                             double q_max,
-                             double q_min,
-                             double zmp_val,
-                             double duration_preview_window,
-                             double duration_step,
-                             double middle_zmp,
-                             double offset);
+                              double q_max,
+                              double q_min,
+                              double zmp_val_current,
+                              double zmp_val_next,
+                              double duration_preview_window,
+                              double duration_step,
+                              double middle_zmp,
+                              double offset);
 
     Eigen::Vector3d _delta_com;
 

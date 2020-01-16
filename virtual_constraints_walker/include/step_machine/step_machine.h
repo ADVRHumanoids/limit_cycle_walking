@@ -1,9 +1,9 @@
 #ifndef STEP_MACHINE_H
 #define STEP_MACHINE_H
 
-#include <robot/step_state.h>
+#include <robot/robot_state.h>
 #include <walker/walker.h>
-
+#include <step_machine/foot_trajectory.h>
 
 class StepMachine {
 public:
@@ -42,9 +42,7 @@ private:
 
     static Param * getDefaultParam();
 
-    bool core(double time,
-              double q_fake,
-              mdof::RobotState * ref);
+    bool core(double time);
 
     bool impactDetector(double time,
                         double q,
@@ -54,21 +52,25 @@ private:
                         double terrain_heigth);
 
     bool landingHandler(double time,
-                        double terrain_heigth,
-                        const mdof::RobotState * state,
-                        mdof::RobotState * ref);
+                        const mdof::RobotState * state);
 
 
-    bool StepMachine::qFake(double time,
-                            double q,
-                            double q_min,
-                            double q_max,
-                            double steep_q,
-                            bool started,
-                            double start_walk,
-                            double& q_fake);
+    bool computeQFake(double time,
+               double q,
+               double q_min,
+               double q_max,
+               double steep_q,
+               bool started,
+               double start_walk,
+               double& q_fake);
 
-    bool updateStep(mdof::RobotState * ref);
+    double computeQ(bool current_swing_leg,
+                  double theta,
+                  Eigen::Vector3d world_T_com,
+                  Eigen::Vector3d world_T_com_start,
+                  std::array<Eigen::Affine3d, 2> ankle_T_com);
+
+    bool updateStep();
 
     bool resetter();
 
@@ -81,7 +83,7 @@ private:
     int _step_counter, _cycle_counter;
     double _steep_q;
 
-    double _time_impact;
+    double _t_impact;
 
     double _theta;
 
@@ -97,7 +99,7 @@ private:
     bool _started;
 
     /* starting time */
-    double _start_walk;
+    double _t_start_walk;
 
     /* phase variable */
     double _q;
@@ -117,12 +119,33 @@ private:
     /* swinging leg (0 -> left, 1 -> right) */
     bool _current_swing_leg;
 
+    /* time between instant that received START command is received and instant where robot starts walking. Required for initial lateral shift of the CoM */
+    double _delay_start;
+
+    /* buffer of commands for step */
     std::deque<double> _q_buffer;
     std::deque<double> _theta_buffer;
 
-
     double _terrain_height;
 
+    Eigen::Vector3d _com_pos_start;
+    Eigen::Vector3d _com_pos_goal;
+
+    std::array<Eigen::Affine3d, 2> _foot_pos_start;
+    std::array<Eigen::Affine3d, 2> _foot_pos_goal;
+
+    Eigen::Affine3d _waist_pos_start;
+    Eigen::Affine3d _waist_pos_goal;
+
+//    std::array<bool, 2> _foot_contact;
+
+    double _step_t_start;
+    double _step_t_end;
+
+    double _step_duration;
+    double _step_clearance;
+
+    double _middle_zmp;
 
 };
 
