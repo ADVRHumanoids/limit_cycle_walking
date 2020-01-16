@@ -15,10 +15,12 @@ public:
         q_min(0),
         q_max(0),
         steep_q(0),
-        theta(0)
+        theta(0),
+        zmp(0)
     {
         world_T_com_start.setZero();
         world_T_com_goal.setZero();
+
         world_T_foot_start[0].matrix().setZero();
         world_T_foot_start[1].matrix().setZero();
 
@@ -27,7 +29,6 @@ public:
 
         world_T_com.setZero();
         com_vel.setZero();
-        zmp.setZero();
 
         world_T_foot[0].matrix().setZero();
         world_T_foot[1].matrix().setZero();
@@ -42,14 +43,14 @@ public:
     Eigen::Vector3d getComVel() const;
     void setComVel(const Eigen::Vector3d &value);
 
-    Eigen::Vector3d getZmp() const;
-    void setZmp(const Eigen::Vector3d &value);
+    double getZmp() const;
+    void setZmp(const double &value);
 
     std::array<Eigen::Affine3d, 2> getFoot() const;
     void setFoot(const std::array<Eigen::Affine3d, 2> &value);
 
-    void setLFoot(const Eigen::Affine3d &value);
-    void setRFoot(const Eigen::Affine3d &value);
+//    void setLFoot(const Eigen::Affine3d &value);
+//    void setRFoot(const Eigen::Affine3d &value);
 
     std::array<Eigen::Affine3d, 2> getFootStart() const;
     void setFootStart(const std::array<Eigen::Affine3d, 2> &value);
@@ -100,8 +101,8 @@ public:
     double getTheta() const;
     void setTheta(double value);
 
-    double getStartTime() const;
-    void setStartTime(double value);
+    double getStartWalkTime() const;
+    void setStartWalkTime(double value);
 
     double getQ() const
     {
@@ -133,6 +134,7 @@ public:
             }
         }
 
+
         Eigen::Vector3d dist_com;
         double q;
         double offset_q;
@@ -156,11 +158,22 @@ public:
     }
 
 
+    double getTStart() const;
+    void setTStart(double value);
+
+    double getTEnd() const;
+    void setTEnd(double value);
+
+    bool getSwingLeg() const;
+    void setSwingLeg(bool swingLeg);
+
 private:
 
     /* feet are organized in arrays, first left second right */
 
-    Eigen::Vector3d com_vel, zmp;
+    Eigen::Vector3d com_vel;
+
+    double zmp;
 
     std::array<Eigen::Affine3d, 2> world_T_foot;
     std::array<Eigen::Affine3d, 2> world_T_foot_start;
@@ -176,6 +189,8 @@ private:
 
     std::array<bool, 2> foot_contact;
 
+    double t_start;
+    double t_end;
 
     double step_duration;
     double step_clearing;
@@ -192,7 +207,9 @@ private:
     /* direction of step */
     double theta;
 
-    double start_walk;
+    double start_walk_time;
+
+    bool swing_leg;
 
     void log(XBot::MatLogger::Ptr logger)
     {
@@ -230,12 +247,12 @@ void RobotState::setComVel(const Eigen::Vector3d &value)
     com_vel = value;
 }
 
-Eigen::Vector3d RobotState::getZmp() const
+double RobotState::getZmp() const
 {
     return zmp;
 }
 
-void RobotState::setZmp(const Eigen::Vector3d &value)
+void RobotState::setZmp(const double &value)
 {
     zmp = value;
 }
@@ -250,14 +267,44 @@ void RobotState::setTheta(double value)
     theta = value;
 }
 
-double RobotState::getStartTime() const
+double RobotState::getStartWalkTime() const
 {
-    return start_time;
+    return start_walk_time;
 }
 
-void RobotState::setStartTime(double value)
+void RobotState::setStartWalkTime(double value)
 {
-    start_time = value;
+    start_walk_time = value;
+}
+
+double RobotState::getTStart() const
+{
+    return t_start;
+}
+
+void RobotState::setTStart(double value)
+{
+    t_start = value;
+}
+
+double RobotState::getTEnd() const
+{
+    return t_end;
+}
+
+void RobotState::setTEnd(double value)
+{
+    t_end = value;
+}
+
+bool RobotState::getSwingLeg() const
+{
+    return swing_leg;
+}
+
+void RobotState::setSwingLeg(bool value)
+{
+    swing_leg = value;
 }
 
 

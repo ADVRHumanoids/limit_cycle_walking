@@ -8,6 +8,8 @@
 #include <walker/lateral_plane.h>
 #include <walker/sagittal_plane.h>
 
+#include <walker/foot_trajectory.h>
+
 class Walker {
 public:
 
@@ -33,7 +35,8 @@ public:
 
     enum class Side { Left = 0, Right = 1, Double = -1 };  /*Side that is SWINGING*/     /*think a way to put here the values of step_y*/
 
-    bool initialize(double time, const mdof::RobotState& state);
+    bool initialize(double time,
+                    const mdof::RobotState * state);
 
     bool compute(double time,
                 const mdof::RobotState * state,
@@ -44,14 +47,6 @@ public:
 private:
     /* set homing configuration for robot */
     void idle();
-
-    void walk(double time,
-              const mdof::RobotState& state,
-              mdof::RobotState& ref);
-
-    bool homing(double time,
-                const mdof::RobotState& state,
-                mdof::RobotState& ref);
 
     bool reset();
 
@@ -65,31 +60,31 @@ private:
     double _delay_start;
 
     /* fist step side */
-    Side _current_side, _other_side;
+//    Side _current_side, _other_side;
 
     /* swinging leg */
-    bool _current_swing_leg;
+//    bool _current_swing_leg;
 
     /* phase variable (and its max and min) */
-    double _q, _q_max, _q_min;
+//    double _q, _q_max, _q_min;
 
     /* duration of step */
-    double _step_duration;
+//    double _step_duration;
 
     /* clearing of step */
-    double _step_clearing;
+//    double _step_clearing;
 
     /* steepness of the phase variable --> (_q1_max - _q1_min)/_step_duration */
-    double _steep_q;
+//    double _steep_q;
 
     /* current height */
-    double _height;
+//    double _height;
 
     /* com trajectory */
-    Eigen::Vector3d _com_x, _com_y;
+//    Eigen::Vector3d _com_x, _com_y;
 
     /* current zmp */
-    Eigen::Vector2d _current_zmp;
+//    Eigen::Vector2d _current_zmp;
 
     LateralPlane::Ptr _lat;
     SagittalPlane::Ptr _sag;

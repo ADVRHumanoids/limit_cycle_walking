@@ -1,63 +1,41 @@
 #include <walker/walker.h>
 
 Walker::Walker(double dt, Options opt) :
-    _opt(opt),
     _dt(dt),
     _reset_condition(false),
     _delay_start(0),
-    _current_side(Side::Double), _other_side(Side::Double),
-    _current_swing_leg(0),
-    _q(0),
-    _q_max(0),
-    _q_min(0),
-    _step_duration(0),
-    _step_clearing(0),
-    _steep_q(0),
-    _height(0)
-
+    _opt(opt)
 {
-    _com_x.setZero();
-    _com_y.setZero();
-    _current_zmp.setZero();
 }
 
-bool Walker::initialize(double time, const mdof::RobotState& state)
+bool Walker::initialize(double time,
+                        const mdof::RobotState * state)
 {
     /* before setting stuff, I need the homing */
-    homing();
+//    homing(time, state, ref);
 
     /* required parameters here:
      * zmp indent
-     * crouch height
      * initial_swing_leg
      * duration preview window for MPC
      * Q for MPC
      * R for MPC
-     *
      */
+
     _reset_condition = 0;
-    _q_max = state.getQMin();
-    _q_min = state.getQMax();
-
-    _steep_q = state.getSteepQ(); /* should be 0! */
-
-    _step_duration = state.getStepDuration();
-    _step_clearing = state.getStepClearing();
 
     /* com to sole (height of linear inverted pendulum for MPC) */
-    double height_lip = fabs(state.getCom().z() - state.getFoot()[_current_swing_leg].translation().z());
+    double height_lip = fabs(state->getCom().z() - state->getFoot()[state->getSwingLeg()].translation().z());
 
     _delay_start = 1.5;
 
-    double step_lenght = fabs(4* fabs(state.getAnkleCom()[_current_swing_leg].translation().z()) * tan(state.getQMax()));
+    double step_lenght = fabs(4* fabs(state->getAnkleCom()[state->getSwingLeg()].translation().z()) * tan(state->getQMax()));
 
-    Eigen::Affine3d l_foot = state.getFoot()[0];
-    Eigen::Affine3d r_foot = state.getFoot()[1];
-
-
-    std::cout << "Lean forward: " << _opt.lean_forward << " m (Initial angle: " << _initial_q1 << " rad)" << std::endl;
-    std::cout << "Step length: " <<  step_lenght << " m (Max angle of inclination: " << _q_max << " rad)" <<  std::endl;
-    std::cout << "Step duration: " << _step_duration << " s" << std::endl;
+    /* steepness should be zero ? */
+    /* zmp should be ? */
+    std::cout << "Initial angle: " << state->getQ() << " rad)" << std::endl;
+    std::cout << "Step length: " <<  step_lenght << " m (Max angle of inclination: " << state->getQMax() << " rad)" <<  std::endl;
+    std::cout << "Step duration: " << state->getStepDuration() << " s" << std::endl;
     std::cout << "Double stance: " <<  _opt.double_stance_duration << " s" << std::endl;
 //    std::cout << "Steepness: " << _steep_q <<  std::endl;
 //    std::cout << "ZMP width correction: " << - state.get_indent_zmp() << " --> ZMP Right: " << _current_zmp << " and ZMP Left: " << _initial_zmp_y_right << std::endl;
@@ -77,60 +55,90 @@ bool Walker::initialize(double time, const mdof::RobotState& state)
 
 }
 
-bool Walker::homing(double time,
-                    const mdof::RobotState * state,
-                    mdof::RobotState * ref)
-{
-    /* com homing  */
-
-    Eigen::Vector3d com_goal = state->getCom();
-    /* center the CoM w.r.t. the feet */
-    com_goal(0) = state->getFoot()[_current_swing_leg].translation()(0) + _opt.lean_forward;
-    com_goal(1) = (state->getFoot()[0].translation()(1) + (state->getFoot()[1].translation()(1)))/2; //TODO put in
-    com_goal(2) = _opt.crouch_height;
-
-    ref->setComStart(state->getCom());
-    ref->setComGoal(com_goal);
-
-    Eigen::Affine3d l_foot = state->getFoot()[0];
-    Eigen::Affine3d r_foot = state->getFoot()[1];
-
-    Eigen::Quaterniond _orientation_goal;
-
-
-
-    /* unrequired? */
-    _ready_flag = 1;
-}
-
 bool Walker::compute(double time,
                      const mdof::RobotState * state,
                      mdof::RobotState * ref)
-{
+{   
+    /* get values from state*/
+    double q = state->getQ();
+    double q_min = state->getQMin();
+    double q_max = state->getQMax();
+    bool current_swing_leg = state->getSwingLeg();
+    double t_start_walk = state->getStartWalkTime();
+    double step_duration = state->getStepDuration();
+    double step_clearing = state->getStepClearing();
+    Eigen::Vector3d com_pos_start = state->getCom();
+    std::array< Eigen::Affine3d, 2 > foot_pos_start = state->getFootStart();
+//    std::array< Eigen::Affine3d, 2 > foot_pos_goal = state->getFootGoal();
+    double t_start = state->getTStart();
+//    double t_end = state->getTEnd();
+    double current_zmp = state->getZmp();
+    double theta = state->getTheta();
+    Eigen::Affine3d waist_pos_start = state->getWaist();
 
-    /*
-     * I should probably put here the mechanics to move com before step at the beginning
+    Eigen::Rotation2Dd rot2(theta);
 
-     */
-    if (time < state->getStartTime())
+    if (time < t_start_walk)
     {
         /* do nothing */
     }
 
-    if (time > state->getStartTime() && time < state->getStartTime() + _delay_start)
+    if (time > t_start_walk && time < t_start_walk + _delay_start)
     {
         /* this fakes a _q in the beginning, so that the com moves before the step */
-        _q = state->getSteepQ() * time;
+        q = state->getSteepQ() * time;
     }
 
-    _lat->update(state->getQ(), state->getQMax(), state->getQMin(), zmp_val, duration_preview_window, duration_step);
-    _sag->update(delta_com_lat, delta_step);
+    double height_robot = state->getAnkleCom()[1 - current_swing_leg].translation().z();
 
-    ref.com_traj[0] = state.com_sag_start + delta_com_sag;
-    ref.com_traj[1] = state.com_lat_start + delta_com_lat;
+    /* compute stepping motion */
+    _sag->update(q, height_robot);
+    _lat->update(q, q_max, q_min, current_zmp, _opt.horizon_length, step_duration);
 
-    ref.step_traj = compute_traj(state.foot_start, state.foot_goal);
+    /* compute com trajectory */
+    Eigen::Vector3d com_ref;
 
+    com_ref(0) = com_pos_start(0) + _sag->getDeltaCom();
+    com_ref(1) = com_pos_start(1) + _lat->getDeltaCom();
+    com_ref(2) = com_pos_start(2);
+
+    /* rotate com_ref if needed */
+    com_ref.head(2) = rot2.toRotationMatrix() * com_ref.head(2);
+
+
+    /*compute feet trajectories */
+    std::array<Eigen::Affine3d, 2> feet_ref;
+
+    /* set foot_goal and t_goal */
+    /* THIS IS NECESSARY ONLY WHEN NEW STEP IS ISSUED */
+    std::array< Eigen::Affine3d, 2 > foot_pos_goal = state->getFootStart();
+    foot_pos_goal[current_swing_leg] = _sag->getFootGoal();
+    ref->setFootGoal(foot_pos_goal);
+    t_start = state->getTStart();/* which is also t_impact */
+    ref->setTEnd(t_start + state->getStepDuration()); /* t_end */
+
+    feet_ref[1 - current_swing_leg] = foot_pos_start[1 - current_swing_leg];
+
+    /* here the feet trajectory should be a function of q, not t */
+    feet_ref[current_swing_leg] = mdof::computeTrajectory(foot_pos_start[current_swing_leg],
+                                                          ref->getFootGoal()[current_swing_leg],
+                                                          step_clearing,
+                                                          t_start,
+                                                          ref->getTEnd(),
+                                                          time);
+
+    /* appearing to be useless:
+     * robot state t_end
+     * robot state foot_goal
+     */
+    /* compute waist trajectory */
+    Eigen::Affine3d waist_ref = waist_pos_start;
+
+    waist_ref.linear() = (Eigen::AngleAxisd(theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+
+    /* set trajectories */
+    ref->setCom(com_ref);
+    ref->setFoot(feet_ref);
+    ref->setWaist(waist_ref);
 }
-
 

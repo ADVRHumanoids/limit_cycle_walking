@@ -28,11 +28,42 @@ bool StepMachine::initialize(const mdof::RobotState *state)
 {
     _terrain_height = state->getFoot()[_current_swing_leg].translation()(2);
     _current_swing_leg = _param->getFirstSide();
-//    _q = state->getQ();
+
+//    _walker->homing(time, state, ref);
 
 
 
     return true;
+}
+
+bool StepMachine::homing(double time,
+                    const mdof::RobotState * state,
+                    mdof::RobotState * ref)
+{
+    /* com homing  */
+
+    Eigen::Vector3d com = state->getCom();
+
+    ref->setComStart(com);
+
+    /* center the CoM w.r.t. the feet */
+    com(0) = state->getFoot()[state->getSwingLeg()].translation()(0) + _param->getLeanForward();
+    com(1) = (state->getFoot()[0].translation()(1) + (state->getFoot()[1].translation()(1)))/2;
+    com(2) = _param->getInitialLowering();
+
+    ref->setComGoal(com);
+
+    std::array<Eigen::Affine3d, 2> feet = {state->getFoot()[0], state->getFoot()[1]};
+
+    ref->setFootStart(feet);
+
+    Eigen::Quaterniond _orientation_goal;
+    _orientation_goal.setIdentity();
+
+    feet[0].linear() = _orientation_goal.normalized().toRotationMatrix();
+    feet[1].linear() = _orientation_goal.normalized().toRotationMatrix();
+
+    ref->setFootGoal(feet);
 }
 
 bool StepMachine::start()
@@ -89,18 +120,33 @@ bool StepMachine::updateStep(mdof::RobotState * ref)
 }
 
 bool StepMachine::update(double time,
-                         double q_fake,
                          const mdof::RobotState * state,
                          mdof::RobotState * ref)
 {
-
+    /* this changes 'ref':
+     * q_min
+     * com_start
+     */
     landingHandler(time, _terrain_height, state, ref);
 
-    qFake();
+    qFake(time, state->getQ(), state->getQMin(), state->getQMax(), state->getSteepQ(), started, state->getStartWalkTime(), &q_fake);
 
+    /* this changes 'ref':
+     * q_max
+     * q_min
+     * q_steep
+     */
     core(time, q_fake, ref);
 
-    _walker->compute(time, *state, *ref);
+    /*compute new q_steep for qFake */
+    ref->setSteepQ(ref->getQMax()-ref->getQMin());
+
+    /* this changes 'ref':
+     * com_ref
+     * foot_ref
+     * waist_ref
+     */
+    _walker->compute(time, state, ref);
 
     /*TODO sanity check? */
     return true;
@@ -154,7 +200,9 @@ bool StepMachine::landingHandler(double time,
                                  const mdof::RobotState * state,
                                  mdof::RobotState * ref)
 {
-    if (impactDetector(time, state->getQ(), state->getQMin(), state->getQMax(), state->getFoot()[_current_swing_leg].translation()(2), terrain_heigth))
+    bool current_swing_leg = state->getSwingLeg();
+
+    if (impactDetector(time, state->getQ(), state->getQMin(), state->getQMax(), state->getFoot()[current_swing_leg].translation()(2), terrain_heigth))
     {
         _previous_event = _current_event;
         _current_event = Event::Impact;
@@ -167,7 +215,7 @@ bool StepMachine::landingHandler(double time,
         // -------------------------------
         //        _current_side = robot_interface::Side::Double;
         std::string side;
-        if (_current_swing_leg == 1)
+        if (current_swing_leg == 1)
         {
             side = "LEFT";
         }
@@ -179,7 +227,8 @@ bool StepMachine::landingHandler(double time,
 
         ref->setComStart(state->getCom());
 
-        _current_swing_leg = 1 - _current_swing_leg;
+        current_swing_leg = 1 - current_swing_leg;
+        ref->setSwingLeg(current_swing_leg);
         // ----------------------------------------------------
         //
 
@@ -197,7 +246,7 @@ bool StepMachine::landingHandler(double time,
 
         //                 _q1_min = sense_q1(); /*HACK*/
 
-        if (_current_swing_leg == 1)
+        if (ref->getSwingLeg() == 1)
         {
             side = "LEFT";
         }
@@ -206,7 +255,6 @@ bool StepMachine::landingHandler(double time,
             side = "RIGHT";
         }
         std::cout << "State changed. Current side: " << side << std::endl;
-
         return 1;
     }
     else
@@ -215,20 +263,27 @@ bool StepMachine::landingHandler(double time,
     }
 }
 
-double StepMachine::qFake()
+bool StepMachine::qFake(double time,
+                        double q,
+                        double q_min,
+                        double q_max,
+                        double steep_q,
+                        bool started,
+                        double start_walk,
+                        double& q_fake)
 {
 
-    if (_started == 1 && _time >= +_start_walk)
+    if (started == 1 && time >= +start_walk)
     {
         bool cond_q(false);
 
-        if (_q_min <= _q_max)
+        if (q_min <= q_max)
         {
-            cond_q = (_q >= _q_max);
+            cond_q = (q >= q_max);
         }
-        else if (_q_min > _q_max)
+        else if (_q_min > q_max)
         {
-            cond_q = (_q <= _q_max);
+            cond_q = (q <= q_max);
         }
         if (cond_q)
         {
@@ -236,7 +291,7 @@ double StepMachine::qFake()
         }
         else
         {
-            _q_fake = _q_fake + _steep_q*(_dt); // basically q = a*t
+            q_fake = q_fake + steep_q*(_dt); // basically q = a*t
         }
     }
 

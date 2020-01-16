@@ -26,13 +26,17 @@ public:
     bool setQMax(std::vector<double> q_max);
     bool setTheta(std::vector<double> theta);
 
-    friend std::ostream& operator<<(std::ostream& os, Event s);
-    friend std::ostream& operator<<(std::ostream& os, State s);
 
     bool update(double time,
-                double q_fake,
                 const mdof::RobotState * state,
                 mdof::RobotState * ref);
+
+    bool homing(double time,
+                const mdof::RobotState * state,
+                mdof::RobotState * ref);
+
+    friend std::ostream& operator<<(std::ostream& os, Event s);
+    friend std::ostream& operator<<(std::ostream& os, State s);
 
 private:
 
@@ -54,9 +58,17 @@ private:
                         const mdof::RobotState * state,
                         mdof::RobotState * ref);
 
-    double qFake();
 
-    bool updateStep( mdof::RobotState * ref);
+    bool StepMachine::qFake(double time,
+                            double q,
+                            double q_min,
+                            double q_max,
+                            double steep_q,
+                            bool started,
+                            double start_walk,
+                            double& q_fake);
+
+    bool updateStep(mdof::RobotState * ref);
 
     bool resetter();
 

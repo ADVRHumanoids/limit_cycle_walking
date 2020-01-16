@@ -47,21 +47,22 @@ public:
                 double zmp_val,
                 double duration_preview_window, /* should be constant, equal to size of _K_prev form MPC = duration_preview_window/dt */
                 double duration_step,
-                double middle_zmp,
-                double offset);
+                double middle_zmp  = 0., /* should be constant */
+                double offset = 0.);
+
+    /* get position of */
+    double getDeltaCom(){return _delta_com(0);}
 
 private:
-
-
 
     class MpcSolver;
 
     std::shared_ptr< MpcSolver > _mpc_solver;
 
-    Eigen::Vector3d getDeltaCom(){return _delta_com;}
 
     void addSegment(Eigen::VectorXd& vector, long size, double value);
 
+    /* compute preview window */
     void computePreviewWindow(double q_sns,
                              double q_max,
                              double q_min,
@@ -91,7 +92,7 @@ private:
 
     Eigen::VectorXd _zmp_window;
 
-    Options _opt;
+    MpcOptions _opt;
 
 
 };

@@ -1,6 +1,6 @@
 #include <walker/lateral_plane.h>
 
-LateralPlane::LateralPlane(double dt, Options opt) :
+LateralPlane::LateralPlane(double dt, MpcOptions opt) :
     _q_sns(0),
     _q_sns_prev(0),
     _alpha_old(0),
@@ -11,7 +11,10 @@ LateralPlane::LateralPlane(double dt, Options opt) :
     _size_step(0),
     _dt(dt),
     _opt(opt)
+
 {
+    /* delta com*/
+    _delta_com.setZero();
     _mpc_solver = std::make_shared<MpcSolver>(_opt.h, _opt.Ts, _opt.T, _opt.Q, _opt.R);
 }
 
@@ -53,7 +56,7 @@ void LateralPlane::computePreviewWindow(double q_sns,
     int size_current = static_cast<int>((1 - _alpha) * _size_step);
 
     /* current position in preview window (expressed as a time) */
-    double time = _alpha * fabs( duration_step );
+//    double time = _alpha * fabs( duration_step );
 
     /* fill first segment (zmp value in a single step) of zmp_window with current zmp */
     _zmp_window.head(size_current) << zmp_val;
@@ -108,8 +111,8 @@ void LateralPlane::update(double q_sns,
                           double zmp_val,
                           double duration_preview_window, /* should be constant, equal to size of _K_prev form MPC = duration_preview_window/dt */
                           double duration_step,
-                          double middle_zmp = 0.,
-                          double offset = 0.)
+                          double middle_zmp,
+                          double offset)
 {
 
     /* enters current_time, state, start_walk*/
@@ -124,6 +127,8 @@ void LateralPlane::update(double q_sns,
 //    }
 
     computePreviewWindow(q_sns,q_max, q_min,zmp_val, duration_preview_window, duration_step, middle_zmp, offset);
+
+    /* com value is actually a delta_com */
     _u = _mpc_solver->getKfb() * _delta_com + _mpc_solver->getKprev() * _zmp_window;
     _mpc_solver->getIntegrator()->integrate(_delta_com, _u, _dt, _delta_com);
 
