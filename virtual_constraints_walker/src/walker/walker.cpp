@@ -43,7 +43,7 @@ bool Walker::initialize(double time,
     _mpc_opt.Q << _opt.mpc_Q;
     _mpc_opt.R << _opt.mpc_R;
     _mpc_opt.T = _opt.horizon_length;
-    _mpc_opt.h = state->height_robot;
+    _mpc_opt.h = state->height_com;
     /* preview window resolution set as the control dt */
     _mpc_opt.Ts = _dt;
 
@@ -58,7 +58,7 @@ bool Walker::initialize(double time,
 bool Walker::compute(double time,
                      const mdof::StepState * state,
                       Eigen::Vector3d& delta_com,
-                      Eigen::Affine3d& foot_goal)
+                      Eigen::Vector3d& delta_foot_tot)
 {   
     double q = state->q;
     double q_min = state->q_min;
@@ -69,12 +69,13 @@ bool Walker::compute(double time,
     double step_clearing = state->step_clearance;
     double zmp_current = state->zmp_val_current;
     double zmp_next = state->zmp_val_next;
-    double height_robot = state->height_robot;
+    double height_com = state->height_com;
+
 
 
     /* compute stepping motion */
     /* STILL TODO the update of sag */
-    _sag->update(q, height_robot);
+    _sag->update(q, q_min, q_max, height_com);
 
     /* here can be put also middle_zmp and offset_zmp */
     _lat->update(q, q_max, q_min, zmp_current, zmp_next, _opt.horizon_length, step_duration);
@@ -83,7 +84,11 @@ bool Walker::compute(double time,
     delta_com(1) = _lat->getDeltaCom();
     delta_com(2) = 0;
 
-    foot_goal = _sag->getFootGoal();
+    /* I would like to have delta_foot */
+    delta_foot_tot(0) = _sag->getDeltaFootTot();
+    delta_foot_tot(1) = 0;
+    delta_foot_tot(2) = 0;
+
 
     return true;
 

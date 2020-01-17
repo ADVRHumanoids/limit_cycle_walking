@@ -59,3 +59,11 @@ add_executable(VC_run src/VC_run.cpp)
 target_link_libraries(VC_run virtual_constraints_walker ${catkin_LIBRARIES})
 
 install(TARGETS VC_run RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+option(BUILD_TESTS "Compile virtual_constraint_walker tests" FALSE)
+
+if(BUILD_TESTS)
+  enable_testing()
+  add_custom_target(test_verbose ${CMAKE_CTEST_COMMAND} -V)
+  add_subdirectory(tests)
+endif()

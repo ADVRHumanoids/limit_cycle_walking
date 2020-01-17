@@ -31,10 +31,10 @@ bool StepMachine::initialize(const mdof::RobotState *state)
 
     _middle_zmp = (state->getFeet()[0].translation()(1) + state->getFeet()[1].translation()(1)) /2;
 
-//    _walker->homing(time, state, ref);
+    //    _walker->homing(time, state, ref);
 
 
-
+    /* TODO sanity check? */
     return true;
 }
 
@@ -65,6 +65,8 @@ bool StepMachine::homing(double time,
     ref->setCom(com);
     ref->setFeet(feet);
 
+     /* TODO sanity check? */
+    return true;
 }
 
 bool StepMachine::start()
@@ -72,6 +74,7 @@ bool StepMachine::start()
     _previous_event = _current_event;
     _current_event = Event::Start;
 
+     /* TODO sanity check? */
     return true;
 }
 
@@ -80,17 +83,18 @@ bool StepMachine::stop()
     _previous_event = _current_event;
     _current_event = Event::Stop;
 
+     /* TODO sanity check? */
     return true;
 }
 
 bool StepMachine::setQMax(std::vector<double> q_max)
 {
-    /* sanity check? */
     for (auto i : q_max)
     {
         _q_buffer.push_back(i);
     }
 
+    /* TODO sanity check? */
     return true;
 }
 
@@ -107,6 +111,7 @@ bool StepMachine::setTheta(std::vector<double> theta)
 
 bool StepMachine::updateStep()
 {
+    /* update q_max */
     if (_q_buffer.empty())
     {
         _q_max = _param->getMaxInclination();
@@ -116,6 +121,9 @@ bool StepMachine::updateStep()
         _q_max = _q_buffer.front();
         _q_buffer.pop_front();
     }
+
+    /* update step */
+
 
     return true;
 }
@@ -149,7 +157,6 @@ bool StepMachine::update(double time,
     /*compute new q_steep for qFake */
     _steep_q = _q_max - _q_min;
 
-
     double zmp_val_current = state->getFeet()[_current_swing_leg].translation()(1);
     double zmp_val_next  = state->getFeet()[1 - _current_swing_leg].translation()(1);
 
@@ -179,56 +186,59 @@ bool StepMachine::update(double time,
 
 
     Eigen::Rotation2Dd rot2(_theta);
-    double height_robot = state->getAnkleCom()[1 - _current_swing_leg].translation().z();
+    double height_com = state->getAnkleCom()[1 - _current_swing_leg].translation().z();
 
     /* FILL STEP STATE */
     mdof::StepState * step_state = nullptr;
     step_state->q = _q;
     step_state->q_min = _q_min;
     step_state->q_min = _q_max;
-    step_state->height_robot = height_robot;
+    step_state->height_com = height_com;
     step_state->step_duration = _step_duration;
     step_state->step_clearance = _step_clearance;
     step_state->zmp_val_current = zmp_val_current;
     step_state->zmp_val_next = zmp_val_next;
 
-
     Eigen::Vector3d delta_com;
-    Eigen::Affine3d swing_foot_pos_goal;
-    _walker->compute(time, step_state, delta_com, swing_foot_pos_goal);
+    Eigen::Vector3d delta_foot_tot;
+
+    /* compute com and foot displacement */
+    _walker->compute(time, step_state, delta_com, delta_foot_tot);
 
 
+    /* compute com trajectory and rotate if needed */
+    delta_com.head(2) = rot2.toRotationMatrix() * delta_com.head(2);
 
-    /* compute com trajectory and rotate if needed*/
     Eigen::Vector3d com_ref;
     com_ref = _com_pos_start + delta_com;
 
-    com_ref.head(2) = rot2.toRotationMatrix() * com_ref.head(2);
+    /* which is also t_impact */
+     _step_t_end = _step_t_start + _step_duration;
 
-    /*compute feet trajectories */
-    std::array<Eigen::Affine3d, 2> feet_ref;
+    /*compute feet trajectories and rotate if needed */
+    delta_foot_tot.head(2) = rot2.toRotationMatrix() * delta_foot_tot.head(2);
 
-    /* set foot_goal and t_goal */
     /* THIS IS NECESSARY ONLY WHEN NEW STEP IS ISSUED */
-    std::array< Eigen::Affine3d, 2 > feet_pos_goal = _foot_pos_start;
-    feet_pos_goal[_current_swing_leg] = swing_foot_pos_goal;
+    _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + delta_foot_tot;
+    _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
-   /* which is also t_impact */
-    _step_t_end = _step_t_start + _step_duration;
-
+    std::array<Eigen::Affine3d, 2> feet_ref;
     feet_ref[1 - _current_swing_leg] = _foot_pos_start[1 - _current_swing_leg];
-
 
 
     /* here the feet trajectory should be a function of q, not t */
     feet_ref[_current_swing_leg] = mdof::computeTrajectory(_foot_pos_start[_current_swing_leg],
-                                                           feet_pos_goal[_current_swing_leg],
+                                                           _foot_pos_goal[_current_swing_leg],
                                                            _step_clearance,
                                                            _step_t_start,
                                                            _step_t_end,
                                                            time);
 
-    /* compute waist trajectory */
+
+    /* TODO still to update _foot_pos_start at each impact */
+
+
+    /* rotate waist */
     Eigen::Affine3d waist_ref = _waist_pos_start;
     waist_ref.linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
@@ -297,6 +307,7 @@ bool StepMachine::landingHandler(double time,
      * q_min
      * q_max
      * com_start
+     * foot_start
      * _q_buffer
      */
 
@@ -318,6 +329,9 @@ bool StepMachine::landingHandler(double time,
 
         _com_pos_start = state->getCom();
 
+        /* this is probably necessary! */
+        _foot_pos_start = state->getFeet();
+
         _current_swing_leg = 1 - _current_swing_leg;
 
         (_current_swing_leg) ? side = "LEFT" : side = "RIGHT";
@@ -332,13 +346,13 @@ bool StepMachine::landingHandler(double time,
 }
 
 bool StepMachine::computeQFake(double time,
-                        double q,
-                        double q_min,
-                        double q_max,
-                        double steep_q,
-                        bool started,
-                        double start_walk,
-                        double& q_fake)
+                               double q,
+                               double q_min,
+                               double q_max,
+                               double steep_q,
+                               bool started,
+                               double start_walk,
+                               double& q_fake)
 {
 
     if (started == 1 && time >= +start_walk)

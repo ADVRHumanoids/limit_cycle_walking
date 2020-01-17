@@ -39,7 +39,7 @@ public:
     bool compute(double time,
                  const mdof::StepState * state,
                  Eigen::Vector3d& delta_com,
-                 Eigen::Affine3d& foot_goal);
+                 Eigen::Vector3d& delta_foot_tot);
 
     friend std::ostream& operator<<(std::ostream& os, Side s);
 

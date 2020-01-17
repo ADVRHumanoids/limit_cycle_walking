@@ -14,10 +14,8 @@ struct StepState {
         step_clearance(0),
         zmp_val_current(0),
         zmp_val_next(0),
-        height_robot(0)
+        height_com(0)
     {
-        com.setZero();
-        foot_goal.matrix().setZero();
     }
 
     double q, q_min, q_max;
@@ -27,10 +25,7 @@ struct StepState {
     double zmp_val_current;
     double zmp_val_next;
 
-    double height_robot;
-
-    Eigen::Vector3d com;
-    Eigen::Affine3d foot_goal;
+    double height_com;
 
     void log(XBot::MatLogger::Ptr logger)
     {
