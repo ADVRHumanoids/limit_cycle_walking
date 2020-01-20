@@ -3,6 +3,20 @@
 
 #include <XBotLogger/Logger.hpp>
 
+/**
+ * this walker is conceived having in mind a 'normal walk':
+ * while walking I'm not thinking at each step, but only at a general direction.
+ * Hence, I'm treating the robot as a point (represented by the com), and I'm giving a direction to this point.
+ * Footsteps are planned accordingly.
+ * (Sometimes it can be the opposite: I may be more interested in a specific stepping motion while not thinking about
+ * the center of mass motion. This makes me think that there are three parameters:
+ * 1. general idea of motion
+ * 2. com motion
+ * 3. step motion
+ * Can I assume that the general idea of motion coincides with the sagittal com, since our 'principal component of motion'
+ * is in the sagittal plane?
+**/
+
 class SagittalPlane {
 public:
 
@@ -10,39 +24,39 @@ public:
 
     SagittalPlane(double dt);
 
-    void update(double q, double height_com);
+    void update(double q,
+                double q_min,
+                double q_max,
+                double height_com);
 
     double getDeltaCom(){return _delta_com;}
     
-    Eigen::Affine3d getFootGoal() const;
-    Eigen::Vector3d getComGoal() const;
+    double getDeltaComTot() {return _disp_com;}
+    double getDeltaFootTot() {return _disp_foot;}
 
 private:
     
     
-    double computeCom(double q,
-                     double height);
+    bool computeCom(double q,
+                    double height_com);
 
     bool computeStep(double q_min,
                      double q_max,
-                     double theta,
-                     double height_com,
-                     Eigen::Vector3d inital_com,
-                     Eigen::Affine3d initial_stance_foot,
-                     Eigen::Vector3d& final_com,
-                     Eigen::Affine3d& final_swing_foot);
+                     double height_com);
+
+    double _q;
 
     double _delta_com;
     
-//    Eigen::Affine3d _delta_foot;
+    /* total displacement of com */
+    double _disp_com;
     
-//    Eigen::Affine3d _foot_start;
-    Eigen::Affine3d _foot_goal;
-    
-//    Eigen::Vector3d _com_start;
-    Eigen::Vector3d _com_goal;
+    /* total displacement of foot */
+    double _disp_foot;
 
-    double _q;
+    /* dt */
+    double _dt;
+
 
 
 

@@ -1,5 +1,15 @@
 #include <walker/sagittal_plane.h>
 
+SagittalPlane::SagittalPlane(double dt) :
+    _q(0),
+    _delta_com(0),
+    _disp_com(0),
+    _disp_foot(0),
+    _dt(dt)
+{
+
+}
+
 void SagittalPlane::update(double q,
                            double q_min,
                            double q_max,
