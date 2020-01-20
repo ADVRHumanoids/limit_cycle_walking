@@ -1,0 +1,15 @@
+<launch>
+
+  <param name="robot_semantic_description" textfile="/home/francesco/advr-superbuild/configs/ADVR_shared/cogimon/srdf/cogimon.srdf"/>
+
+  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+  <include file="$(find gazebo_ros)/launch/cogimon.launch">
+  
+  
+  <!-- Spawn a robot into Gazebo -->
+  <!-- <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file $(find baxter_description)/urdf/baxter.urdf -urdf -z 1 -model baxter" /> -->
+
+  <!-- more default parameters can be changed here -->
+  </include>
+
+</launch>

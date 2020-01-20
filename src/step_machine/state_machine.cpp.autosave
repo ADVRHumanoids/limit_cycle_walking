@@ -1,0 +1,267 @@
+#include <state_machine/state_machine.h>
+#include <stdexcept>
+
+StateMachine::StateMachine() :
+    _time(0)
+{
+}
+
+bool StateMachine::setEvent(Event event)
+{
+    _last_event = _current_event;
+    _current_event = event;
+
+    return true;
+
+}
+
+void StateMachine::update(double time)
+{
+
+//     std::cout << "Entering state machine with event: " << _event << " during state: " << _current_state << std::endl;
+
+//    if (_last_event != _current_event)
+//    {
+//        _new_event_time = time;
+//    }
+
+//    switch (_current_event)
+//    {
+//        case Event::Impact :
+//            switch (_current_state)
+//            {
+//                case State::Idle :
+//                    throw std::runtime_error(std::string("Something wrong. Impact during IDLE"));
+
+//                case State::Walking :
+//                    _step_counter++;
+//                    planner(time);
+//                    break;
+
+//                case State::Starting :
+//                    _step_counter++;
+//                    _previous_state = _current_state;
+//                    _current_state = State::Walking;
+//                    walk(time);
+//                    break;
+
+//                case State::Stopping :
+//                    _step_counter++;
+//                    _previous_state = _current_state;
+//                    _current_state = State::LastStep;
+//                    _q1_max = 0;
+//                    planner(time);
+//                    break;
+
+//                case State::LastStep :
+//                    _step_counter++;
+//                    _started = 0;
+//                    _q1_start = _q1_temp;
+//                    _previous_state = _current_state;
+//                    _current_state = State::Idle;
+//                    planner(time);
+//                    _steep_coeff = 0;
+//                    resetter();
+//                    break;
+//            }
+//            break;
+
+//        case Event::START :
+//        {
+//            switch (_current_state)
+//            {
+
+//                case State::Idle :
+//                    _previous_state = _current_state;
+//                    _current_state = State::Starting;
+//                    _q1_max = _initial_param.get_max_inclination();
+//                    _step_counter++;
+//                    _cycle_counter++;
+//                    _started = 1;
+//                    _start_walk = _internal_time + _delay_start;
+//                    _steep_coeff = (_q1_max - _q1_min)/_step_duration;
+//                    planner(time + _delay_start); //_t_before_first_step
+//                    break;
+
+//                default : /*std::cout << "Ignored starting event. Already WALKING" << std::endl; */
+//                    break;
+//            }
+//            break;
+//        }
+//        case Event::Stop :
+//        {
+////             _started = 0;
+//            switch (_current_state)
+//            {
+//                case State::Idle :
+//                    /* std::cout << "Ignored stopping event. Already in IDLE" << std::endl; */
+//                    break;
+
+//                case State::Walking :
+//                case State::Starting :
+//                    _end_walk = time;
+//                    _previous_state = _current_state;
+//                    _current_state = State::Stopping;
+////                     planner(time); //replan as soon as I get the message?
+//                    break;
+
+//                case State::Stopping :
+//                    /* std::cout << "Ignored stopping event. Already STOPPING" << std::endl; */
+//                    break;
+//            }
+//            break;
+//        }
+//        case Event::Empty :
+
+//            switch (_current_state)
+//            {
+//                case State::Idle :
+//                    planner(time);
+//                    break;
+//                default :
+//                    break;
+//            }
+
+//            break;
+
+//        default :
+//            throw std::runtime_error(std::string("Event not recognized"));
+//    }
+}
+
+
+bool StateMachine::step(mdof::StepState& step_state, double q1_max, double theta)
+{
+    step_state.com_start = step_state.com_goal;
+    step_state.foot_start = step_state.foot_pos;
+
+    step_state.com_goal =
+
+
+            double q1_max_new;
+
+            q1_max_new = _q1_max;
+            Eigen::Matrix2d R_steer;
+
+
+
+
+            /* TODO refactor: this is needed for the steering and the length step */
+
+            double theta = _theta_steer; // change heading
+            R_steer << cos(theta), -sin(theta),
+                    sin(theta), cos(theta);
+
+            _q1_max = 0.05;
+            //                q1_max_new = _q1_max;
+            //                if (_step_counter >= 4 && _step_counter < 5)       /*Left*/
+            //                {
+            //                    _q1_max = 0.001;
+            //                    q1_max_new = _q1_max; // change step length
+            //                    double theta = _theta_steer; // change heading
+            //                    R_steer << cos(theta), -sin(theta),
+            //                                    sin(theta), cos(theta);
+            //                }
+            //                else if (_step_counter >= 5 && _step_counter < 6)   /*Right*/
+            //                {
+            //                    _q1_max = 0.02;
+            //                    q1_max_new = _q1_max; // change step length
+            //                    double theta = _theta_steer; // change heading
+            //                    R_steer << cos(theta), -sin(theta),
+            //                                    sin(theta), cos(theta);
+            //                }
+            //                else if (_step_counter >= 6 && _step_counter < 7)   /*Left*/
+            //                {
+            //                    _q1_max = 0.05;
+            //                    q1_max_new = _q1_max; // change step length
+            //                    double theta = _theta_steer; // change heading
+            //                    R_steer << cos(theta), -sin(theta),
+            //                                    sin(theta), cos(theta);
+            //                }
+            //                else if (_step_counter >= 7 && _step_counter < 8)  /*Right*/
+            //                {
+            //                    _q1_max = 0.05;
+            //                    q1_max_new = _q1_max; // change step length
+            //                    double theta = _theta_steer; // change heading
+            //                    R_steer << cos(theta), -sin(theta),
+            //                                    sin(theta), cos(theta);
+            //                }
+            //                else if (_step_counter >= 8 && _step_counter < 9)   /*Left*/
+            //                {
+            //                    _q1_max = 0.05;
+            //                    q1_max_new = _q1_max; // change step length
+            //                    double theta = _theta_steer; // change heading
+            //                    R_steer << cos(theta), -sin(theta),
+            //                                    sin(theta), cos(theta);
+            //                }
+            //                else if (_step_counter >= 9 && _step_counter < 10) /*Right*/
+            //                {
+            //                    _q1_max = 0.05;
+            //                    q1_max_new = _q1_max; // change step length
+            //                    double theta = _theta_steer; // change heading
+            //                    R_steer << cos(theta), -sin(theta),
+            //                                    sin(theta), cos(theta);
+            //                }
+            //                else if (_step_counter >= 10 && _step_counter < 15)
+            //                {
+            //                    _q1_max = 0.05;
+            //                    q1_max_new = _q1_max; // change step length
+            //                    double theta = _theta_steer; // change heading
+            //                    R_steer << cos(theta), -sin(theta),
+            //                                    sin(theta), cos(theta);
+            //                }
+            //                else
+            //                {
+            //                    _q1_max = - 0.05;
+            //                    q1_max_new = _q1_max;
+            //                    double theta = 0;
+            //                    R_steer << cos(theta), -sin(theta),
+            //                                sin(theta), cos(theta);
+            //                }
+            /*----------------generate q1-------------------------*/
+            double q1 = (q1_max_new - _q1_min);
+
+
+            _steep_coeff = (q1_max_new - _q1_min)/_step_duration;
+            /*----------------------------------------------------*/
+
+            std::cout << "q1_max: " << q1_max_new << std::endl;
+            std::cout << "q1_min: " << _q1_min << std::endl;
+            std::cout << "angle: " << q1 << std::endl;
+
+            Eigen::Vector2d disp_com; // displacement in the xy plane
+            Eigen::Vector2d disp_com_rot; // displacement in the xy plane
+            disp_com << fabs(_current_pose_ROS.get_distance_ankle_to_com(_current_side).z()) * tan(q1), 0; // displacement of com in x
+
+            disp_com_rot = R_steer * disp_com; // angle steering
+            std::cout << "disp_com_rot: " << disp_com_rot.transpose() << std::endl;
+
+            _final_com_position.head(2) = _initial_com_position.head(2) + disp_com_rot;
+            _final_com_position_fake.head(2) = _initial_com_position_fake.head(2) + disp_com;
+
+
+
+            _final_sole_pose.translation() = _current_pose_ROS.get_sole_tot(_other_side).translation() + 2 * (_final_com_position - _current_pose_ROS.get_sole_tot(_other_side).translation());  // get final step given the displacement vector
+
+            /* TODO refactor: this is needed for the steering (orientation) */
+            double theta_heading;
+            /* orientation */
+
+            //                if (_step_counter >= 4 && _step_counter < 15)
+            //                {
+            //                    theta_heading = _theta_steer;
+            //                }
+            //                else
+            //                {
+            theta_heading = 0;
+            //                }
+
+            /* Sole */
+            _final_sole_pose.linear() = (Eigen::AngleAxisd(theta_heading, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+
+            /* Waist */
+
+            _final_waist_pose.linear() = (Eigen::AngleAxisd(theta_heading, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+}
+
+}
