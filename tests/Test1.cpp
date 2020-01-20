@@ -3,20 +3,6 @@
 
 namespace {
 
-//Eigen::Affine3d GetRandomFrame()
-//{
-//    Eigen::Quaterniond q;
-//    q.coeffs().setRandom();
-//    q.normalize();
-
-//    Eigen::Affine3d T;
-//    T.setIdentity();
-//    T.linear() = q.toRotationMatrix();
-//    T.translation().setRandom();
-
-//    return T;
-//}
-
 class TestApi: public ::testing::Test {
 
 
@@ -24,11 +10,8 @@ protected:
 
      TestApi(){
 
-
          double dt = 0.01;
          sag_plane = std::make_shared<SagittalPlane>(dt);
-
-
 
      }
 
@@ -43,23 +26,53 @@ protected:
      }
 
      SagittalPlane::Ptr sag_plane;
+     double q;
+     double q_min;
+     double q_max;
+     double height_com;
 
+     double delta_com;
+     double Delta_com;
+     double Delta_foot;
+
+     double delta_com_true;
+     double Delta_com_true;
+     double Delta_foot_true;
 };
 
 
-TEST_F(TestApi, checkBoh)
+TEST_F(TestApi, checkUpdate)
 {
-    double q = 0;
-    double q_min = 0;
-    double q_max = 0;
-    double height_com = 1;
+
+    q = 0.;
+    q_min = 0.;
+    q_max = 0.;
+    height_com = 1.;
+
+    delta_com_true = 0.;
+    Delta_com_true = 0.;
+    Delta_foot_true = 0.;
+
     sag_plane->update(q, q_min, q_max, height_com);
 
-    double delta_com = sag_plane->getDeltaCom();
-    double Delta_com = sag_plane->getDeltaComTot();
-    double Delta_foot = sag_plane->getDeltaFootTot();
+    ASSERT_TRUE(sag_plane->getDeltaCom() - delta_com_true <= 0.001);
+    ASSERT_TRUE(sag_plane->getDeltaComTot() - Delta_com_true <= 0.001);
+    ASSERT_TRUE(sag_plane->getDeltaFootTot() - Delta_foot_true <= 0.001);
 
-    ASSERT_TRUE(delta_com - 0 <= 0.001);
+    q = 0.;
+    q_min = 0.;
+    q_max = 0.785398;
+    height_com = 1.;
+
+    delta_com_true = 0;
+    Delta_com_true = fabs(height_com) * tan(q_max - q_min);
+    Delta_foot_true = 2 * Delta_com_true;
+
+    sag_plane->update(q, q_min, q_max, height_com);
+
+    ASSERT_TRUE(sag_plane->getDeltaCom() - delta_com_true <= 0.001);
+    ASSERT_TRUE(sag_plane->getDeltaComTot() - Delta_com_true <= 0.001);
+    ASSERT_TRUE(sag_plane->getDeltaFootTot() - Delta_foot_true <= 0.001);
 }
 
 

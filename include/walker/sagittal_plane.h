@@ -38,11 +38,14 @@ private:
     
     
     bool computeCom(double q,
-                    double height_com);
+                      double height_com,
+                      double& delta_com);
 
     bool computeStep(double q_min,
                      double q_max,
-                     double height_com);
+                     double height_com,
+                     double& disp_com,
+                     double& disp_foot);
 
     double _q;
 
