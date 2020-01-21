@@ -1,4 +1,4 @@
-#include "step_machine/foot_trajectory.h"
+#include "walker/foot_trajectory.h"
 
 namespace Eigen
 {

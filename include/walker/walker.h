@@ -1,71 +1,155 @@
-#ifndef WALKER_H
-#define WALKER_H
+#ifndef STEP_MACHINE_H
+#define STEP_MACHINE_H
 
-#include <string>
-#include <cartesian_interface/CartesianInterface.h>
-#include <robot/step_state.h>
-
-#include <walker/lateral_plane.h>
-#include <walker/sagittal_plane.h>
+#include <robot/robot_state.h>
+#include <engine/engine.h>
+#include <walker/foot_trajectory.h>
 
 class Walker {
 public:
 
-    typedef std::shared_ptr<Walker> Ptr;
+    class Param;
 
-    struct Options
-    {
-        Options();
+    Walker(double dt, Param * par = getDefaultParam()); /* TODO */
 
-        /* initial lean, used for tuning */
-//        double lean_forward = 0;
-        double zmp_offset = 0;
-//        double crouch_height = 0;
-//        bool initial_swing_leg = 0;
-        double horizon_length = 5;
-        double mpc_Q = 1000000;
-        double mpc_R = 1;
-        double double_stance_duration;
+    enum class Event { Impact = 0, Start = 1, Stop = 2, Empty = 3 }; /* some private (Impact), some public ? */
+    enum class State { Idle = 0, Walking = 1, Starting = 2, Stopping = 4, LastStep = 5 };
 
-    };
+    bool initialize(const mdof::RobotState * state);
 
-    Walker(double dt, Options opt = Options());
+    bool start();
+    bool stop();
 
-    enum class Side { Left = 0, Right = 1, Double = -1 };  /*Side that is SWINGING*/     /*think a way to put here the values of step_y*/
+    /* parametrization a la Bennewitz */
+    bool setStep(double delta_x, double delta_y, double delta_theta);
 
-    bool initialize(double time,
-                    const mdof::StepState * state);
+    bool setQMax(std::vector<double> q_max);
+    bool setTheta(std::vector<double> theta);
 
-    bool compute(double time,
-                 const mdof::StepState * state,
-                 Eigen::Vector3d& delta_com,
-                 Eigen::Vector3d& delta_foot_tot);
 
-    friend std::ostream& operator<<(std::ostream& os, Side s);
+    bool update(double time,
+                const mdof::RobotState * state,
+                mdof::RobotState * ref);
+
+    bool homing(double time,
+                const mdof::RobotState * state,
+                mdof::RobotState * ref);
+
+    friend std::ostream& operator<<(std::ostream& os, Event s);
+    friend std::ostream& operator<<(std::ostream& os, State s);
 
 private:
-    /* set homing configuration for robot */
-    void idle();
 
-    bool reset();
+    static Param * getDefaultParam();
 
-    /* dt inside walker */
+    bool core(double time);
+
+    bool impactDetector(double time,
+                        double q,
+                        double q_min,
+                        double q_max,
+                        double swing_leg_heigth,
+                        double terrain_heigth);
+
+    bool landingHandler(double time,
+                        const mdof::RobotState * state);
+
+
+    bool computeQFake(double time,
+               double q,
+               double q_min,
+               double q_max,
+               double steep_q,
+               bool started,
+               double start_walk,
+               double& q_fake);
+
+    double computeQ(bool current_swing_leg,
+                  double theta,
+                  Eigen::Vector3d world_T_com,
+                  Eigen::Vector3d world_T_com_start,
+                  std::array<Eigen::Affine3d, 2> ankle_T_com);
+
+    bool updateStep();
+
+    bool resetter();
+
+    State _current_state, _previous_state;
+    Event _current_event, _previous_event;
+
+    /* parameters of the stepping motion */
+    mdof::StepState * _step;
+
+    int _step_counter, _cycle_counter;
+    double _steep_q;
+
+    double _t_impact;
+
+    double _theta;
+
+    Engine::Ptr _engine;
+
+    /* parameters for the robot */
+    Param * _param;
+
+    double _time;
+    double _new_event_time;
+
+    /* received command to start walking */
+    bool _started;
+
+    /* starting time */
+    double _t_start_walk;
+
+    /* phase variable */
+    double _q;
+
+    /* current minimum q */
+    double _q_min;
+
+    /* current maximum q */
+    double _q_max;
+
+    /* fake q */
+    double _q_fake;
+
+    /* dt of the control */
     double _dt;
 
-    /* reset q1 after each impact */
-//    bool _reset_condition;
+    /* swinging leg (0 -> left, 1 -> right) */
+    bool _current_swing_leg;
 
-    /*time between instant that received START command is received and instant where robot starts walking. Required for initial lateral shift of the CoM*/
-//    double _delay_start;
+    /* time between instant that received START command is received and instant where robot starts walking. Required for initial lateral shift of the CoM */
+    double _delay_start;
 
-    LateralPlane::Ptr _lat;
-    SagittalPlane::Ptr _sag;
+    /* buffer of commands for step */
+    std::deque<double> _q_buffer;
+    std::deque<double> _theta_buffer;
 
-//    bool _ready_flag;
+    double _terrain_height;
 
-    const Options _opt;
+    Eigen::Vector3d _com_pos_start;
+    Eigen::Vector3d _com_pos_goal;
+
+    std::array<Eigen::Affine3d, 2> _foot_pos_start;
+    std::array<Eigen::Affine3d, 2> _foot_pos_goal;
+
+    Eigen::Affine3d _waist_pos_start;
+    Eigen::Affine3d _waist_pos_goal;
+
+//    std::array<bool, 2> _foot_contact;
+
+    double _step_t_start;
+    double _step_t_end;
+
+    double _step_duration;
+    double _step_clearance;
+
+    double _middle_zmp;
 
 };
 
 
-#endif // WALKER_H
+#include <param/param.h>
+
+#endif // STEP_MACHINE_H

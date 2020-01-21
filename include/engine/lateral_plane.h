@@ -5,6 +5,10 @@
 
 class LateralPlane {
 
+    /**
+      * now duration_preview_window is CONSTANT. Cannot be changed online
+     **/
+
 public:
 
     typedef std::shared_ptr< LateralPlane > Ptr;
@@ -20,33 +24,37 @@ public:
 
     */
 
-    struct MpcOptions
+    struct Options
     {
-        MpcOptions()
+        Options() :
+            h(1.0),
+            horizon_length(5),
+            Ts(0.01),
+            Q(1,1),
+            R(1,1)
         {
             Q << 1000000;
             R << 1;
         }
 
         /* height linear inverted pendulum */
-        double h = 1.0;
+        double h;
+        /* duration window */
+        double horizon_length;
         /* preview window resolution */
-        double Ts = 0.01;
-        /* horizon length */
-        double T = 1.0;
+        double Ts;
         /* gains for mpc */
         Eigen::MatrixXd Q;
         Eigen::MatrixXd R;
     };
 
-    LateralPlane(double dt, MpcOptions opt = MpcOptions());
+    LateralPlane(double dt, Options opt = Options());
 
     void update(double q_sns,
-                double q_max,
                 double q_min,
+                double q_max,
                 double zmp_val_current,
                 double zmp_val_next,
-                double duration_preview_window, /* should be constant, equal to size of _K_prev form MPC = duration_preview_window/dt */
                 double duration_step,
                 double middle_zmp  = 0., /* should be constant */
                 double offset = 0.);
@@ -54,14 +62,11 @@ public:
     /* get position of */
     double getDeltaCom(){return _delta_com(0);}
 
+    Eigen::VectorXd getPreviewWindow(){return _zmp_window;}
+
 private:
 
     class MpcSolver;
-
-    std::shared_ptr< MpcSolver > _mpc_solver;
-
-
-    void addSegment(Eigen::VectorXd& vector, long size, double value);
 
     /* compute preview window */
     void computePreviewWindow(double q_sns,
@@ -69,7 +74,6 @@ private:
                               double q_min,
                               double zmp_val_current,
                               double zmp_val_next,
-                              double duration_preview_window,
                               double duration_step,
                               double middle_zmp,
                               double offset);
@@ -94,11 +98,13 @@ private:
 
     Eigen::VectorXd _zmp_window;
 
-    MpcOptions _opt;
+    std::shared_ptr< MpcSolver > _mpc_solver;
+
+    Options _opt;
 
 
 };
 
-#include <walker/mpc_solver.h>
+#include <engine/mpc_solver.h>
 
 #endif // LATERAL_PLANE_H

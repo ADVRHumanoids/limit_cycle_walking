@@ -5,8 +5,6 @@ cmake_minimum_required(VERSION 2.8.3)
 add_compile_options(-std=c++11)
 
 
-
-
 #find_package(XBotInterface REQUIRED)
 #find_package(cmake_modules REQUIRED)
 #find_package(Eigen3 REQUIRED)
@@ -43,15 +41,20 @@ include_directories(include/)
 
 add_library(LimitCycleWalker STATIC
     src/virtualConstraintsNode.cpp
+    src/engine/engine.cpp
+    src/engine/lateral_plane.cpp
+    src/engine/sagittal_plane.cpp
+    src/engine/mpc_solver.cpp
+    src/walker/foot_trajectory.cpp
     src/walker/walker.cpp
-    src/walker/lateral_plane.cpp
-    src/walker/sagittal_plane.cpp
-    src/step_machine/foot_trajectory.cpp
-    src/step_machine/step_machine.cpp
+    src/param/param.cpp
     src/robot_interface_ROS.cpp)
 
 
-target_link_libraries(LimitCycleWalker ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES} ${OpenMpC_LIBRARIES})
+target_link_libraries(LimitCycleWalker ${catkin_LIBRARIES}
+                                       ${XBotInterface_LIBRARIES}
+                                       ${OpenMpC_LIBRARIES}
+                                       yaml-cpp)
 
 install(TARGETS LimitCycleWalker LimitCycleWalker
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
