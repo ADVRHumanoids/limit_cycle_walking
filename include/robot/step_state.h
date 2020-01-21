@@ -4,6 +4,7 @@
 #include <XBotInterface/MatLogger.hpp>
 
 namespace mdof {
+
 struct StepState {
 
     StepState() :
