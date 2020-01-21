@@ -1,34 +1,43 @@
 #ifndef WALKING_PARAM_H
 #define WALKING_PARAM_H
 
-#include <step_machine/step_machine.h>
+#include <walker/walker.h>
 #include <yaml-cpp/node/node.h>
 #include <ros/node_handle.h>
 
-class StepMachine::Param
+class Walker::Param
 {
 public:
 
+    /**
+    * @brief Default (empty) problem
+    */
     Param();
-    Param(YAML::Node);
-    Param(ros::NodeHandle);
+    /**
+     * @brief Construct from a YAML description
+     * @param yaml_node YAML node containing a problem_description node
+     */
+    Param(YAML::Node yaml_node);
 
-    double getInitialLowering() const {return _initial_lowering;}
-    double getStepClearance() const {return _clearance_height;}
-    double getStepDuration() const {return _step_duration;}
-    bool getFirstSide() const {return _first_side;}
-    int getMaxSteps() const {return _max_steps;}
-    double getZmpOffset() const {return _zmp_offset;}
-    double getDurationDoubleStance() const {return _duration_double_stance;}
-    double getStartTime() const {return _start_time;}
-    double getLeanForward() const {return _lean_forward;}
-//    std::vector<double> getThresholdImpactRigth() const {return _thresholds_impact_right;}
-//    std::vector<double> getThresholdImpactLeft() const {return _thresholds_impact_left;}
-    bool getRealImpactFlag() const {return _real_impacts;}
-    double getMaxInclination() const {return _max_inclination;}
-    double getMpcQ() const {return _mpc_Q;}
-    double getMpcR() const {return _mpc_R;}
-    bool getDurationPreviewWindow() const {return _duration_preview_window;}
+    /**
+     * @brief Construct from a ROS Node
+     */
+    Param(ros::NodeHandle nh);
+
+//    double getInitialLowering() const {return _initial_lowering;}
+//    double getStepClearance() const {return _clearance_height;}
+//    double getStepDuration() const {return _step_duration;}
+//    bool getFirstSide() const {return _first_side;}
+//    int getMaxSteps() const {return _max_steps;}
+//    double getZmpOffset() const {return _zmp_offset;}
+//    double getDurationDoubleStance() const {return _duration_double_stance;}
+//    double getStartTime() const {return _start_time;}
+//    double getLeanForward() const {return _lean_forward;}
+//    bool getRealImpactFlag() const {return _real_impacts;}
+//    double getMaxInclination() const {return _max_inclination;}
+//    double getMpcQ() const {return _mpc_Q;}
+//    double getMpcR() const {return _mpc_R;}
+//    bool getDurationPreviewWindow() const {return _duration_preview_window;}
 
 //    void setInitialLowering(double initial_lowering) {_initial_lowering = initial_lowering;}
 //    void setStepClearance(double clearance_height) {_clearance_height = clearance_height;}
@@ -47,64 +56,23 @@ public:
 //    void setMpcR(double mpc_R) {_mpc_R = mpc_R;}
 //    void setDurationPreviewWindow(double duration_preview_window) {_duration_preview_window = duration_preview_window;}
 
-private:
+    /* init parameters */
+    double initial_lowering;
+    bool first_side_step;
+    double lean_forward;
 
-    double _initial_lowering;
-    bool _first_side;
-    int _max_steps;
-    double _zmp_offset;
-    double _start_time;
-    double _lean_forward;
-//    std::vector<double> _thresholds_impact_right;
-//    std::vector<double> _thresholds_impact_left;
-    bool _real_impacts;
-    double _mpc_Q;
-    double _mpc_R;
-    double _duration_preview_window;
+    /* walking parameters */
+    double clearance_height;
+    double step_duration;
+    double double_stance_duration;
+    double max_inclination;
 
-    /* parameters step */
-    double _clearance_height;
-    double _step_duration;
-    double _duration_double_stance;
-    double _max_inclination;
+    /* mpc parameters */
+    double mpc_Q;
+    double mpc_R;
+    double horizon_duration;
+    double zmp_offset;
 
 };
 
-
-#include <param/param.h>
-
-StepMachine::Param::Param()
-{
-    /*default parameters*/
-    _initial_lowering = -0.12;
-    /* initial side is left (0) */
-    _first_side = 0;
-    _max_steps = 10;
-    _zmp_offset = 0;
-    _start_time = 1;
-    _lean_forward = 0;
-//    _thresholds_impact_right = {50, 100};
-//    _thresholds_impact_left = {50, 100};
-    _real_impacts = 0;
-    _mpc_Q = 1000000;
-    _mpc_R = 1;
-    /* duration in second */
-    _duration_preview_window = 5;
-
-    /* parameters step */
-    _clearance_height = 0.1;
-    _step_duration = 2;
-    _duration_double_stance = 0;
-    _max_inclination = 0.1;
-}
-
-StepMachine::Param::Param(YAML::Node)
-{
-
-}
-
-StepMachine::Param::Param(ros::NodeHandle)
-{
-
-}
 #endif // WALKING_PARAM_H
