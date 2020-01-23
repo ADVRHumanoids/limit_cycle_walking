@@ -40,7 +40,7 @@ bool SagittalPlane::computeStep(double q_min,
     double q_tot = q_max - q_min;
 
     computeCom(q_tot, height_com, disp_com);
-    disp_foot = 2 * _disp_com;
+    disp_foot = 2 * disp_com;
 
     return true;
     }
