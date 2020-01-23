@@ -37,12 +37,13 @@ struct RobotState
 
     void log(XBot::MatLogger::Ptr logger)
     {
-        logger->add("com_pos", world_T_com);
         logger->add("com_vel", com_vel);
         logger->add("lfoot", world_T_foot[0].translation());
         logger->add("rfoot", world_T_foot[1].translation());
-
-
+        logger->add("waist", world_T_waist.translation());
+        logger->add("lankle_to_com", ankle_T_com[0].translation());
+        logger->add("rankle_to_com", ankle_T_com[1].translation());
+        logger->add("com_pos", world_T_com);
     }
 };
 }
