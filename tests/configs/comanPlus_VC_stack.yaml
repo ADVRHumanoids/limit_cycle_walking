@@ -1,0 +1,82 @@
+solver_options:
+    regularization: 1e-6
+    back_end: "qpoases"
+
+stack:
+    - ["LFoot", "RFoot"] #PosturalPennacchio
+    - ["CoM", "Torso"] # CoM # CoMStabilizer #"Torso"
+    - ["WaistOrient"]
+    - ["Postural"]
+    
+constraints: ["JointLimits", "VelocityLimits"]
+
+################################################
+############### TASK DEFINITIONS ###############
+################################################
+
+LFoot:
+    type: "Cartesian"
+    distal_link: "l_sole"
+    base_link: "world"
+    lambda: 1
+
+RFoot:
+    type: "Cartesian"
+    distal_link: "r_sole"
+    base_link: "world"
+    lambda: 1
+
+WaistOrient:
+    type: "Cartesian"
+    distal_link: "Waist"
+    base_link: "world"
+    lambda: 0.1
+    indices: [3,4,5]
+#    weight: 0.07
+
+CoM:
+    type: "Com"
+    lambda: 1
+    
+CoMStabilizer:
+    type: "CoMStabilizer"
+    lambda: 1
+    foot_size: [0.22, 0.11]
+    K: [0.0, 0.00] # 0.01, 0.01 // 0.0, 0.06
+    D: [0.0, 0.00] # -0.001, -0.005 // 0.0, -0.01
+    l_sole: "l_sole"
+    r_sole: "r_sole"
+    ft_sensor_l_sole: "l_leg_ft"
+    ft_sensor_r_sole: "r_leg_ft"
+    ankle: "l_ankle"
+    dT: 0.01
+    invertFTSensors: false
+    lib_name: "libCoMStabilizerAddon.so"
+    
+PosturalPennacchio:
+    type: "Postural"
+    lambda: 1.0
+    enabled_joints: ["WaistLat"]
+
+Postural:
+    type: "Postural"
+    lambda: 0.01
+
+LArm:
+    type: "Cartesian"
+    distal_link: "LSoftHand"
+    base_link: "world"
+    lambda: 0.1
+
+RArm:
+    type: "Cartesian"
+    distal_link: "RSoftHand"
+    base_link: "world"
+    lambda: 0.1
+
+Torso:
+    type: "Cartesian"
+    distal_link: "torso"
+    base_link: "world"
+    lambda: 0.1
+    indices: [3]

@@ -61,7 +61,7 @@ protected:
 
          /* default options:
           * double zmp_offset = 0.;
-          * double horizon_length = 5.;
+          * double horizon_duration = 5.;
           *  double mpc_Q = 1000000.;
           * double mpc_R = 1.;
           * double double_stance_duration = 0.;
@@ -106,12 +106,12 @@ TEST_F(TestEngine, checkCompute)
 {
     double time = 0.;
 
-    ASSERT_TRUE(eng->initialize(time, &ss));
+    ASSERT_TRUE(eng->initialize(ss));
 
     Eigen::Vector3d delta_com, delta_com_expected;
     Eigen::Vector3d delta_foot_tot, delta_foot_tot_expected;
 
-    eng->compute(time, &ss, delta_com, delta_foot_tot);
+    eng->compute(time, ss, delta_com, delta_foot_tot);
 
     double Delta_com_expected = fabs(ss.height_com) * tan(ss.q_max - ss.q_min);
 
@@ -130,12 +130,12 @@ TEST_F(TestEngineNotInitialized, checkCompute)
 {
     double time = 0.;
 
-    ASSERT_TRUE(eng->initialize(time, &ss));
+    ASSERT_TRUE(eng->initialize(ss));
 
     Eigen::Vector3d delta_com, delta_com_expected;
     Eigen::Vector3d delta_foot_tot, delta_foot_tot_expected;
 
-    eng->compute(time, &ss, delta_com, delta_foot_tot);
+    eng->compute(time, ss, delta_com, delta_foot_tot);
 
     double Delta_com_expected = fabs(ss.height_com) * tan(ss.q_max - ss.q_min);
 
