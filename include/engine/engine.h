@@ -18,7 +18,7 @@ public:
         Options();
 
         double zmp_offset = 0.;
-        double horizon_length = 5.;
+        double horizon_duration = 5.;
         double mpc_Q = 1000000.;
         double mpc_R = 1.;
         double double_stance_duration = 0.;
@@ -27,11 +27,10 @@ public:
 
     Engine(double dt, Options opt = Options());
 
-    bool initialize(double time,
-                    const mdof::StepState * state);
+    bool initialize(const mdof::StepState &state);
 
     bool compute(double time,
-                 const mdof::StepState * state,
+                 const mdof::StepState &state,
                  Eigen::Vector3d& delta_com,
                  Eigen::Vector3d& delta_foot_tot);
 

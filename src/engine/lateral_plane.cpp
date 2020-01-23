@@ -15,7 +15,7 @@ LateralPlane::LateralPlane(double dt, Options opt) :
 {
     _u.setZero();
     /* size window is fixed now: horizon_lenght (t) / dt) */
-    _size_window = round(_opt.horizon_length/_dt);
+    _size_window = round(_opt.horizon_duration/_dt);
     _delta_com.setZero();
     _mpc_solver = std::make_shared<MpcSolver>(_opt.h, _opt.Ts, _size_window, _opt.Q, _opt.R);
     _zmp_window.resize(_size_window);

@@ -49,6 +49,7 @@ private:
 
     double _q;
 
+    /* incremental displacement of com */
     double _delta_com;
     
     /* total displacement of com */

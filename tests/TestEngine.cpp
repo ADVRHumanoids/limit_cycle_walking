@@ -11,7 +11,7 @@ protected:
      TestEngine()
      {
          opt.zmp_offset = 0.;
-         opt.horizon_length = 5.;
+         opt.horizon_duration = 5.;
          opt.mpc_Q = 1000000.;
          opt.mpc_R = 1.;
          opt.double_stance_duration = 0.;

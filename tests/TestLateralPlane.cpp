@@ -14,7 +14,7 @@ protected:
 
         opt.h = 1.0;
         opt.Ts = 0.01;
-        opt.horizon_length = 1.0;
+        opt.horizon_duration = 1.0;
 
         dt = 0.01;
         lat_plane = std::make_shared<LateralPlane>(dt, opt);
@@ -96,7 +96,7 @@ TEST_F(TestLateral, checkUpdate)
     middle_zmp = 0;
     offset = 0;
 
-    int size_window = static_cast<int>(round(opt.horizon_length/dt));
+    int size_window = static_cast<int>(round(opt.horizon_duration/dt));
     Eigen::VectorXd preview_window_expected(size_window);
     preview_window_expected.setOnes();
 
@@ -116,8 +116,8 @@ TEST_F(TestLateralNotInitialized, checkUpdate)
     zmp_val_next = -1;
     duration_step = 2;
 
-    double default_horizon_length = 5.;
-    int size_window = static_cast<int>(round(default_horizon_length/dt));
+    double default_horizon_duration = 5.;
+    int size_window = static_cast<int>(round(default_horizon_duration/dt));
     int size_step = static_cast<int>(round(duration_step/dt));
     Eigen::VectorXd preview_window_expected(size_window);
     preview_window_expected.setOnes(); /* first 200 are 1 */

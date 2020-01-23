@@ -28,7 +28,7 @@ public:
     {
         Options() :
             h(1.0),
-            horizon_length(5),
+            horizon_duration(5),
             Ts(0.01),
             Q(1,1),
             R(1,1)
@@ -40,7 +40,7 @@ public:
         /* height linear inverted pendulum */
         double h;
         /* duration window */
-        double horizon_length;
+        double horizon_duration;
         /* preview window resolution */
         double Ts;
         /* gains for mpc */
