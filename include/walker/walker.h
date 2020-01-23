@@ -8,14 +8,16 @@
 class Walker {
 public:
 
+    typedef std::shared_ptr<Walker> Ptr;
+
     class Param;
 
-    Walker(double dt, Param * par = getDefaultParam()); /* TODO */
+    Walker(double dt, std::shared_ptr<Param> par = getDefaultParam()); /* TODO */
 
     enum class Event { Impact = 0, Start = 1, Stop = 2, Empty = 3 }; /* some private (Impact), some public ? */
     enum class State { Idle = 0, Walking = 1, Starting = 2, Stopping = 4, LastStep = 5 };
 
-    bool initialize(const mdof::RobotState * state);
+    bool init(const mdof::RobotState &state);
 
     bool start();
     bool stop();
@@ -28,19 +30,18 @@ public:
 
 
     bool update(double time,
-                const mdof::RobotState * state,
-                mdof::RobotState * ref);
+                const mdof::RobotState &state,
+                mdof::RobotState &ref);
 
-    bool homing(double time,
-                const mdof::RobotState * state,
-                mdof::RobotState * ref);
+    bool homing(const mdof::RobotState &state,
+                mdof::RobotState &ref);
 
     friend std::ostream& operator<<(std::ostream& os, Event s);
     friend std::ostream& operator<<(std::ostream& os, State s);
 
 private:
 
-    static Param * getDefaultParam();
+    static std::shared_ptr<Walker::Param> getDefaultParam();
 
     bool core(double time);
 
@@ -52,7 +53,7 @@ private:
                         double terrain_heigth);
 
     bool landingHandler(double time,
-                        const mdof::RobotState * state);
+                        const mdof::RobotState &state);
 
 
     bool computeQFake(double time,
@@ -71,14 +72,14 @@ private:
                   std::array<Eigen::Affine3d, 2> ankle_T_com);
 
     bool updateStep();
+    bool updateQMax();
 
-    bool resetter();
+//    bool resetter();
 
     State _current_state, _previous_state;
     Event _current_event, _previous_event;
 
     /* parameters of the stepping motion */
-    mdof::StepState * _step;
 
     int _step_counter, _cycle_counter;
     double _steep_q;
@@ -87,10 +88,6 @@ private:
 
     double _theta;
 
-    Engine::Ptr _engine;
-
-    /* parameters for the robot */
-    Param * _param;
 
     double _time;
     double _new_event_time;
@@ -147,6 +144,39 @@ private:
 
     double _middle_zmp;
 
+    /* parameters for the robot */
+//    std::shared_ptr<Param> _param;
+    std::shared_ptr<Param> _param;
+
+    mdof::StepState * _step;
+    Engine::Ptr _engine;
+
+
+    friend std::ostream& operator<<(std::ostream& os, Event s)
+    {
+        switch (s)
+        {
+            case Event::Empty : return os << "empty";
+            case Event::Impact :  return os << "impact";
+            case Event::Start :  return os << "start";
+            case Event::Stop :  return os << "stop";
+            default : return os << "wrong event";
+        }
+    }
+
+
+    friend std::ostream& operator<<(std::ostream& os, State s)
+    {
+        switch (s)
+        {
+            case State::Idle :  return os << "idle";
+            case State::Walking : return os << "walking";
+            case State::Starting : return os << "start walking";
+            case State::Stopping : return os << "stop walking";
+            case State::LastStep : return os << "last step";
+            default : return os << "wrong state";
+        }
+    }
 };
 
 
