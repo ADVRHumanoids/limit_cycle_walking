@@ -1,0 +1,6 @@
+float64[] q_max
+float64[] theta
+
+---------
+
+bool success
