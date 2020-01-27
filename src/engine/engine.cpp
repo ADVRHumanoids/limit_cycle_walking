@@ -65,7 +65,6 @@ bool Engine::compute(double time,
     delta_foot_tot(1) = 0;
     delta_foot_tot(2) = 0;
 
-
     return true;
 
 }

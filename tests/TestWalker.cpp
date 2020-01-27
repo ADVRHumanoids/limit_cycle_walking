@@ -72,7 +72,7 @@ protected:
      mdof::RobotState _state;
      mdof::RobotState _ref;
 
-     XBot::Cartesian::CartesianInterfaceImpl::Ptr ci;
+//     XBot::Cartesian::CartesianInterfaceImpl::Ptr ci;
 
      double _initial_lowering_default;
 

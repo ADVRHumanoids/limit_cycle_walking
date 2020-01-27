@@ -175,7 +175,7 @@ bool Walker::update(double time,
     updateQMax();
 
     /* update given the robot state */
-    computeQ(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
+    _q = computeQ(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
 
     computeQFake(time, _q, _q_min, _q_max, _steep_q, _started, _t_start_walk, _q_fake);
 
@@ -231,7 +231,7 @@ bool Walker::update(double time,
     mdof::StepState step_state;
     step_state.q = _q;
     step_state.q_min = _q_min;
-    step_state.q_min = _q_max;
+    step_state.q_max = _q_max;
     step_state.height_com = height_com;
     step_state.step_duration = _step_duration;
     step_state.step_clearance = _step_clearance;
@@ -551,8 +551,7 @@ bool Walker::core(double time)
             /* 'started' flag set to True */
             _started = 1;
 
-            /* this is neeeded to allow the robot to swing before stepping. 'start_time' is the time when the stepping begins, not when the overall walking begin */
-            _t_start_walk = time + _delay_start;
+            _t_start_walk = time;
 
             /* this plan a step at time 'time + delay' so to allow the robot to swing before stepping */
 //            updateStep();

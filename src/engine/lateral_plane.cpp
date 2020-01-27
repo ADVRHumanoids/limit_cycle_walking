@@ -39,8 +39,16 @@ void LateralPlane::computePreviewWindow(double q_sns,
     /* if alpha < 0 make it zero. This can happen if q_sns become */
     if (_alpha < 0)
     {
+        std::cout << "Lateral plane. WARNING: alpha < 0 " << std::endl;
         _alpha = 0;
     }
+
+    if (_alpha > 1)
+    {
+        std::cout << "Lateral plane. WARNING: alpha > 1 " << std::endl;
+        _alpha = 1;
+    }
+
 
     /* zmp to track */
     if (_alpha <= 1)

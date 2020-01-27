@@ -36,6 +36,8 @@ public:
     bool homing(const mdof::RobotState &state,
                 mdof::RobotState &ref);
 
+    State getState() {return _current_state;}
+
     friend std::ostream& operator<<(std::ostream& os, Event s);
     friend std::ostream& operator<<(std::ostream& os, State s);
 
@@ -171,8 +173,8 @@ private:
         {
             case State::Idle :  return os << "idle";
             case State::Walking : return os << "walking";
-            case State::Starting : return os << "start walking";
-            case State::Stopping : return os << "stop walking";
+            case State::Starting : return os << "starting";
+            case State::Stopping : return os << "stopping";
             case State::LastStep : return os << "last step";
             default : return os << "wrong state";
         }
