@@ -73,7 +73,6 @@ private:
                   Eigen::Vector3d world_T_com_start,
                   std::array<Eigen::Affine3d, 2> ankle_T_com);
 
-    bool updateStep();
     bool updateQMax();
 
 //    bool resetter();
