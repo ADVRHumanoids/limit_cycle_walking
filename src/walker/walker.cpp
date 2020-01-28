@@ -191,7 +191,7 @@ bool Walker::update(double time,
      * q_min
      * q_steep
      */
-    core(time);
+    step_machine(time);
 
     /*compute new q_steep for qFake */
     _steep_q = _q_max - _q_min;
@@ -202,16 +202,16 @@ bool Walker::update(double time,
     /* t_impact gets updated every time an impact occurs */
     double _step_t_start = _t_impact;
 
-    if (time < _t_start_walk)
+    if (!_started == 1)
     {
-        /* never step */
+        /* if time is never step */
         _step_t_start = time + 1;
         /* if walking is not started, zmp stays in the middle */
         zmp_val_current = _middle_zmp;
         zmp_val_next = _middle_zmp;
     }
 
-    if (time > _t_start_walk && time < _t_start_walk + _delay_start)
+    if (_started == 1 && time >= _t_start_walk && time < _t_start_walk + _delay_start)
     {
         /* delay -first- step to let the com swing laterally */
         _step_t_start = _t_start_walk + _delay_start;
@@ -451,11 +451,6 @@ double Walker::computeQ(bool current_swing_leg,
     return q;
 }
 
-bool Walker::updateStep()
-{
-
-}
-
 //bool Walker::resetter(const mdof::RobotState * state,
 //                           mdof::RobotState * ref)
 //{
@@ -466,7 +461,7 @@ bool Walker::updateStep()
 //    ref->setCom(new_com);
 //}
 
-bool Walker::core(double time)
+bool Walker::step_machine(double time)
 {
     /* q_max
      * q_min

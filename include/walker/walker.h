@@ -45,7 +45,7 @@ private:
 
     static std::shared_ptr<Walker::Param> getDefaultParam();
 
-    bool core(double time);
+    bool step_machine(double time);
 
     bool impactDetector(double time,
                         double q,
