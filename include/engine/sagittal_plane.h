@@ -27,7 +27,7 @@ public:
     void update(double q,
                 double q_min,
                 double q_max,
-                double height_com);
+                double distance_com_ankle);
 
     double getDeltaCom(){return _delta_com;}
     
@@ -38,12 +38,12 @@ private:
     
     
     bool computeCom(double q,
-                      double height_com,
+                      double distance_com_ankle,
                       double& delta_com);
 
     bool computeStep(double q_min,
                      double q_max,
-                     double height_com,
+                     double distance_com_ankle,
                      double& disp_com,
                      double& disp_foot);
 
