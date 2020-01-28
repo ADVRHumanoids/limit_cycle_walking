@@ -20,6 +20,7 @@ bool Engine::initialize(const mdof::StepState &state)
     _lat_opt.Q << _opt.mpc_Q;
     _lat_opt.R << _opt.mpc_R;
     _lat_opt.horizon_duration = _opt.horizon_duration;
+    /* this is the height of the com from ground (soles) (this should be CONSTANT) */
     _lat_opt.h = state.height_com;
     /* preview window resolution set as the control dt */
     _lat_opt.Ts = _dt;
@@ -38,6 +39,7 @@ bool Engine::compute(double time,
                       Eigen::Vector3d& delta_foot_tot)
 {   
     double q = state.q;
+    double q_fake = state.q_fake;
     double q_min = state.q_min;
     double q_max = state.q_max;
     double step_duration = state.step_duration;
@@ -46,13 +48,14 @@ bool Engine::compute(double time,
 //    double step_clearing = state->step_clearance;
     double zmp_current = state.zmp_val_current;
     double zmp_next = state.zmp_val_next;
-    double height_com = state.height_com;
+    /* height of com from ankle */
+    double distance_ankle_com = state.distance_ankle_com;
 
 
 
     /* compute stepping motion */
     /* STILL TODO the update of sag */
-    _sag->update(q, q_min, q_max, height_com);
+    _sag->update(q_fake, q_min, q_max, distance_ankle_com);
 
     /* here can be put also middle_zmp and offset_zmp */
     _lat->update(q, q_max, q_min, zmp_current, zmp_next, _opt.horizon_duration, step_duration);
