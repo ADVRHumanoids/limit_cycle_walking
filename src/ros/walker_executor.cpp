@@ -19,13 +19,15 @@ WalkerExecutor::WalkerExecutor() :
     init_services();
     /* init model and robot */
     init_load_model_and_robot();
-
-    init_load_robot_state();
     /* init cartesian interface */
     init_load_cartesian_interface();
     /* init walker */
     init_load_walker();
+    /* homing of the robot */
     homing();
+    /* get state of the robot */
+    init_load_robot_state();
+    /* initialize walker with current state of the robot */
     init_initialize_walker();
 }
 
@@ -34,8 +36,6 @@ void WalkerExecutor::run()
 
     ros::spinOnce();
 
-//    _robot->sense();
-//    _model->syncFrom(*_robot, XBot::Sync::Position, XBot::Sync::MotorSide);
     /* update robot state */
     updateRobotState();
 
@@ -108,16 +108,23 @@ bool WalkerExecutor::homing()
 
 bool WalkerExecutor::updateRobotState()
 {
-    std::array<Eigen::Affine3d, 2> world_T_ankle;
 
+
+    /* from reference */
     _ci->getPoseReferenceRaw("l_sole", _state.world_T_foot[0]);
     _ci->getPoseReferenceRaw("r_sole", _state.world_T_foot[1]);
     _ci->getComPositionReference(_state.world_T_com);
     _ci->getPoseReferenceRaw("Waist", _state.world_T_waist);
-    _ci->getPoseReferenceRaw("l_sole", world_T_ankle[0]);
-    _ci->getPoseReferenceRaw("r_sole", world_T_ankle[1]);
 
-    _state.ankle_T_com[0].translation()= world_T_ankle[0].translation() - _state.world_T_com;
+    /* from model */
+    std::array<Eigen::Affine3d, 2> world_T_ankle;
+    Eigen::Vector3d world_T_com;
+
+    _model->getPose("l_ankle", world_T_ankle[0]);
+    _model->getPose("r_ankle", world_T_ankle[1]);
+//    _model->getCOM(world_T_com);
+
+    _state.ankle_T_com[0].translation() = world_T_ankle[0].translation() - _state.world_T_com;
     _state.ankle_T_com[0].linear() = world_T_ankle[0].linear();
     _state.ankle_T_com[1].translation() = world_T_ankle[1].translation() - _state.world_T_com;
     _state.ankle_T_com[1].linear() = world_T_ankle[1].linear();
@@ -140,6 +147,11 @@ void WalkerExecutor::init_load_model_and_robot()
     _qdot = _q;
 
     _model->getJointPosition( _q );
+
+//    XBot::JointNameMap joint_map;
+//    _model->getJointPosition(joint_map);
+//    std::cout << joint_map["RankleRoll"] << std::endl;
+
 
     /* set FLOATING BASE? */
 //    Eigen::Affine3d w_T_l;
@@ -183,6 +195,8 @@ void WalkerExecutor::init_load_robot_state()
     _state.ankle_T_com[0].linear() = world_T_ankle[0].linear();
     _state.ankle_T_com[1].translation() = world_T_ankle[1].translation() - _state.world_T_com;
     _state.ankle_T_com[1].linear() = world_T_ankle[1].linear();
+
+    _ci->reset(_time);
 }
 
 void WalkerExecutor::init_load_cartesian_interface()
