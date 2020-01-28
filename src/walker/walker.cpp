@@ -48,6 +48,9 @@ bool Walker::init(const mdof::RobotState &state)
     _q = computeQ(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
     _q_min = _q;
     _q_max = _param->getMaxInclination();
+    _foot_pos_start[0] = state.world_T_foot[0];
+    _foot_pos_start[1] = state.world_T_foot[1];
+
 
     /* initialize the Engine of Walker */
     Engine::Options eng_opt;
@@ -59,8 +62,10 @@ bool Walker::init(const mdof::RobotState &state)
 
     _engine = std::make_shared<Engine>(_dt, eng_opt);
 
-    /* is this right? I don't think so */
+    /* TODO: is this right? I don't think so */
     double height_com = fabs(state.world_T_com[2] - state.world_T_foot[_current_swing_leg].translation()[2]);
+
+    double distance_ankle_com = state.ankle_T_com[1 - _current_swing_leg].translation().z();
 
     double zmp_current = state.world_T_foot[_current_swing_leg].translation()[1];
     zmp_current = zmp_current + ( ( (zmp_current - _middle_zmp) > 0) - ( (zmp_current - _middle_zmp) < 0) ) * _param->getZmpOffset();
@@ -70,9 +75,11 @@ bool Walker::init(const mdof::RobotState &state)
 
     mdof::StepState step_state;
     step_state.q = _q;
+    step_state.q_fake = _q_fake;
     step_state.q_min = _q_min;
     step_state.q_min = _q_max;
     step_state.height_com = height_com;
+    step_state.distance_ankle_com = distance_ankle_com;
     step_state.step_duration = _step_duration;
     step_state.step_clearance = _step_clearance;
     step_state.zmp_val_current = zmp_current;
@@ -177,7 +184,8 @@ bool Walker::update(double time,
     /* update given the robot state */
     _q = computeQ(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
 
-    computeQFake(time, _q, _q_min, _q_max, _steep_q, _started, _t_start_walk, _q_fake);
+    /* this start computing at _t_start_walk + _delay_start*/
+    computeQFake(time, _q, _q_min, _q_max, _steep_q, _started, _t_start_walk + _delay_start, _q_fake);
 
     /* this changes:
      * q_min
@@ -225,14 +233,18 @@ bool Walker::update(double time,
 
 
     Eigen::Rotation2Dd rot2(_theta);
-    double height_com = state.ankle_T_com[1 - _current_swing_leg].translation().z();
+    /* TODO are these constant? */
+    double distance_ankle_com = state.ankle_T_com[1 - _current_swing_leg].translation().z();
+    double  height_com = fabs(state.world_T_com[2] - state.world_T_foot[_current_swing_leg].translation()[2]);
 
     /* FILL STEP STATE */
     mdof::StepState step_state;
     step_state.q = _q;
+    step_state.q_fake = _q_fake;
     step_state.q_min = _q_min;
     step_state.q_max = _q_max;
     step_state.height_com = height_com;
+    step_state.distance_ankle_com = distance_ankle_com;
     step_state.step_duration = _step_duration;
     step_state.step_clearance = _step_clearance;
     step_state.zmp_val_current = zmp_val_current;
@@ -294,11 +306,11 @@ std::shared_ptr<Walker::Param> Walker::getDefaultParam()
 }
 
 bool Walker::impactDetector(double time,
-                                 double q, /* fake or not? */
-                                 double q_min,
-                                 double q_max,
-                                 double swing_leg_heigth,
-                                 double terrain_heigth)
+                            double q, /* TODO fake or not? */
+                            double q_min,
+                            double q_max,
+                            double swing_leg_heigth,
+                            double terrain_heigth)
 {
     //     std::cout << "_q1_max: " << _q1_max << std::endl;
     //     std::cout << "sense_q1: " << sense_q1() << std::endl;
@@ -349,7 +361,7 @@ bool Walker::landingHandler(double time,
         _current_event = Event::Impact;
 
         // ---------------------------
-        _q_min = _q; /* HACK ALERT */
+        _q_min = - _q; /* HACK ALERT */
         // ---------------------------
 
         /* reset q_fake */
@@ -378,13 +390,13 @@ bool Walker::landingHandler(double time,
 }
 
 bool Walker::computeQFake(double time,
-                               double q,
-                               double q_min,
-                               double q_max,
-                               double steep_q,
-                               bool started,
-                               double start_walk,
-                               double& q_fake)
+                          double q,
+                          double q_min,
+                          double q_max,
+                          double steep_q,
+                          bool started,
+                          double start_walk,
+                          double& q_fake)
 {
 
     if (started == 1 && time >= start_walk)
@@ -436,7 +448,7 @@ double Walker::computeQ(bool current_swing_leg,
     Eigen::Rotation2Dd rot2(theta);
 
 
-    /* distance between current com and starting com (updated at each step)*/
+    /* distance between current com and starting com (updated at each step) */
     dist_com = world_T_com - world_T_com_start;
 
     /* rotate back com */
@@ -509,14 +521,14 @@ bool Walker::step_machine(double time)
             _previous_state = _current_state;
             _current_state = State::LastStep;
 
-            /* set q_max to zero (is this enough to make it half step?)*/
+            /* TODO set q_max to zero (is this enough to make it half step?)*/
             _q_max = 0;
             break;
 
         case State::LastStep :
             _step_counter++;
 
-            /* 'started' flag set to False */
+            /* TODO 'started' flag set to False */
             _started = 0;
 
             _q_min = _q_fake;
@@ -548,8 +560,6 @@ bool Walker::step_machine(double time)
 
             _t_start_walk = time;
 
-            /* this plan a step at time 'time + delay' so to allow the robot to swing before stepping */
-//            updateStep();
             break;
 
         default : /*std::cout << "Ignored starting event. Already WALKING" << std::endl; */
@@ -559,7 +569,6 @@ bool Walker::step_machine(double time)
     }
     case Event::Stop :
     {
-        //             _started = 0;
         switch (_current_state)
         {
         case State::Idle :
@@ -599,6 +608,12 @@ bool Walker::step_machine(double time)
         break;
 
     }
+
+    /* burn EVENT */
+    _previous_event = _current_event;
+    _current_event = Event::Empty;
+
+
     return true;
 }
 
