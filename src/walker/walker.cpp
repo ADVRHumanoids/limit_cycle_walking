@@ -508,11 +508,11 @@ double Walker::computeQ(bool current_swing_leg,
     /* rotate back com */
     dist_com.head(2) = rot2.toRotationMatrix() * dist_com.head(2);
 
-    /* depending on the length of the step, remove offset */
-    offset_q = 0;
+    /* TODO depending on the length of the step, remove offset */
+    offset_q = _q_max_previous;
 
     /* compute q, inclination angle of the robot */
-    q = ( dist_com(0) / fabs(ankle_T_com[1 - current_swing_leg].translation()(2)) ) - offset_q;
+    q = atan( dist_com(0) / fabs(ankle_T_com[1 - current_swing_leg].translation()(2)) ) - offset_q;
 
     return q;
 }
