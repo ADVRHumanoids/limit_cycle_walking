@@ -3,5 +3,14 @@ slprj/*
 *.slx
 *.slxc
 *.kdev4
-CMakeLists.txt.user
+*.autosave
+*.user
+tests/CMakeFiles
+tests/CTestTestfile.cmake
+tests/Makefile
+tests/cmake_install.cmake
+tests/external/tmp
+tests/limit_cycle_walking_tests.cbp
+*.cmake
+*.
 .kdev4/
