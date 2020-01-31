@@ -4,7 +4,6 @@ slprj/*
 *.slxc
 *.kdev4
 *.autosave
-*.user
 tests/CMakeFiles
 tests/CTestTestfile.cmake
 tests/Makefile
