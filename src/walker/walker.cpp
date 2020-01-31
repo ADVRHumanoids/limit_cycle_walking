@@ -35,6 +35,9 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
     _foot_pos_start[0].matrix().setZero();
     _foot_pos_start[1].matrix().setZero();
 
+    _foot_pos_goal[0].matrix().setZero();
+    _foot_pos_goal[1].matrix().setZero();
+
     _waist_pos_start.matrix().setZero();
     _waist_pos_goal.matrix().setZero();
 }
@@ -55,9 +58,11 @@ bool Walker::init(const mdof::RobotState &state)
      * so that after the first part (up to _start + _delay) is at the right value
      */
     _q_min = _q;
+
     _foot_pos_start[0] = state.world_T_foot[0];
     _foot_pos_start[1] = state.world_T_foot[1];
 
+    _foot_pos_goal = _foot_pos_start;
 
     /* initialize the Engine of Walker */
     Engine::Options eng_opt;
@@ -115,7 +120,6 @@ bool Walker::homing(const mdof::RobotState &state,
      /* TODO sanity check? */
     return true;
 }
-
 
 bool Walker::start()
 {
@@ -193,8 +197,8 @@ bool Walker::updateStep()
     _step.zmp_val_current = _zmp_val_current;
     _step.zmp_val_next = _zmp_val_next;
     _step.disable_step = _disable_step;
-    _step.t_min = _step_t_start;
-    _step.t_max = _step_t_end;
+    _step.t_min = _t_min;
+    _step.t_max = _t_max;
 
     return true;
 }
@@ -250,13 +254,13 @@ bool Walker::update(double time,
     if (_started == 1 && time >= _t_start_walk && time < _t_start_walk + _delay_start)
     {
         _disable_step = true;
-        /* TODO HACK to fake the starting lateral swing, since not q nor q_fake are actually moving in this period */
-//        _q = _param->getMaxInclination()/_delay_start * (time - _t_start_walk);
-//        _step_duration = _param->getStepDuration()/2;
-        _step_t_start = _t_start_walk;
-        _step_t_end = _t_start_walk + _delay_start;
+        /* TODO HACK to fake the starting lateral swing, since not q nor q_fake are actually moving in this period
+         * step_start and step_end goes into step, I'm using them to move the window
+         */
+        _t_min = _t_start_walk;
+        _t_max = _t_start_walk + _delay_start;
         /* delay -first- step to let the com swing laterally */
-//        _step_t_start = _t_start_walk + _delay_start;
+        _step_t_start = _t_start_walk + _delay_start;
         /* if walking is started, zmp current is still in the middle, but next zmp is the first step */
         _zmp_val_current = _zmp_middle;
         /* TODO could be wrong? */
@@ -268,8 +272,6 @@ bool Walker::update(double time,
         /* for the ending motion of the last step */
         _zmp_val_next = _zmp_middle;
     }
-
-
 
     /* -- until here everything is updated -- */
 
@@ -312,23 +314,26 @@ bool Walker::update(double time,
     /* compute com and foot displacement */
     _engine->compute(time, _step, delta_com, delta_foot_tot, delta_com_tot);
 
-    _com_pos_goal = _com_pos_start + delta_com_tot;
 
     /* compute com trajectory and rotate if needed */
     delta_com.head(2) = rot2.toRotationMatrix() * delta_com.head(2);
 
-    /* TODO lat com is not a delta! */
+    /* update com pos goal THIS IS NECESSARY ONLY WHEN NEW STEP IS ISSUED */
+    delta_com_tot.head(2) = rot2.toRotationMatrix() * delta_com_tot.head(2);
+    _com_pos_goal = _com_pos_start + delta_com_tot;
+
     Eigen::Vector3d com_ref;
     com_ref = _com_pos_start + delta_com;
+
 //    com_ref(0) = _com_pos_start(0) + delta_com(0);
 //    com_ref(1) = delta_com(1);
 //    com_ref(2) = _com_pos_start(2) + delta_com(2);
 
 
     /*compute feet trajectories and rotate if needed */
-    delta_foot_tot.head(2) = rot2.toRotationMatrix() * delta_foot_tot.head(2);
 
-    /* THIS IS NECESSARY ONLY WHEN NEW STEP IS ISSUED */
+    /* update foot pos goal THIS IS NECESSARY ONLY WHEN NEW STEP IS ISSUED */
+    delta_foot_tot.head(2) = rot2.toRotationMatrix() * delta_foot_tot.head(2);
     _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + delta_foot_tot;
     _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
@@ -457,7 +462,6 @@ bool Walker::computeQFake(double time,
                           double start_walk,
                           double& q_fake)
 {
-
     if (started == 1 && time >= start_walk)
     {
         bool cond_q(false);
@@ -481,8 +485,6 @@ bool Walker::computeQFake(double time,
     }
     /* TODO sanity check? */
     return true;
-
-
 }
 
 double Walker::computeQ(bool current_swing_leg,

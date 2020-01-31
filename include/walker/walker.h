@@ -142,8 +142,13 @@ private:
 
 //    std::array<bool, 2> _foot_contact;
 
+    /* initial and final time of foot movement */
     double _step_t_start;
     double _step_t_end;
+
+    /* initial and final time of total stepping motion */
+    double _t_min;
+    double _t_max;
 
     double _step_duration;
     double _step_clearance;
