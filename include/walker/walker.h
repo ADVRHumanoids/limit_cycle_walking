@@ -131,6 +131,7 @@ private:
     double _terrain_height;
 
     Eigen::Vector3d _com_pos_start;
+    /* TODO com_pos_goal is not used */
     Eigen::Vector3d _com_pos_goal;
 
     std::array<Eigen::Affine3d, 2> _foot_pos_start;

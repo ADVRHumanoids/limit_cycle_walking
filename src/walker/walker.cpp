@@ -271,7 +271,6 @@ bool Walker::update(double time,
 
 
 
-
     /* -- until here everything is updated -- */
 
     /* this takes:
