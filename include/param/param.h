@@ -40,7 +40,10 @@ public:
     double getHorizonDuration() const {return _horizon_duration;}
     double getZmpOffset() const {return _zmp_offset;}
 
+    void log(std::string name, XBot::MatLogger::Ptr logger);
+
 private:
+
 
     bool parseYAML(YAML::Node yaml_node);
 

@@ -34,6 +34,8 @@ public:
                  Eigen::Vector3d& delta_com,
                  Eigen::Vector3d& delta_foot_tot);
 
+    void log(std::string name, XBot::MatLogger::Ptr logger);
+
 private:
 
     bool reset();

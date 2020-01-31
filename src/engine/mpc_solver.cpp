@@ -41,6 +41,18 @@ bool LateralPlane::MpcSolver::update()
     return true;
 }
 
+void LateralPlane::MpcSolver::log(std::string name, XBot::MatLogger::Ptr logger)
+{
+    logger->add(name + "_K_fb", _K_fb);
+    logger->add(name + "_K_prev", _K_prev);
+    logger->add(name + "_C_zmp", _C_zmp);
+    logger->add(name + "_h", _h);
+    logger->add(name + "_Ts", _Ts);
+    logger->add(name + "_size_window", _size_window);
+    logger->add(name + "_Q", _Q);
+    logger->add(name + "_R", _R);
+}
+
 
 
 

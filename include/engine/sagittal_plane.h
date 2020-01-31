@@ -34,6 +34,8 @@ public:
     double getDeltaComTot() {return _disp_com;}
     double getDeltaFootTot() {return _disp_foot;}
 
+    void log(std::string name, XBot::MatLogger::Ptr logger);
+
 private:
     
     

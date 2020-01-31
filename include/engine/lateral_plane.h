@@ -55,8 +55,8 @@ public:
                 double q_max,
                 double zmp_val_current,
                 double zmp_val_next,
-                double duration_step,
-                double middle_zmp  = 0., /* should be constant */
+                double step_duration,
+                double zmp_middle  = 0., /* should be constant */
                 double offset = 0.);
 
     /* get position of */
@@ -64,23 +64,23 @@ public:
 
     Eigen::VectorXd getPreviewWindow(){return _zmp_window;}
 
+    void log(std::string name, XBot::MatLogger::Ptr logger);
+
 private:
 
     class MpcSolver;
 
     /* compute preview window */
     void computePreviewWindow(double q_sns,
-                              double q_max,
                               double q_min,
+                              double q_max,
                               double zmp_val_current,
                               double zmp_val_next,
-                              double duration_step,
-                              double middle_zmp,
+                              double step_duration,
+                              double zmp_middle,
                               double offset);
 
     Eigen::Vector3d _delta_com;
-
-    double _q_sns, _q_sns_prev;
 
     double _alpha_old, _alpha;
 

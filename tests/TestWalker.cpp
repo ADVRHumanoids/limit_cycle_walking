@@ -26,6 +26,7 @@ protected:
 
 
          _initial_lowering_default = par->getInitialLowering();
+
 //         /* initialize XBotCore */
 //         XBot::Logger::SetVerbosityLevel(XBot::Logger::Severity::DEBUG);
 //         std::string xbot_yaml = path_to_cfg + "cogimon_walking.yaml";

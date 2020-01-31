@@ -19,9 +19,10 @@ void SagittalPlane::update(double q,
     computeStep(q_min, q_max, distance_com_ankle, _disp_com, _disp_foot);
 }
 
+
 bool SagittalPlane::computeCom(double q,
-                                 double distance_com_ankle,
-                                 double& delta_com)
+                               double distance_com_ankle,
+                               double& delta_com)
 {
     /* compute com displacement, which now is linear */
     delta_com = fabs(distance_com_ankle) * tan(q);
@@ -43,4 +44,15 @@ bool SagittalPlane::computeStep(double q_min,
     disp_foot = 2 * disp_com;
 
     return true;
-    }
+}
+
+void SagittalPlane::log(std::string name, XBot::MatLogger::Ptr logger)
+{
+    std::string className("sagittal_plane_");
+
+    logger->add(name + "_q", _q);
+    logger->add(name + "_delta_com", _delta_com);
+    logger->add(name + "_disp_com", _disp_com);
+    logger->add(name + "_disp_foot", _disp_foot);
+    logger->add(name + "_dt", _dt);
+}

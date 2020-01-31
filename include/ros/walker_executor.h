@@ -24,14 +24,14 @@ public:
     WalkerExecutor();
     void run();
     bool homing();
+    
+    void log(XBot::MatLogger::Ptr logger);
+
+    ~WalkerExecutor();
 
 private:
 
-    typedef actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ActionServer;
-    typedef std::shared_ptr<ActionServer> ActionServerPtr;
-
     bool updateRobotState();
-
 
     void init_services();
     void init_load_model_and_robot();
@@ -69,8 +69,6 @@ private:
     XBot::ModelInterface::Ptr _model;
     XBot::RobotInterface::Ptr _robot;
     XBot::Cartesian::CartesianInterfaceImpl::Ptr _ci;
-
-    Walker::Param::Ptr  _walker_par;
 
     mdof::RobotState _state;
     mdof::RobotState _ref;

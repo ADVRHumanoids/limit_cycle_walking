@@ -41,6 +41,20 @@ Walker::Param::Param(ros::NodeHandle nh) : Param()
     }
 }
 
+void Walker::Param::log(std::string name, XBot::MatLogger::Ptr logger)
+{
+    logger->add(name + "_initial_lowering", _initial_lowering);
+    logger->add(name + "_first_side_step", _first_side_step);
+    logger->add(name + "_lean_forward", _lean_forward);
+    logger->add(name + "_step_clearance", _step_clearance);
+    logger->add(name + "_step_duration", _step_duration);
+    logger->add(name + "_double_stance_duration", _double_stance_duration);
+    logger->add(name + "_mpc_Q", _mpc_Q);
+    logger->add(name + "_mpc_R", _mpc_R);
+    logger->add(name + "_horizon_duration", _horizon_duration);
+    logger->add(name + "_zmp_offset", _zmp_offset);
+}
+
 Walker::Param::Param(YAML::Node yaml_node) : Param()
 {
     parseYAML(yaml_node);

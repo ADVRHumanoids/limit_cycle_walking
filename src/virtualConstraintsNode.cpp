@@ -177,7 +177,7 @@ Eigen::Affine3d virtualConstraintsNode::r_sole_orientation_goal()
 int virtualConstraintsNode::straighten_up_action() /*if I just setted a publisher it would be harder to define when the action was completed*/
     {
         
-        actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac_com("cartesian/com/reach", true); /*without /goal!!*/
+        actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction>ac_com("cartesian/com/reach", true); /*without /goal!!*/
         actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac_r_sole("cartesian/r_sole/reach", true); /*without /goal!!*/
         actionlib::SimpleActionClient<cartesian_interface::ReachPoseAction> ac_l_sole("cartesian/l_sole/reach", true); /*without /goal!!*/
       
@@ -643,7 +643,7 @@ void virtualConstraintsNode::exe(double time)
 
         if (impact_routine())
         {    
-            std::cout<<"impact routine"<<std::endl;
+            std::cout<< "impact routine" <<std::endl;
 
             _reset_condition = _q1_temp;
 //             _q1_temp = 0; //ver2
@@ -1023,7 +1023,6 @@ void virtualConstraintsNode::commander(double time)
 //         int sign_first_stance_step = (_current_pose_ROS.get_sole(_other_side).coeff(1) > 0) - (_current_pose_ROS.get_sole(_other_side).coeff(1) < 0); //
 //         zmp_lat_ref = _current_pose_ROS.get_sole_tot(_other_side).translation().coeff(1) - sign_first_stance_step * _initial_param.get_indent_zmp();
         /* send ZMP ref after kajita */
-        zmp_lat_ref = _MpC_lat->_C_zmp*_com_y;
         _zmp_ref << zmp_sag_ref, zmp_lat_ref, 0;
 
         if (_started == 0 || (_started == 1 && _internal_time < _start_walk))
@@ -1072,10 +1071,8 @@ void virtualConstraintsNode::commander(double time)
     
         _logger->add("zmp_ref", _zmp_window_y.coeff(0));
         _logger->add("window_tot", _zmp_window_y);
-       
-        _logger->add("com_y", _com_y);
-        _logger->add("u", _u);
-        _logger->add("zmp", _MpC_lat->_C_zmp*_com_y);
+
+
         
 //         _logger->add("flag_impact", _flag_impact);
         
@@ -1602,9 +1599,6 @@ bool virtualConstraintsNode::initialize(double time)
     std::cout << "Steepness: " << _steep_coeff <<  std::endl;
     std::cout << "Real impacts: " << _initial_param.get_switch_real_impact() <<  std::endl;
     std::cout << "ZMP width correction: " << - _initial_param.get_indent_zmp() << " --> ZMP Right: " << _initial_zmp_y_right << " and ZMP Left: " << _initial_zmp_y_right << std::endl;
-
-    _com_y << _initial_com_position(1), 0, 0; /*com trajectory used by mpc: pos, vel, acc*/
-
     //MpC
 
     Eigen::MatrixXd Q(1,1);

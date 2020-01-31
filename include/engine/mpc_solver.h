@@ -23,8 +23,11 @@ public:
 
     Eigen::MatrixXd getKfb() {return _K_fb;}
     Eigen::MatrixXd getKprev() {return _K_prev;}
+    Eigen::Matrix<double, 1,3> getC() {return _C_zmp;};
 
     OpenMpC::dynamics::LtiDynamics::Ptr getIntegrator() {return _integrator;}
+
+    void log(std::string name, XBot::MatLogger::Ptr logger);
 
 private:
 

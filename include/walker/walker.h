@@ -41,7 +41,10 @@ public:
     friend std::ostream& operator<<(std::ostream& os, Event s);
     friend std::ostream& operator<<(std::ostream& os, State s);
 
+    void log(std::string name, XBot::MatLogger::Ptr logger);
+
 private:
+
 
     static std::shared_ptr<Walker::Param> getDefaultParam();
 
@@ -73,7 +76,8 @@ private:
                   Eigen::Vector3d world_T_com_start,
                   std::array<Eigen::Affine3d, 2> ankle_T_com);
 
-    bool updateQMax();
+    bool updateQMax(double time);
+    bool updateStep();
 
 //    bool resetter();
 
@@ -106,7 +110,7 @@ private:
     double _q_min;
 
     /* current maximum q */
-    double _q_max;
+    double _q_max, _q_max_previous;
 
     /* fake q */
     double _q_fake;
@@ -143,13 +147,17 @@ private:
     double _step_duration;
     double _step_clearance;
 
-    double _middle_zmp;
+    double _zmp_middle;
+    double _zmp_val_current;
+    double _zmp_val_next;
 
+    double _distance_ankle_com;
+    double _height_com;
+
+    bool _disable_step;
     /* parameters for the robot */
-//    std::shared_ptr<Param> _param;
+    mdof::StepState _step;
     std::shared_ptr<Param> _param;
-
-    mdof::StepState * _step;
     Engine::Ptr _engine;
 
 

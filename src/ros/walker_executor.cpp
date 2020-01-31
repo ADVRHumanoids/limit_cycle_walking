@@ -72,6 +72,7 @@ void WalkerExecutor::run()
 
     _time += _period;
 
+    log(_logger);
 }
 
 bool WalkerExecutor::homing()
@@ -103,7 +104,24 @@ bool WalkerExecutor::homing()
        std::cout << "Task is reaching.." << std::endl;
    }
 
-    return true;
+   return true;
+}
+
+void WalkerExecutor::log(XBot::MatLogger::Ptr logger)
+{
+    _state.log("state", logger);
+    _ref.log("ref", logger);
+    _wlkr->log("walker", logger);
+
+    logger->add("q", _q);
+    logger->add("q_dot", _qdot);
+    logger->add("q_ddot", _qddot);
+    logger->add("time", _time);
+}
+
+WalkerExecutor::~WalkerExecutor()
+{
+    _logger->flush();
 }
 
 bool WalkerExecutor::updateRobotState()

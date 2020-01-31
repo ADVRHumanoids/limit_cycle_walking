@@ -9,16 +9,19 @@ protected:
 
     TestLateral()
     {
-        opt.Q << 1000000;
+        opt.Q << 5000;
         opt.R << 1;
 
         opt.h = 1.0;
         opt.Ts = 0.01;
-        opt.horizon_duration = 1.0;
+        opt.horizon_duration = 5.0;
 
         dt = 0.01;
         lat_plane = std::make_shared<LateralPlane>(dt, opt);
 
+        logger = XBot::MatLogger::getLogger("/tmp/lateral_test");
+
+        time = 0;
     }
 
     virtual ~TestLateral() {
@@ -29,6 +32,7 @@ protected:
     }
 
     virtual void TearDown() {
+        logger->flush();
     }
 
     LateralPlane::Ptr lat_plane;
@@ -42,7 +46,9 @@ protected:
     double middle_zmp; /* should be constant */
     double offset;
     LateralPlane::Options opt;
+    XBot::MatLogger::Ptr logger;
     double dt;
+    double time;
 
 };
 
@@ -74,6 +80,7 @@ protected:
     virtual void TearDown() {
     }
 
+
     double q_sns;
     double q_min;
     double q_max;
@@ -85,52 +92,81 @@ protected:
     double dt;
 };
 
-TEST_F(TestLateral, checkUpdate)
+//TEST_F(TestLateral, checkUpdate)
+//{
+//    q_sns = 0;
+//    q_min = 0;
+//    q_max = 0.785;
+//    zmp_val_current = 1;
+//    zmp_val_next = -1;
+//    duration_step = 2;
+//    middle_zmp = 0;
+//    offset = 0;
+//    int size_window = static_cast<int>(round(opt.horizon_duration/dt));
+//    Eigen::VectorXd preview_window_expected(size_window);
+//    preview_window_expected.setOnes();
+
+
+//    lat_plane->update(q_sns, q_min, q_max, zmp_val_current, zmp_val_next, duration_step, middle_zmp, offset);
+
+//    ASSERT_TRUE(lat_plane->getDeltaCom() - 0 <= 0.001);
+//    ASSERT_TRUE(lat_plane->getPreviewWindow().isApprox(preview_window_expected));
+//}
+
+TEST_F(TestLateral, checkUpdateContinued)
 {
     q_sns = 0;
     q_min = 0;
     q_max = 0.785;
-    zmp_val_current = 1;
-    zmp_val_next = -1;
-    duration_step = 2;
-    middle_zmp = 0;
+    zmp_val_current = 0;
+    zmp_val_next = 0.1;
+    duration_step = 1;
+    middle_zmp = (zmp_val_next + zmp_val_current)/2;
     offset = 0;
 
-    int size_window = static_cast<int>(round(opt.horizon_duration/dt));
-    Eigen::VectorXd preview_window_expected(size_window);
-    preview_window_expected.setOnes();
+    while (time < 15)
+    {
+        lat_plane->update(q_sns, q_min, q_max, zmp_val_current, zmp_val_next, duration_step, middle_zmp);
+        lat_plane->log("test_lateral", logger);
+        logger->add("zmp", zmp_val_current);
+        time += dt;
+        q_sns += dt;
+        if (q_sns > q_max)
+        {
+            q_sns = 0;
+            double temp_zmp = zmp_val_current;
+            zmp_val_current = zmp_val_next;
+            zmp_val_next = temp_zmp;
+        }
+    }
 
-    lat_plane->update(q_sns, q_min, q_max, zmp_val_current, zmp_val_next, duration_step, middle_zmp, offset);
 
-    ASSERT_TRUE(lat_plane->getDeltaCom() - 0 <= 0.001);
-    ASSERT_TRUE(lat_plane->getPreviewWindow().isApprox(preview_window_expected));
 }
 
+//TEST_F(TestLateralNotInitialized, checkUpdate)
+//{
+//    q_sns = 0;
+//    q_min = 0;
+//    q_max = 0.785;
+//    zmp_val_current = 1;
+//    zmp_val_next = -1;
+//    duration_step = 2;
 
-TEST_F(TestLateralNotInitialized, checkUpdate)
-{
-    q_sns = 0;
-    q_min = 0;
-    q_max = 0.785;
-    zmp_val_current = 1;
-    zmp_val_next = -1;
-    duration_step = 2;
+//    double default_horizon_duration = 5.;
+//    int size_window = static_cast<int>(round(default_horizon_duration/dt));
+//    int size_step = static_cast<int>(round(duration_step/dt));
+//    Eigen::VectorXd preview_window_expected(size_window);
+//    preview_window_expected.setOnes(); /* first 200 are 1 */
 
-    double default_horizon_duration = 5.;
-    int size_window = static_cast<int>(round(default_horizon_duration/dt));
-    int size_step = static_cast<int>(round(duration_step/dt));
-    Eigen::VectorXd preview_window_expected(size_window);
-    preview_window_expected.setOnes(); /* first 200 are 1 */
+//    Eigen::VectorXd segment(size_step);
+//    preview_window_expected.segment(size_step, size_step) << zmp_val_next * segment.setOnes(); /* second 200 are -1 */
+//    /* last 100 are 1 */
 
-    Eigen::VectorXd segment(size_step);
-    preview_window_expected.segment(size_step, size_step) << zmp_val_next * segment.setOnes(); /* second 200 are -1 */
-    /* last 100 are 1 */
+//    lat_plane->update(q_sns, q_min, q_max, zmp_val_current, zmp_val_next, duration_step);
 
-    lat_plane->update(q_sns, q_min, q_max, zmp_val_current, zmp_val_next, duration_step);
-
-    ASSERT_TRUE(lat_plane->getDeltaCom() - 0 <= 0.001);
-    ASSERT_TRUE(lat_plane->getPreviewWindow().isApprox(preview_window_expected));
-}
+//    ASSERT_TRUE(lat_plane->getDeltaCom() - 0 <= 0.001);
+//    ASSERT_TRUE(lat_plane->getPreviewWindow().isApprox(preview_window_expected));
+//}
 
 }
 
