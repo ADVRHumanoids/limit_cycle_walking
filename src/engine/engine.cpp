@@ -34,8 +34,9 @@ bool Engine::initialize(const mdof::StepState &state)
 
 bool Engine::compute(double time,
                      const mdof::StepState &state,
-                      Eigen::Vector3d& delta_com,
-                      Eigen::Vector3d& delta_foot_tot)
+                     Eigen::Vector3d& delta_com,
+                     Eigen::Vector3d& delta_foot_tot,
+                     Eigen::Vector3d& delta_com_tot)
 {   
     double q = state.q;
     double q_fake = state.q_fake;
@@ -85,6 +86,9 @@ bool Engine::compute(double time,
         delta_foot_tot(2) = 0;
     }
 
+    delta_com_tot(0) = _sag->getDeltaComTot();
+    delta_com_tot(1) = 0;
+    delta_com_tot(2) = 0;
 
     return true;
 

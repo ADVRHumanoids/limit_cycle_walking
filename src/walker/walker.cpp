@@ -307,9 +307,12 @@ bool Walker::update(double time,
 
     Eigen::Vector3d delta_com;
     Eigen::Vector3d delta_foot_tot;
+    Eigen::Vector3d delta_com_tot;
 
     /* compute com and foot displacement */
-    _engine->compute(time, _step, delta_com, delta_foot_tot);
+    _engine->compute(time, _step, delta_com, delta_foot_tot, delta_com_tot);
+
+    _com_pos_goal = _com_pos_start + delta_com_tot;
 
     /* compute com trajectory and rotate if needed */
     delta_com.head(2) = rot2.toRotationMatrix() * delta_com.head(2);
@@ -424,7 +427,10 @@ bool Walker::landingHandler(double time,
         (_current_swing_leg) ? side = "LEFT" : side = "RIGHT";
         std::cout << "Impact! Current side: " << side << std::endl;
 
-        _com_pos_start = state.world_T_com;
+
+        /* TODO update com start: WITH REAL OR WITH PLANNED? this is basically a way to get rid of the com jump in the last step */
+//        _com_pos_start = state.world_T_com;
+        _com_pos_start = _com_pos_goal;
 
         /* this is probably necessary! */
         _foot_pos_start = state.world_T_foot;
@@ -535,9 +541,7 @@ bool Walker::step_machine(double time)
      * state
      * steep_q
      */
-    /* TODO updateStep??? DO IT! */
 
-    /* uses q_fake */
     std::cout << "Entering step machine with event: '" << _current_event << "' during state: '" << _current_state << "'" << std::endl;
 
     if (_previous_event != _current_event)
@@ -555,18 +559,12 @@ bool Walker::step_machine(double time)
 
         case State::Walking :
             _step_counter++;
-//            updateStep();
-
             break;
 
         case State::Starting :
             _step_counter++;
             _previous_state = _current_state;
             _current_state = State::Walking;
-
-            /* starting with the half step */
-//            updateStep();
-
             break;
 
         case State::Stopping :
@@ -582,18 +580,16 @@ bool Walker::step_machine(double time)
         case State::LastStep :
             _step_counter++;
 
-//            _com_pos_start = _com_pos_goal;
-
             /* TODO 'started' flag set to False */
             _started = 0;
 
             /* TODO WHY ??*/
-            _q_min = _q_fake;
+//            _q_min = _q_fake;
 
             _previous_state = _current_state;
             _current_state = State::Idle;
             _steep_q = 0;
-//            resetter();
+//            TODO resetter();
             break;
         }
         break;
@@ -635,10 +631,8 @@ bool Walker::step_machine(double time)
 
         case State::Walking :
         case State::Starting :
-            //                    _end_walk = time; /*probably not used*/
             _previous_state = _current_state;
-            _current_state = State::Stopping; //replan as soon as I get the message?
-//            updateStep();
+            _current_state = State::Stopping; // TODO replan as soon as I get the message?
             break;
 
         case State::Stopping :
@@ -657,7 +651,6 @@ bool Walker::step_machine(double time)
         switch (_current_state)
         {
         case State::Idle :
-//            updateStep();
             break;
         default :
             break;

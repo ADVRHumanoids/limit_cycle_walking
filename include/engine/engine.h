@@ -32,7 +32,8 @@ public:
     bool compute(double time,
                  const mdof::StepState &state,
                  Eigen::Vector3d& delta_com,
-                 Eigen::Vector3d& delta_foot_tot);
+                 Eigen::Vector3d& delta_foot_tot,
+                 Eigen::Vector3d& delta_com_tot);
 
     void log(std::string name, XBot::MatLogger::Ptr logger);
 
