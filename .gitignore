@@ -3,4 +3,5 @@ slprj/*
 *.slx
 *.slxc
 *.kdev4
+CMakeLists.txt.user
 .kdev4/
