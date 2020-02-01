@@ -24,41 +24,23 @@ public:
 
     SagittalPlane(double dt);
 
-    void update(double q,
-                double q_min,
-                double q_max,
-                double distance_com_ankle);
+    bool update(double q,
+                 double distance_com_ankle);
 
     double getDeltaCom(){return _delta_com;}
-    
-    double getDeltaComTot() {return _disp_com;}
-    double getDeltaFootTot() {return _disp_foot;}
+    double getDeltaFoot() {return _delta_foot;}
 
     void log(std::string name, XBot::MatLogger::Ptr logger);
 
 private:
-    
-    
-    bool computeCom(double q,
-                      double distance_com_ankle,
-                      double& delta_com);
-
-    bool computeStep(double q_min,
-                     double q_max,
-                     double distance_com_ankle,
-                     double& disp_com,
-                     double& disp_foot);
 
     double _q;
 
-    /* incremental displacement of com */
+    /* displacement of com */
     double _delta_com;
     
-    /* total displacement of com */
-    double _disp_com;
-    
-    /* total displacement of foot */
-    double _disp_foot;
+    /* displacement of foot */
+    double _delta_foot;
 
     /* dt */
     double _dt;

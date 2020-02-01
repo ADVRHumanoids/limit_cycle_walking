@@ -161,6 +161,8 @@ private:
     double _height_com;
 
     bool _disable_step;
+
+    bool _update_step;
     /* parameters for the robot */
     mdof::StepState _step;
     std::shared_ptr<Param> _param;

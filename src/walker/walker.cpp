@@ -27,6 +27,7 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
     _step_clearance(0),
     _zmp_middle(0),
     _disable_step(false),
+    _update_step(false),
     _param(par)
 {
     _com_pos_start.setZero();
@@ -312,15 +313,28 @@ bool Walker::update(double time,
     Eigen::Vector3d delta_com_tot;
 
     /* compute com and foot displacement */
-    _engine->compute(time, _step, delta_com, delta_foot_tot, delta_com_tot);
+    _engine->computeCom(time, _step, delta_com);
 
+    if (_update_step)
+    {
+        Eigen::Vector3d delta_com_tot;
+        Eigen::Vector3d delta_foot_tot;
+
+        _engine->computeStep(time, _step, delta_foot_tot, delta_com_tot);
+
+        delta_com_tot.head(2) = rot2.toRotationMatrix() * delta_com_tot.head(2);
+        _com_pos_goal = _com_pos_start + delta_com_tot;
+
+        delta_foot_tot.head(2) = rot2.toRotationMatrix() * delta_foot_tot.head(2);
+        _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + delta_foot_tot;
+        _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+
+        /* burn update_step */
+        _update_step = false;
+    }
 
     /* compute com trajectory and rotate if needed */
     delta_com.head(2) = rot2.toRotationMatrix() * delta_com.head(2);
-
-    /* update com pos goal THIS IS NECESSARY ONLY WHEN NEW STEP IS ISSUED */
-    delta_com_tot.head(2) = rot2.toRotationMatrix() * delta_com_tot.head(2);
-    _com_pos_goal = _com_pos_start + delta_com_tot;
 
     Eigen::Vector3d com_ref;
     com_ref = _com_pos_start + delta_com;
@@ -329,14 +343,7 @@ bool Walker::update(double time,
 //    com_ref(1) = delta_com(1);
 //    com_ref(2) = _com_pos_start(2) + delta_com(2);
 
-
-    /*compute feet trajectories and rotate if needed */
-
-    /* update foot pos goal THIS IS NECESSARY ONLY WHEN NEW STEP IS ISSUED */
-    delta_foot_tot.head(2) = rot2.toRotationMatrix() * delta_foot_tot.head(2);
-    _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + delta_foot_tot;
-    _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
-
+    /*compute feet trajectories and rotate if needed */   
     std::array<Eigen::Affine3d, 2> feet_ref;
     feet_ref[1 - _current_swing_leg] = _foot_pos_start[1 - _current_swing_leg];
 
@@ -561,18 +568,21 @@ bool Walker::step_machine(double time)
 
         case State::Walking :
             _step_counter++;
+            _update_step = true;
             break;
 
         case State::Starting :
             _step_counter++;
             _previous_state = _current_state;
             _current_state = State::Walking;
+            _update_step = true;
             break;
 
         case State::Stopping :
             _step_counter++;
             _previous_state = _current_state;
             _current_state = State::LastStep;
+            _update_step = true;
 
             /* TODO set q_max to zero (is this enough to make it half step?)*/
             _q_max_previous = _q_max;
@@ -584,9 +594,6 @@ bool Walker::step_machine(double time)
 
             /* TODO 'started' flag set to False */
             _started = 0;
-
-            /* TODO WHY ??*/
-//            _q_min = _q_fake;
 
             _previous_state = _current_state;
             _current_state = State::Idle;

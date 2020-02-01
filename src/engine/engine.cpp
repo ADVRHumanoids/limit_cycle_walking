@@ -32,11 +32,9 @@ bool Engine::initialize(const mdof::StepState &state)
     return true;
 }
 
-bool Engine::compute(double time,
+bool Engine::computeCom(double time,
                      const mdof::StepState &state,
-                     Eigen::Vector3d& delta_com,
-                     Eigen::Vector3d& delta_foot_tot,
-                     Eigen::Vector3d& delta_com_tot)
+                     Eigen::Vector3d& delta_com)
 {   
     double q = state.q;
     double q_fake = state.q_fake;
@@ -58,7 +56,7 @@ bool Engine::compute(double time,
 
     /* compute stepping motion */
     /* STILL TODO the update of sag with real q*/
-    _sag->update(q_fake, q_min, q_max, distance_ankle_com);
+    _sag->update(q_fake, distance_ankle_com);
 
     /* here can be put also middle_zmp and offset_zmp */
     if (!disable_step)
@@ -68,10 +66,6 @@ bool Engine::compute(double time,
         delta_com(0) = _sag->getDeltaCom();
         delta_com(1) = _lat->getDeltaCom();
         delta_com(2) = 0;
-
-        delta_foot_tot(0) = _sag->getDeltaFootTot();
-        delta_foot_tot(1) = 0;
-        delta_foot_tot(2) = 0;
     }
     else
     {
@@ -80,13 +74,42 @@ bool Engine::compute(double time,
         delta_com(0) = 0;
         delta_com(1) = _lat->getDeltaCom();
         delta_com(2) = 0;
+    }
+    return true;
+}
 
+bool Engine::computeStep(double time, const mdof::StepState &state, Eigen::Vector3d &delta_foot_tot, Eigen::Vector3d &delta_com_tot)
+{
+
+    double q_min = state.q_min;
+    double q_max = state.q_max;
+
+    bool disable_step = state.disable_step;
+    /* height of com from ankle */
+    double distance_ankle_com = state.distance_ankle_com;
+
+
+
+    /* compute stepping motion */
+    /* STILL TODO the update of sag with real q*/
+    double delta_q = q_max - q_min;
+    _sag->update(delta_q, distance_ankle_com);
+
+    /* here can be put also middle_zmp and offset_zmp */
+    if (!disable_step)
+    {
+        delta_foot_tot(0) = _sag->getDeltaFoot();
+        delta_foot_tot(1) = 0;
+        delta_foot_tot(2) = 0;
+    }
+    else
+    {
         delta_foot_tot(0) = 0;
         delta_foot_tot(1) = 0;
         delta_foot_tot(2) = 0;
     }
 
-    delta_com_tot(0) = _sag->getDeltaComTot();
+    delta_com_tot(0) = _sag->getDeltaCom();
     delta_com_tot(1) = 0;
     delta_com_tot(2) = 0;
 
