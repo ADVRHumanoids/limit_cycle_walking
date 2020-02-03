@@ -38,7 +38,6 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
 
     _foot_pos_goal[0].matrix().setZero();
     _foot_pos_goal[1].matrix().setZero();
-
     _waist_pos_start.matrix().setZero();
     _waist_pos_goal.matrix().setZero();
 }
@@ -50,9 +49,10 @@ bool Walker::init(const mdof::RobotState &state)
     _zmp_middle = (state.world_T_foot[0].translation()(1) + state.world_T_foot[1].translation()(1)) /2;
     _delay_start = 1.5;
     _com_pos_start = state.world_T_com;
+    _com_pos_goal = state.world_T_com;
     _step_duration = _param->getStepDuration();
     /* TODO _q depends on current _q_max, so I need to update _q_max before _q */
-    _q_max_previous = _param->getMaxInclination();
+    _q_max_previous = 0;
     _q_max = _param->getMaxInclination();
     _q = computeQ(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
     /* TODO this should be _q as starting, but since I am using a small hack for starting, I'm beginning from 0
@@ -161,9 +161,6 @@ bool Walker::setTheta(std::vector<double> theta)
 
 bool Walker::updateQMax(double time)
 {
-    /* TODO at init q_max is set from the param.
-     *
-     */
     /* update q_max */
     /* TODO update only if it started walking */
     if (_started == 1 && time < _t_start_walk + _delay_start)
@@ -173,12 +170,12 @@ bool Walker::updateQMax(double time)
 
     if (_q_buffer.empty())
     {
-        _q_max_previous = _q_max;
+//        _q_max_previous = _q_max;
         _q_max = _param->getMaxInclination();
     }
     else
     {
-        _q_max_previous = _q_max;
+//        _q_max_previous = _q_max;
         _q_max = _q_buffer.front();
         _q_buffer.pop_front();
     }
@@ -210,19 +207,19 @@ bool Walker::update(double time,
 {
 
     /* update _q_max */
-    updateQMax(time);
+//    updateQMax(time);
 
     /* update _q given the robot state */
     _q = computeQ(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
 
-    /*compute new q_steep for qFake */
-    _steep_q = _q_max - _q_min;
+    /*update step duration. Right now, it is constant, the first one given in the param */
+    _step_duration = _param->getStepDuration();
 
+    /*compute new q_steep for qFake */
+    _steep_q = (_q_max - _q_min)/ _step_duration;
 
     /* update _q_fake: this start computing at _t_start_walk + _delay_start*/
     computeQFake(time, _q, _q_min, _q_max, _steep_q, _started, _t_start_walk + _delay_start, _q_fake);
-
-
 
     /* update zmp values */
     _zmp_val_current = state.world_T_foot[_current_swing_leg].translation()(1);
@@ -231,8 +228,6 @@ bool Walker::update(double time,
     _zmp_val_next  = state.world_T_foot[1 - _current_swing_leg].translation()(1);
     _zmp_val_next = _zmp_val_next + ( ( (_zmp_val_next - _zmp_middle) > 0) - ( (_zmp_val_next - _zmp_middle) < 0) ) * _param->getZmpOffset();
 
-    /*update step duration. Right now, it is constant, the first one given in the param */
-    _step_duration = _param->getStepDuration();
 
     /* t_impact gets updated every time an impact occurs */
     _step_t_start = _t_impact;
@@ -317,6 +312,11 @@ bool Walker::update(double time,
 
     if (_update_step)
     {
+        if (_current_state != State::LastStep)
+        {
+            updateQMax(time);
+        }
+
         Eigen::Vector3d delta_com_tot;
         Eigen::Vector3d delta_foot_tot;
 
@@ -430,6 +430,7 @@ bool Walker::landingHandler(double time,
 
         // ---------------------------
         _q_min = - _q; /* HACK ALERT */
+        _q_max_previous = _q_max;
         // ---------------------------
 
         /* reset q_fake */
@@ -598,6 +599,7 @@ bool Walker::step_machine(double time)
             _previous_state = _current_state;
             _current_state = State::Idle;
             _steep_q = 0;
+            _q_max = _param->getMaxInclination();
 //            TODO resetter();
             break;
         }
@@ -613,8 +615,8 @@ bool Walker::step_machine(double time)
             _current_state = State::Starting;
 
             /* put it somewhere else */
-            _q_max_previous = _q_max;
-            _q_max = _param->getMaxInclination();
+//            _q_max_previous = _q_max;
+//            _q_max = _param->getMaxInclination();
             _step_counter++;
             _cycle_counter++;
 
@@ -623,6 +625,7 @@ bool Walker::step_machine(double time)
 
             _t_start_walk = time;
 
+            _update_step = 1;
             break;
 
         default : /*std::cout << "Ignored starting event. Already WALKING" << std::endl; */
@@ -692,6 +695,7 @@ void Walker::log(std::string name, XBot::MatLogger::Ptr logger)
     logger->add(name + "_q", _q);
     logger->add(name + "_q_min", _q_min);
     logger->add(name + "_q_max", _q_max);
+    logger->add(name + "_q_max_previous", _q_max_previous);
     logger->add(name + "_q_fake", _q_fake);
     logger->add(name + "_dt", _dt);
     logger->add(name + "_current_swing_leg", _current_swing_leg);
