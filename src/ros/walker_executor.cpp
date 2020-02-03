@@ -220,7 +220,7 @@ void WalkerExecutor::init_load_robot_state()
 void WalkerExecutor::init_load_cartesian_interface()
 {
     std::cout << _path_to_cfg << std::endl;
-    YAML::Node ik_yaml = YAML::LoadFile(_path_to_cfg + "comanPlus_VC_stack.yaml");
+    YAML::Node ik_yaml = YAML::LoadFile(_path_to_cfg + "cartesio_stack.yaml");
 
     XBot::Cartesian::ProblemDescription ik_problem(ik_yaml, _model);
     _ci = std::make_shared<XBot::Cartesian::CartesianInterfaceImpl>(_model, ik_problem);
