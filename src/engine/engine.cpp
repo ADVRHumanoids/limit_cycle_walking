@@ -96,18 +96,18 @@ bool Engine::computeStep(double time, const mdof::StepState &state, Eigen::Vecto
     _sag->update(delta_q, distance_ankle_com);
 
     /* here can be put also middle_zmp and offset_zmp */
-    if (!disable_step)
-    {
+//    if (!disable_step)
+//    {
         delta_foot_tot(0) = _sag->getDeltaFoot();
         delta_foot_tot(1) = 0;
         delta_foot_tot(2) = 0;
-    }
-    else
-    {
-        delta_foot_tot(0) = 0;
-        delta_foot_tot(1) = 0;
-        delta_foot_tot(2) = 0;
-    }
+//    }
+//    else
+//    {
+//        delta_foot_tot(0) = 0;
+//        delta_foot_tot(1) = 0;
+//        delta_foot_tot(2) = 0;
+//    }
 
     delta_com_tot(0) = _sag->getDeltaCom();
     delta_com_tot(1) = 0;
