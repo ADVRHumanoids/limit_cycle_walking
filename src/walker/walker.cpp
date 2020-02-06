@@ -38,6 +38,7 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
 
     _foot_pos_goal[0].matrix().setZero();
     _foot_pos_goal[1].matrix().setZero();
+
     _waist_pos_start.matrix().setZero();
     _waist_pos_goal.matrix().setZero();
 }
@@ -60,10 +61,10 @@ bool Walker::init(const mdof::RobotState &state)
      */
     _q_min = _q;
 
-    _foot_pos_start[0] = state.world_T_foot[0];
-    _foot_pos_start[1] = state.world_T_foot[1];
-
+    _foot_pos_start = state.world_T_foot;
     _foot_pos_goal = _foot_pos_start;
+
+
 
     /* initialize the Engine of Walker */
     Engine::Options eng_opt;
@@ -206,7 +207,7 @@ bool Walker::update(double time,
                          mdof::RobotState &ref)
 {
 
-    /* update _q_max */
+    /* update _q_max TODO here nope! */
 //    updateQMax(time);
 
     /* update _q given the robot state */
@@ -218,7 +219,7 @@ bool Walker::update(double time,
     /*compute new q_steep for qFake */
     _steep_q = (_q_max - _q_min)/ _step_duration;
 
-    /* update _q_fake: this start computing at _t_start_walk + _delay_start*/
+    /* update _q_fake: this start computing at _t_start_walk + _delay_start */
     computeQFake(time, _q, _q_min, _q_max, _steep_q, _started, _t_start_walk + _delay_start, _q_fake);
 
     /* update zmp values */
@@ -228,14 +229,7 @@ bool Walker::update(double time,
     _zmp_val_next  = state.world_T_foot[1 - _current_swing_leg].translation()(1);
     _zmp_val_next = _zmp_val_next + ( ( (_zmp_val_next - _zmp_middle) > 0) - ( (_zmp_val_next - _zmp_middle) < 0) ) * _param->getZmpOffset();
 
-
-    /* t_impact gets updated every time an impact occurs */
-    _step_t_start = _t_impact;
-
-    /* which is also t_impact */
-     _step_t_end = _step_t_start + _step_duration;
-
-
+     /* TODO HACK this is disabling step while keeping lat com moving */
     _disable_step = false;
 
     if (!_started == 1)
@@ -247,16 +241,17 @@ bool Walker::update(double time,
         _zmp_val_next = _zmp_middle;
     }
 
+    /* this happen after start command is issued but before _delay_start */
     if (_started == 1 && time >= _t_start_walk && time < _t_start_walk + _delay_start)
     {
         _disable_step = true;
         /* TODO HACK to fake the starting lateral swing, since not q nor q_fake are actually moving in this period
-         * step_start and step_end goes into step, I'm using them to move the window
+         * hence I disable the step and I only go forward with time
+         * _t_min and _t_max goes into step, I'm using them to move the window
          */
         _t_min = _t_start_walk;
         _t_max = _t_start_walk + _delay_start;
-        /* delay -first- step to let the com swing laterally */
-        _step_t_start = _t_start_walk + _delay_start;
+
         /* if walking is started, zmp current is still in the middle, but next zmp is the first step */
         _zmp_val_current = _zmp_middle;
         /* TODO could be wrong? */
@@ -268,7 +263,6 @@ bool Walker::update(double time,
         /* for the ending motion of the last step */
         _zmp_val_next = _zmp_middle;
     }
-
     /* -- until here everything is updated -- */
 
     /* this takes:
@@ -294,6 +288,8 @@ bool Walker::update(double time,
 
 
 
+
+
     Eigen::Rotation2Dd rot2(_theta);
     /* TODO are these constant? */
     _distance_ankle_com = state.ankle_T_com[1 - _current_swing_leg].translation().z();
@@ -309,6 +305,14 @@ bool Walker::update(double time,
 
     /* compute com and foot displacement */
     _engine->computeCom(time, _step, delta_com);
+
+    /* this basically UPDATE the step. In particular:
+     * calls _engine->computeStep which needs:
+     * - step
+     * and gives:
+     * - total disp of com
+     * - total disp of foot
+     */
 
     if (_update_step)
     {
@@ -329,6 +333,19 @@ bool Walker::update(double time,
         _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + delta_foot_tot;
         _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
+        /* TODO shouldn't this go inside update? ONLY UPDATED WHEN UPDATE_STEP IS CALLED */
+        /* t_impact gets updated every time an impact occurs */
+        /* delay -first- step to let the com swing laterally */
+        if (_started == 1 && time >= _t_start_walk && time < _t_start_walk + _delay_start)
+        {
+            _step_t_start = _t_start_walk + _delay_start;
+        }
+        else
+        {
+            _step_t_start = _t_impact;
+        }
+        _step_t_end = _step_t_start + _step_duration;
+
         /* burn update_step */
         _update_step = false;
     }
@@ -347,7 +364,7 @@ bool Walker::update(double time,
     std::array<Eigen::Affine3d, 2> feet_ref;
     feet_ref[1 - _current_swing_leg] = _foot_pos_start[1 - _current_swing_leg];
 
-    /* here the feet trajectory should be a function of q, not t */
+    /* TODO here the feet trajectory should be a function of q, not t */
     feet_ref[_current_swing_leg] = mdof::computeTrajectory(_foot_pos_start[_current_swing_leg],
                                                            _foot_pos_goal[_current_swing_leg],
                                                            _step_clearance,
