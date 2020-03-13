@@ -23,10 +23,10 @@ WalkerExecutor::WalkerExecutor() :
     init_load_cartesian_interface();
     /* init walker */
     init_load_walker();
-    /* homing of the robot */
-    homing();
     /* get state of the robot */
     init_load_robot_state();
+    /* homing of the robot */
+    homing();
     /* initialize walker with current state of the robot */
     init_initialize_walker();
 }
@@ -73,6 +73,8 @@ void WalkerExecutor::run()
     _time += _period;
 
     log(_logger);
+    _set_qmax_flag = 0;
+    _set_theta_flag = 0;
 }
 
 bool WalkerExecutor::homing()
@@ -104,6 +106,10 @@ bool WalkerExecutor::homing()
        std::cout << "Task is reaching.." << std::endl;
    }
 
+   /* update state */
+   _state = _ref;
+
+
    return true;
 }
 
@@ -117,6 +123,8 @@ void WalkerExecutor::log(XBot::MatLogger::Ptr logger)
     logger->add("q_dot", _qdot);
     logger->add("q_ddot", _qddot);
     logger->add("time", _time);
+    logger->add("set_qmax_flag", _set_qmax_flag);
+    logger->add("set_theta_flag", _set_theta_flag);
 }
 
 WalkerExecutor::~WalkerExecutor()
@@ -248,13 +256,13 @@ void WalkerExecutor::init_initialize_walker()
 
 void WalkerExecutor::init_services()
 {
-    _run_walker_srv = _nh.advertiseService("run_walker", &WalkerExecutor::run_walker_service, this);
+    _run_walker_srv = _nh.advertiseService("run", &WalkerExecutor::run_service, this);
     _set_q_max_cmd_srv = _nh.advertiseService("set_qmax", &WalkerExecutor::set_qmax_service, this);
     _set_theta_cmd_srv = _nh.advertiseService("set_theta", &WalkerExecutor::set_theta_service, this);
     _set_cmd_srv = _nh.advertiseService("set_cmd", &WalkerExecutor::set_cmd_service, this);
 }
 
-bool WalkerExecutor::run_walker_service(std_srvs::SetBoolRequest &req,
+bool WalkerExecutor::run_service(std_srvs::SetBoolRequest &req,
                                          std_srvs::SetBoolResponse &res)
 {
     if (req.data)
@@ -277,6 +285,7 @@ bool WalkerExecutor::run_walker_service(std_srvs::SetBoolRequest &req,
 bool WalkerExecutor::set_qmax_service(limit_cycle_walking::SetCommandsRequest &req,
                                        limit_cycle_walking::SetCommandsResponse &res)
 {
+    _set_qmax_flag = 1;
     if (!req.q_max.empty())
     {
         std::cout << "new 'q_max' received: " << std::endl;
@@ -299,6 +308,7 @@ bool WalkerExecutor::set_qmax_service(limit_cycle_walking::SetCommandsRequest &r
 bool WalkerExecutor::set_theta_service(limit_cycle_walking::SetCommandsRequest &req,
                                         limit_cycle_walking::SetCommandsResponse &res)
 {
+    _set_theta_flag = 1;
     if (!req.theta.empty())
     {
         std::cout << "new 'theta' received: " << std::endl;

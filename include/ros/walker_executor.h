@@ -43,7 +43,7 @@ private:
     void init_initialize_walker();
 
 
-    bool run_walker_service(std_srvs::SetBoolRequest& req,
+    bool run_service(std_srvs::SetBoolRequest& req,
                     std_srvs::SetBoolResponse& res);
 
     /* TODO maybe doing these as messages ??*/
@@ -81,6 +81,8 @@ private:
     XBot::MatLogger::Ptr _logger;
 
     double _period, _time;
+
+    bool _set_theta_flag, _set_qmax_flag;
 };
 
 #endif // WALKER_ROS_H
