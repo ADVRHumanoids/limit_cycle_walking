@@ -77,6 +77,8 @@ private:
                   std::array<Eigen::Affine3d, 2> ankle_T_com);
 
     bool updateQMax(double time);
+    bool updateTheta(double time);
+
     bool updateStep();
 
 //    bool resetter();
@@ -157,12 +159,15 @@ private:
     double _zmp_val_current;
     double _zmp_val_next;
 
+    double _zmp_val_initial_left, _zmp_val_initial_right;
+
     double _distance_ankle_com;
     double _height_com;
 
     bool _disable_step;
 
     bool _update_step;
+
     /* parameters for the robot */
     mdof::StepState _step;
     std::shared_ptr<Param> _param;

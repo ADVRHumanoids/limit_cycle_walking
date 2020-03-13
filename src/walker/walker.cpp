@@ -45,13 +45,15 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
 
 bool Walker::init(const mdof::RobotState &state)
 {
+    std::cout << "Initialization of Walker... " << std::endl;
+
     _terrain_height = state.world_T_foot[_current_swing_leg].translation()(2);
     _current_swing_leg = _param->getFirstSideStep();
     _zmp_middle = (state.world_T_foot[0].translation()(1) + state.world_T_foot[1].translation()(1)) /2;
-    _delay_start = 1.5;
     _com_pos_start = state.world_T_com;
     _com_pos_goal = state.world_T_com;
     _step_duration = _param->getStepDuration();
+    _delay_start = _step_duration;
     /* TODO _q depends on current _q_max, so I need to update _q_max before _q */
     _q_max_previous = 0;
     _q_max = _param->getMaxInclination();
@@ -88,9 +90,14 @@ bool Walker::init(const mdof::RobotState &state)
     _zmp_val_next = state.world_T_foot[1 - _current_swing_leg].translation()[1];
     _zmp_val_next = _zmp_val_next + ( ( (_zmp_val_next - _zmp_middle) > 0) - ( (_zmp_val_next - _zmp_middle) < 0) ) * _param->getZmpOffset();
 
+    _zmp_val_initial_left = state.world_T_foot[0].translation()[1];
+    _zmp_val_initial_right = state.world_T_foot[1].translation()[1];
+
     updateStep();
 
     _engine->initialize(_step);
+
+    std::cout << "Ready." << std::endl;
     /* TODO sanity check? */
     return true;
 }
@@ -98,6 +105,9 @@ bool Walker::init(const mdof::RobotState &state)
 bool Walker::homing(const mdof::RobotState &state,
                     mdof::RobotState &ref)
 {
+    /* intialize ref with state*/
+    ref = state;
+
     /* com homing  */
     Eigen::Vector3d com = state.world_T_com;
 
@@ -183,6 +193,30 @@ bool Walker::updateQMax(double time)
     return true;
 }
 
+bool Walker::updateTheta(double time)
+{
+    /* update q_max */
+    /* TODO update only if it started walking */
+    if (_started == 1 && time < _t_start_walk + _delay_start)
+    {
+        return false;
+    }
+
+    if (_theta_buffer.empty())
+    {
+//        _q_max_previous = _q_max;
+        _theta = 0;
+    }
+    else
+    {
+//        _q_max_previous = _q_max;
+        _theta = _theta_buffer.front();
+        _theta_buffer.pop_front();
+    }
+    return true;
+}
+
+
 bool Walker::updateStep()
 {
     _step.q = _q;
@@ -223,14 +257,56 @@ bool Walker::update(double time,
     computeQFake(time, _q, _q_min, _q_max, _steep_q, _started, _t_start_walk + _delay_start, _q_fake);
 
     /* update zmp values */
-    _zmp_val_current = state.world_T_foot[_current_swing_leg].translation()(1);
-    _zmp_val_current = _zmp_val_current + ( ( (_zmp_val_current - _zmp_middle) > 0) - ( (_zmp_val_current - _zmp_middle) < 0) ) * _param->getZmpOffset();
+    if (_current_swing_leg == 0)
+    {
+        _zmp_val_current = _zmp_val_initial_left;
+        _zmp_val_next = _zmp_val_initial_right;
+    }
+    else if (_current_swing_leg == 1)
+    {
+        _zmp_val_current = _zmp_val_initial_right;
+        _zmp_val_next = _zmp_val_initial_left;
+    }
 
-    _zmp_val_next  = state.world_T_foot[1 - _current_swing_leg].translation()(1);
-    _zmp_val_next = _zmp_val_next + ( ( (_zmp_val_next - _zmp_middle) > 0) - ( (_zmp_val_next - _zmp_middle) < 0) ) * _param->getZmpOffset();
+//    _zmp_val_current = state.world_T_foot[_current_swing_leg].translation()(1);
+//    _zmp_val_current = _zmp_val_current + ( ( (_zmp_val_current - _zmp_middle) > 0) - ( (_zmp_val_current - _zmp_middle) < 0) ) * _param->getZmpOffset();
 
-     /* TODO HACK this is disabling step while keeping lat com moving */
+//    _zmp_val_next = state.world_T_foot[1 - _current_swing_leg].translation()(1);
+//    _zmp_val_next = _zmp_val_next + ( ( (_zmp_val_next - _zmp_middle) > 0) - ( (_zmp_val_next - _zmp_middle) < 0) ) * _param->getZmpOffset();
+
+    /* TODO HACK this is disabling step while keeping lat com moving */
     _disable_step = false;
+
+
+    /* -- until here everything is updated -- */
+    if (_current_state == State::LastStep)
+    {
+        /* for the ending motion of the last step */
+        /* TODO put here for zeroing zmp afterlast step */
+        _zmp_val_next = _zmp_middle;
+    }
+    /* this takes:
+     * time
+     * q
+     * q_min
+     * q_max
+     * terrain_heigth
+     */
+    /* this changes:
+     * q_min
+     * com_start
+     * q_fake
+     */
+    landingHandler(time, state);
+
+    /* this changes:
+     * q_max
+     * q_min
+     * q_steep
+     */
+    step_machine(time);
+
+
 
     if (!_started == 1)
     {
@@ -255,48 +331,38 @@ bool Walker::update(double time,
         /* if walking is started, zmp current is still in the middle, but next zmp is the first step */
         _zmp_val_current = _zmp_middle;
         /* TODO could be wrong? */
-        _zmp_val_next = state.world_T_foot[_current_swing_leg].translation()(1);
+
+        if (_current_swing_leg == 0)
+        {
+            _zmp_val_next = _zmp_val_initial_left;
+        }
+        else if (_current_swing_leg == 1)
+        {
+            _zmp_val_next = _zmp_val_initial_right;
+        }
+//        _zmp_val_next = state.world_T_foot[_current_swing_leg].translation()(1);
     }
 
-    if (_current_state == State::LastStep)
-    {
-        /* for the ending motion of the last step */
-        _zmp_val_next = _zmp_middle;
-    }
-    /* -- until here everything is updated -- */
-
-    /* this takes:
-     * time
-     * q
-     * q_min
-     * q_max
-     * terrain_heigth
-     */
-    /* this changes:
-     * q_min
-     * com_start
-     * q_fake
-     */
-    landingHandler(time, state);
-
-    /* this changes:
-     * q_max
-     * q_min
-     * q_steep
-     */
-    step_machine(time);
-
-
-
-
-
-    Eigen::Rotation2Dd rot2(_theta);
     /* TODO are these constant? */
     _distance_ankle_com = state.ankle_T_com[1 - _current_swing_leg].translation().z();
     _height_com = fabs(state.world_T_com[2] - state.world_T_foot[_current_swing_leg].translation()[2]);
 
+    if (_update_step)
+    {
+        if (_current_state != State::LastStep)
+        {
+            updateQMax(time);
+        }
+    }
     /* TODO do something intelligent with this */
     /* FILL STEP STATE */
+    /* this basically UPDATE the step. In particular:
+     * calls _engine->computeStep which needs:
+     * - step
+     * and gives:
+     * - total disp of com
+     * - total disp of foot
+     */
     updateStep();
 
     Eigen::Vector3d delta_com;
@@ -306,20 +372,11 @@ bool Walker::update(double time,
     /* compute com and foot displacement */
     _engine->computeCom(time, _step, delta_com);
 
-    /* this basically UPDATE the step. In particular:
-     * calls _engine->computeStep which needs:
-     * - step
-     * and gives:
-     * - total disp of com
-     * - total disp of foot
-     */
 
     if (_update_step)
     {
-        if (_current_state != State::LastStep)
-        {
-            updateQMax(time);
-        }
+        updateTheta(time);
+        Eigen::Rotation2Dd rot2(_theta);
 
         Eigen::Vector3d delta_com_tot;
         Eigen::Vector3d delta_foot_tot;
@@ -333,7 +390,6 @@ bool Walker::update(double time,
         _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + delta_foot_tot;
         _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
-        /* TODO shouldn't this go inside update? ONLY UPDATED WHEN UPDATE_STEP IS CALLED */
         /* t_impact gets updated every time an impact occurs */
         /* delay -first- step to let the com swing laterally */
         if (_started == 1 && time >= _t_start_walk && time < _t_start_walk + _delay_start)
@@ -350,6 +406,7 @@ bool Walker::update(double time,
         _update_step = false;
     }
 
+    Eigen::Rotation2Dd rot2(_theta);
     /* compute com trajectory and rotate if needed */
     delta_com.head(2) = rot2.toRotationMatrix() * delta_com.head(2);
 
@@ -531,7 +588,7 @@ double Walker::computeQ(bool current_swing_leg,
     double q;
     double offset_q;
     /* 2D rot matrix, theta in radian */
-    Eigen::Rotation2Dd rot2(theta);
+    Eigen::Rotation2Dd rot2(-theta);
 
 
     /* distance between current com and starting com (updated at each step) */
@@ -569,7 +626,7 @@ bool Walker::step_machine(double time)
      * steep_q
      */
 
-    std::cout << "Entering step machine with event: '" << _current_event << "' during state: '" << _current_state << "'" << std::endl;
+//    std::cout << "Entering step machine with event: '" << _current_event << "' during state: '" << _current_state << "'" << std::endl;
 
     if (_previous_event != _current_event)
     {
@@ -666,6 +723,7 @@ bool Walker::step_machine(double time)
 
         case State::Stopping :
             /* std::cout << "Ignored stopping event. Already STOPPING" << std::endl; */
+
             break;
 
         case State::LastStep :
