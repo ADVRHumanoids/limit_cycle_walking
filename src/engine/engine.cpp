@@ -33,8 +33,8 @@ bool Engine::initialize(const mdof::StepState &state)
 }
 
 bool Engine::computeCom(double time,
-                     const mdof::StepState &state,
-                     Eigen::Vector3d& delta_com)
+                        const mdof::StepState &state,
+                        Eigen::Vector3d& delta_com)
 {   
     double q = state.q;
     double q_fake = state.q_fake;
@@ -46,7 +46,7 @@ bool Engine::computeCom(double time,
     double t_max = state.t_max;
 
     /* for now it is not needed, but it will be if I put here the trajectory generation of step, which now is computed using cartesio */
-//    double step_clearing = state->step_clearance;
+    //    double step_clearing = state->step_clearance;
     double zmp_current = state.zmp_val_current;
     double zmp_next = state.zmp_val_next;
     /* height of com from ankle */
@@ -84,7 +84,7 @@ bool Engine::computeStep(double time, const mdof::StepState &state, Eigen::Vecto
     double q_min = state.q_min;
     double q_max = state.q_max;
 
-    bool disable_step = state.disable_step;
+    //    bool disable_step = state.disable_step;
     /* height of com from ankle */
     double distance_ankle_com = state.distance_ankle_com;
 
@@ -96,18 +96,18 @@ bool Engine::computeStep(double time, const mdof::StepState &state, Eigen::Vecto
     _sag->update(delta_q, distance_ankle_com);
 
     /* here can be put also middle_zmp and offset_zmp */
-//    if (!disable_step)
-//    {
-        delta_foot_tot(0) = _sag->getDeltaFoot();
-        delta_foot_tot(1) = 0;
-        delta_foot_tot(2) = 0;
-//    }
-//    else
-//    {
-//        delta_foot_tot(0) = 0;
-//        delta_foot_tot(1) = 0;
-//        delta_foot_tot(2) = 0;
-//    }
+    //    if (!disable_step)
+    //    {
+    delta_foot_tot(0) = _sag->getDeltaFoot();
+    delta_foot_tot(1) = 0;
+    delta_foot_tot(2) = 0;
+    //    }
+    //    else
+    //    {
+    //        delta_foot_tot(0) = 0;
+    //        delta_foot_tot(1) = 0;
+    //        delta_foot_tot(2) = 0;
+    //    }
 
     delta_com_tot(0) = _sag->getDeltaCom();
     delta_com_tot(1) = 0;
