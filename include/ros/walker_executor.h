@@ -82,7 +82,9 @@ private:
 
     double _period, _time;
 
-    bool _set_theta_flag, _set_qmax_flag;
+    bool _set_flag;
+
+    std::array<Eigen::Affine3d, 2> _world_T_ankle;
 };
 
 #endif // WALKER_ROS_H

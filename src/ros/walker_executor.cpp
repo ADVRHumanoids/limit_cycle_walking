@@ -13,6 +13,7 @@ WalkerExecutor::WalkerExecutor() :
 
     _time = 0;
     _period = 0.01;
+    _set_flag = 0;
     _path_to_cfg = WALKER_CONFIG_PATH;
 
     /* init ros stuff */
@@ -35,6 +36,8 @@ void WalkerExecutor::run()
 {
 
     ros::spinOnce();
+
+//    _robot->sense();
 
     /* update robot state */
     updateRobotState();
@@ -73,8 +76,7 @@ void WalkerExecutor::run()
     _time += _period;
 
     log(_logger);
-    _set_qmax_flag = 0;
-    _set_theta_flag = 0;
+    _set_flag = 0;
 }
 
 bool WalkerExecutor::homing()
@@ -122,9 +124,10 @@ void WalkerExecutor::log(XBot::MatLogger::Ptr logger)
     logger->add("q", _q);
     logger->add("q_dot", _qdot);
     logger->add("q_ddot", _qddot);
+    logger->add("l_ankle", _world_T_ankle[0].translation());
+    logger->add("r_ankle", _world_T_ankle[1].translation());
     logger->add("time", _time);
-    logger->add("set_qmax_flag", _set_qmax_flag);
-    logger->add("set_theta_flag", _set_theta_flag);
+    logger->add("set_flag", _set_flag);
 }
 
 WalkerExecutor::~WalkerExecutor()
@@ -143,17 +146,18 @@ bool WalkerExecutor::updateRobotState()
     _ci->getPoseReferenceRaw("Waist", _state.world_T_waist);
 
     /* from model */
-    std::array<Eigen::Affine3d, 2> world_T_ankle;
-    Eigen::Vector3d world_T_com;
+//    std::array<Eigen::Affine3d, 2> world_T_ankle;
+//    Eigen::Vector3d world_T_com;
 
-    _model->getPose("l_ankle", world_T_ankle[0]);
-    _model->getPose("r_ankle", world_T_ankle[1]);
+    _model->getPose("l_ankle", _world_T_ankle[0]);
+    _model->getPose("r_ankle", _world_T_ankle[1]);
+
 //    _model->getCOM(world_T_com);
 
-    _state.ankle_T_com[0].translation() = world_T_ankle[0].translation() - _state.world_T_com;
-    _state.ankle_T_com[0].linear() = world_T_ankle[0].linear();
-    _state.ankle_T_com[1].translation() = world_T_ankle[1].translation() - _state.world_T_com;
-    _state.ankle_T_com[1].linear() = world_T_ankle[1].linear();
+    _state.ankle_T_com[0].translation() = _world_T_ankle[0].translation() - _state.world_T_com;
+    _state.ankle_T_com[0].linear() = _world_T_ankle[0].linear();
+    _state.ankle_T_com[1].translation() = _world_T_ankle[1].translation() - _state.world_T_com;
+    _state.ankle_T_com[1].linear() = _world_T_ankle[1].linear();
 
     return true;
 }
@@ -172,7 +176,7 @@ void WalkerExecutor::init_load_model_and_robot()
     _q.resize(_model->getJointNum());
     _qdot = _q;
 
-    _model->getJointPosition( _q );
+    _model->getJointPosition(_q);
 
 //    XBot::JointNameMap joint_map;
 //    _model->getJointPosition(joint_map);
@@ -238,7 +242,6 @@ void WalkerExecutor::init_load_cartesian_interface()
     _ci->enableOtg(_period);
 }
 
-
 void WalkerExecutor::init_load_walker()
 {
     //_walker_par = std::make_shared<Walker::Param>(_nh);
@@ -257,13 +260,11 @@ void WalkerExecutor::init_initialize_walker()
 void WalkerExecutor::init_services()
 {
     _run_walker_srv = _nh.advertiseService("run", &WalkerExecutor::run_service, this);
-    _set_q_max_cmd_srv = _nh.advertiseService("set_qmax", &WalkerExecutor::set_qmax_service, this);
-    _set_theta_cmd_srv = _nh.advertiseService("set_theta", &WalkerExecutor::set_theta_service, this);
     _set_cmd_srv = _nh.advertiseService("set_cmd", &WalkerExecutor::set_cmd_service, this);
 }
 
 bool WalkerExecutor::run_service(std_srvs::SetBoolRequest &req,
-                                         std_srvs::SetBoolResponse &res)
+                                 std_srvs::SetBoolResponse &res)
 {
     if (req.data)
     {
@@ -282,10 +283,11 @@ bool WalkerExecutor::run_service(std_srvs::SetBoolRequest &req,
     return true;
 }
 
-bool WalkerExecutor::set_qmax_service(limit_cycle_walking::SetCommandsRequest &req,
-                                       limit_cycle_walking::SetCommandsResponse &res)
+bool WalkerExecutor::set_cmd_service(limit_cycle_walking::SetCommandsRequest &req,
+                                      limit_cycle_walking::SetCommandsResponse &res)
 {
-    _set_qmax_flag = 1;
+    _set_flag = 1;
+
     if (!req.q_max.empty())
     {
         std::cout << "new 'q_max' received: " << std::endl;
@@ -302,13 +304,7 @@ bool WalkerExecutor::set_qmax_service(limit_cycle_walking::SetCommandsRequest &r
         std::cout << "Empty 'q_max' command." << std::endl;
         res.success = false;
     }
-    return res.success;
-}
 
-bool WalkerExecutor::set_theta_service(limit_cycle_walking::SetCommandsRequest &req,
-                                        limit_cycle_walking::SetCommandsResponse &res)
-{
-    _set_theta_flag = 1;
     if (!req.theta.empty())
     {
         std::cout << "new 'theta' received: " << std::endl;
@@ -325,13 +321,24 @@ bool WalkerExecutor::set_theta_service(limit_cycle_walking::SetCommandsRequest &
         std::cout << "Empty 'theta' command." << std::endl;
         res.success = false;
     }
-    return res.success;
-}
 
-bool WalkerExecutor::set_cmd_service(limit_cycle_walking::SetCommandsRequest &req,
-                                      limit_cycle_walking::SetCommandsResponse &res)
-{
-    //    cmd_all
+    if (!req.phi.empty())
+    {
+        std::cout << "new 'phi' received: " << std::endl;
+        for (auto elem : req.phi)
+        {
+            std::cout << elem << ", ";
+        }
+        std::cout << std::endl;
+        _wlkr->setPhi(req.phi);
+        res.success = true;
+    }
+    else
+    {
+        std::cout << "Empty 'phi' command." << std::endl;
+        res.success = false;
+    }
+    return res.success;
 }
 
 bool WalkerExecutor::homing_service(std_srvs::SetBoolRequest& req,

@@ -25,9 +25,14 @@ public:
     /* parametrization a la Bennewitz */
     bool setStep(double delta_x, double delta_y, double delta_theta);
 
+    /* stride of the step */
     bool setQMax(std::vector<double> q_max);
+
+    /* heading (in rad) of the com */
     bool setTheta(std::vector<double> theta);
 
+    /* rotation (in rad )of foot and waist */
+    bool setPhi(std::vector<double> phi);
 
     bool update(double time,
                 const mdof::RobotState &state,
@@ -78,6 +83,7 @@ private:
 
     bool updateQMax(double time);
     bool updateTheta(double time);
+    bool updatePhi(double time);
 
     bool updateStep();
 
@@ -93,7 +99,7 @@ private:
 
     double _t_impact;
 
-    double _theta;
+    double _theta, _phi;
 
 
     double _time;
@@ -127,8 +133,7 @@ private:
     double _delay_start;
 
     /* buffer of commands for step */
-    std::deque<double> _q_buffer;
-    std::deque<double> _theta_buffer;
+    std::deque<double> _q_buffer, _theta_buffer, _phi_buffer;
 
     double _terrain_height;
 

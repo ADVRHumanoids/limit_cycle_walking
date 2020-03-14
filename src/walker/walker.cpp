@@ -170,6 +170,17 @@ bool Walker::setTheta(std::vector<double> theta)
     return true;
 }
 
+bool Walker::setPhi(std::vector<double> phi)
+{
+    /* sanity check? */
+    for (auto i : phi)
+    {
+        _phi_buffer.push_back(i);
+    }
+    /* TODO sanity check? */
+    return true;
+}
+
 bool Walker::updateQMax(double time)
 {
     /* update q_max */
@@ -195,8 +206,6 @@ bool Walker::updateQMax(double time)
 
 bool Walker::updateTheta(double time)
 {
-    /* update q_max */
-    /* TODO update only if it started walking */
     if (_started == 1 && time < _t_start_walk + _delay_start)
     {
         return false;
@@ -204,18 +213,34 @@ bool Walker::updateTheta(double time)
 
     if (_theta_buffer.empty())
     {
-//        _q_max_previous = _q_max;
         _theta = 0;
     }
     else
     {
-//        _q_max_previous = _q_max;
         _theta = _theta_buffer.front();
         _theta_buffer.pop_front();
     }
     return true;
 }
 
+bool Walker::updatePhi(double time)
+{
+    if (_started == 1 && time < _t_start_walk + _delay_start)
+    {
+        return false;
+    }
+
+    if (_phi_buffer.empty())
+    {
+        _phi = 0;
+    }
+    else
+    {
+        _phi = _phi_buffer.front();
+        _phi_buffer.pop_front();
+    }
+    return true;
+}
 
 bool Walker::updateStep()
 {
@@ -388,7 +413,7 @@ bool Walker::update(double time,
 
         delta_foot_tot.head(2) = rot2.toRotationMatrix() * delta_foot_tot.head(2);
         _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + delta_foot_tot;
-        _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+        _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_phi, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
         /* t_impact gets updated every time an impact occurs */
         /* delay -first- step to let the com swing laterally */
@@ -431,7 +456,7 @@ bool Walker::update(double time,
 
     /* rotate waist */
     Eigen::Affine3d waist_ref = _waist_pos_start;
-    waist_ref.linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+    waist_ref.linear() = (Eigen::AngleAxisd(_phi, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
     /* set RobotState ref*/
     ref.world_T_com = com_ref;
@@ -699,7 +724,7 @@ bool Walker::step_machine(double time)
 
             _t_start_walk = time;
 
-            _update_step = 1;
+            _update_step = true;
             break;
 
         default : /*std::cout << "Ignored starting event. Already WALKING" << std::endl; */
@@ -762,7 +787,7 @@ void Walker::log(std::string name, XBot::MatLogger::Ptr logger)
     logger->add(name + "_steep_q", _steep_q);
     logger->add(name + "_t_impact", _t_impact);
     logger->add(name + "_theta", _theta);
-    logger->add(name + "_t_impact", _t_impact);
+    logger->add(name + "_phi", _phi);
     logger->add(name + "_time", _time);
     logger->add(name + "_new_event_time", _new_event_time);
     logger->add(name + "_started_flag", _started);
