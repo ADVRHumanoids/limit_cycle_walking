@@ -10,48 +10,46 @@ struct StepState {
     typedef std::shared_ptr<StepState> Ptr;
 
     StepState() :
-        q(0),
-        q_fake(0),
-        q_min(0),
-        q_max(0),
-        step_duration(0),
+        q_sag(0),
+        q_lat(0),
+        q_sag_min(0),
+        q_sag_max(0),
+        q_lat_min(0),
+        q_lat_max(0),
+        duration_current(0),
+        duration_next(0),
         step_clearance(0),
-        zmp_val_current(0),
-        zmp_val_next(0),
         height_com(0),
-        distance_ankle_com(0),
-        disable_step(false),
-        t_min(0),
-        t_max(0)
+        distance_ankle_com(0)
     {
+        zmp_val_current.setZero();
+        zmp_val_next.setZero();
     }
 
-    double q, q_fake, q_min, q_max;
-    /* TODO these are needed if you want to use time instead of q to advance with the preview window */
-    double t_min, t_max;
+    double q_sag, q_sag_min, q_sag_max;
+    double q_lat, q_lat_min, q_lat_max;
 
-    double step_duration, step_clearance;
+    double step_clearance;
+    double duration_current, duration_next;
 
-    double zmp_val_current;
-    double zmp_val_next;
+    Eigen::VectorXd zmp_val_current;
+    Eigen::VectorXd zmp_val_next;
 
     double height_com;
     double distance_ankle_com;
 
-    bool disable_step;
-
     void log(std::string name, XBot::MatLogger::Ptr logger)
     {
-        logger->add(name + "_q", q);
-        logger->add(name + "_q_fake", q_fake);
-        logger->add(name + "_q_min", q_min);
-        logger->add(name + "_q_max", q_max);
-        logger->add(name + "_zmp_current", zmp_val_current);
-        logger->add(name + "_zmp_next", zmp_val_next);
+        logger->add(name + "_q_sag", q_sag);
+        logger->add(name + "_q_lat", q_lat);
+        logger->add(name + "_q_sag_min", q_sag_min);
+        logger->add(name + "_q_sag_max", q_sag_max);
+        logger->add(name + "_q_lat_min", q_lat_min);
+        logger->add(name + "_q_lat_max", q_lat_max);
+//        logger->add(name + "_zmp_current", zmp_val_current);
+//        logger->add(name + "_zmp_next", zmp_val_next);
         logger->add(name + "_height_com", height_com);
         logger->add(name + "_distance_ankle_com", distance_ankle_com);
-        logger->add(name + "_t_min", t_min);
-        logger->add(name + "_t_max", t_max);
     }
 
 };

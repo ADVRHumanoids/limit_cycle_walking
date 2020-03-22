@@ -53,9 +53,10 @@ public:
     void update(double q_sns,
                 double q_min,
                 double q_max,
-                double zmp_val_current,
-                double zmp_val_next,
-                double step_duration,
+                Eigen::VectorXd zmp_val_current,
+                Eigen::VectorXd zmp_val_next,
+                double duration_current,
+                double duration_next,
                 double zmp_middle  = 0., /* should be constant */
                 double offset = 0.);
 
@@ -74,9 +75,10 @@ private:
     void computePreviewWindow(double q_sns,
                               double q_min,
                               double q_max,
-                              double zmp_val_current,
-                              double zmp_val_next,
-                              double step_duration,
+                              Eigen::VectorXd zmp_val_current,
+                              Eigen::VectorXd zmp_val_next,
+                              double duration_current,
+                              double duration_next,
                               double zmp_middle,
                               double offset);
 
@@ -84,13 +86,13 @@ private:
 
     double _alpha_old, _alpha;
 
-    double _zmp_val;
+    Eigen::VectorXd _zmp_val_current, _zmp_val_next;
 
     bool _switch_side_zmp;
 
-    int _size_window, _size_step;
-
-    double _delay_start;
+    /* size of window, current phase and next phase and receding current phase*/
+    int _size_window;
+    int _size_current, _size_next, _receding_size;
 
     double _dt;
 

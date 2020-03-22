@@ -16,6 +16,7 @@ public:
 
     enum class Event { Impact = 0, Start = 1, Stop = 2, Empty = 3 }; /* some private (Impact), some public ? */
     enum class State { Idle = 0, Walking = 1, Starting = 2, Stopping = 4, LastStep = 5 };
+    enum class Stance { Double = 0, Single = 1 };
 
     bool init(const mdof::RobotState &state);
 
@@ -62,20 +63,22 @@ private:
                         double swing_leg_heigth,
                         double terrain_heigth);
 
+    bool doubleStance(double q_lat,
+                     double q_lat_min,
+                     double q_lat_max);
+
     bool landingHandler(double time,
                         const mdof::RobotState &state);
 
 
-    bool computeQFake(double time,
-               double q,
-               double q_min,
-               double q_max,
-               double steep_q,
-               bool started,
-               double start_walk,
-               double& q_fake);
+    bool updateQ(double time,
+                  double q_sag,
+                  double q_sag_min,
+                  double q_sag_max,
+                  double steep_q,
+                  double& q);
 
-    double computeQ(bool current_swing_leg,
+    double computeQSag(bool current_swing_leg,
                   double theta,
                   Eigen::Vector3d world_T_com,
                   Eigen::Vector3d world_T_com_start,
@@ -86,12 +89,12 @@ private:
     bool updatePhi(double time);
 
     bool updateStep();
-
+    bool updateZmp(mdof::RobotState state);
 //    bool resetter();
 
     State _current_state, _previous_state;
     Event _current_event, _previous_event;
-
+    Stance _current_stance;
     /* parameters of the stepping motion */
 
     int _step_counter, _cycle_counter;
@@ -112,16 +115,10 @@ private:
     double _t_start_walk;
 
     /* phase variable */
-    double _q;
-
-    /* current minimum q */
-    double _q_min;
-
-    /* current maximum q */
-    double _q_max, _q_max_previous;
-
-    /* fake q */
-    double _q_fake;
+    double _q, _q_min, _q_max;
+    double _q_sag, _q_sag_min, _q_sag_max;
+    double _q_lat, _q_lat_min, _q_lat_max;
+    double _q_sag_max_previous;
 
     /* dt of the control */
     double _dt;
@@ -157,21 +154,21 @@ private:
     double _t_min;
     double _t_max;
 
-    double _step_duration;
+    double _duration_current, _duration_next;
     double _step_clearance;
 
     double _zmp_middle;
-    double _zmp_val_current;
-    double _zmp_val_next;
+    Eigen::VectorXd _zmp_val_current;
+    Eigen::VectorXd _zmp_val_next;
 
     double _zmp_val_initial_left, _zmp_val_initial_right;
 
     double _distance_ankle_com;
     double _height_com;
 
-    bool _disable_step;
-
     bool _update_step;
+    bool _cmd_step;
+    bool _execute_step;
 
     /* parameters for the robot */
     mdof::StepState _step;

@@ -30,14 +30,8 @@ public:
     bool initialize(const mdof::StepState &state);
 
     bool computeCom(double time,
-                 const mdof::StepState &state,
-                 Eigen::Vector3d& delta_com);
-
-//    bool computeFoot(double time,
-//                 const mdof::StepState &state,
-//                 Eigen::Vector3d& delta_com,
-//                 Eigen::Vector3d& delta_foot_tot,
-//                 Eigen::Vector3d& delta_com_tot);
+                    const mdof::StepState &state,
+                    Eigen::Vector3d& delta_com);
 
     bool computeStep(double time,
                  const mdof::StepState &state,
