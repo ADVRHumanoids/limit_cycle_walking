@@ -14,7 +14,7 @@ public:
 
     Walker(double dt, std::shared_ptr<Param> par = getDefaultParam()); /* TODO */
 
-    enum class Event { Impact = 0, Start = 1, Stop = 2, Empty = 3 }; /* some private (Impact), some public ? */
+    enum class Event { SagReached = 0, LatReached = 1, Start = 2, Stop = 3, Empty = 4 }; /* some private (Impact), some public ? */
     enum class State { Idle = 0, Walking = 1, Starting = 2, Stopping = 4, LastStep = 5 };
     enum class Stance { Double = 0, Single = 1 };
 
@@ -56,20 +56,18 @@ private:
 
     bool step_machine(double time);
 
-    bool impactDetector(double time,
-                        double q,
-                        double q_min,
-                        double q_max,
-                        double swing_leg_heigth,
+    bool qDetector(double q,
+                   double q_min,
+                   double q_max);
+
+    bool impactDetector(double swing_leg_heigth,
                         double terrain_heigth);
 
-    bool doubleStance(double q_lat,
-                     double q_lat_min,
-                     double q_lat_max);
-
-    bool landingHandler(double time,
+    bool sagHandler(double time,
                         const mdof::RobotState &state);
 
+    bool latHandler(double time,
+                        const mdof::RobotState &state);
 
     bool updateQ(double time,
                   double q_sag,
@@ -181,7 +179,8 @@ private:
         switch (s)
         {
             case Event::Empty : return os << "empty";
-            case Event::Impact :  return os << "impact";
+            case Event::SagReached :  return os << "sagittal completed";
+            case Event::LatReached :  return os << "lateral completed";
             case Event::Start :  return os << "start";
             case Event::Stop :  return os << "stop";
             default : return os << "wrong event";

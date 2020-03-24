@@ -251,10 +251,10 @@ bool Walker::update(double time,
     /* update _q_sag */
     _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
 
-    landingHandler(time, state);
+    sagHandler(time, state);
 
     /* if impact, go to double stance */
-    if (_current_event == Event::Impact)
+    if (_current_event == Event::SagReached)
     {
         _current_stance = Stance::Double;
         std::cout << "State changed. Current stance: DOUBLE" << std::endl;
@@ -270,34 +270,28 @@ bool Walker::update(double time,
           _current_event = Event::Start;
         }
     }
-    else
+
+    /* if qDetector lat triggers, get from buffer if it's not empty and issue step */
+    if (qDetector(_q_lat, _q_lat_min, _q_lat_max))
     {
-        /* if in double stance, wait for double stance to finish,
-         * otherwise go to single stance, get from buffer if it's not empty and issue step */
-        if (doubleStance(_q_lat, _q_lat_min, _q_lat_max))
+        _current_event = Event::LatReached;
+        _q_lat = 0; /* RESET Q_LAT */
+
+        if (!_q_buffer.empty())
         {
-            /* nothing */
+            updateQMax(time);
+            _update_step = 1;
+            _execute_step = 1;
         }
         else
         {
-            _q_lat = 0; /* RESET Q_LAT */
-
-            if (!_q_buffer.empty())
-            {
-                updateQMax(time);
-                _update_step = 1;
-                _execute_step = 1;
-            }
-            else
-            {
-                _current_event = Event::Stop;
-            }
-
-            _current_stance = Stance::Single;
-            std::string side;
-            (_current_swing_leg) ? side = "LEFT" : side = "RIGHT";
-            std::cout << "State changed. Current stance: " << side << std::endl;
+            _current_event = Event::Stop;
         }
+
+        _current_stance = Stance::Single;
+        std::string side;
+        (_current_swing_leg) ? side = "LEFT" : side = "RIGHT";
+        std::cout << "State changed. Current stance: " << side << std::endl;
     }
 
     step_machine(time);
@@ -309,15 +303,23 @@ bool Walker::update(double time,
         {
             _durations.resize(2);
             _durations << _param->getStepDuration(), _param->getStepDuration();
+            if (_current_state == State::LastStep)
+            {
+                _durations.resize(3);
+                _durations << _param->getStepDuration(), _param->getStepDuration(), _param->getStepDuration();
+            }
         }
         else
         {
-
-
             if (_current_state == State::Starting)
             {
                 _durations.resize(3);
                 _durations << 4 * _param->getStepDuration(), _param->getStepDuration(), _param->getStepDuration();
+            }
+            else if (_current_state == State::LastStep)
+            {
+                _durations.resize(3);
+                _durations << _param->getStepDuration(), _param->getStepDuration(), _param->getStepDuration();
             }
             else
             {
@@ -325,6 +327,11 @@ bool Walker::update(double time,
                 _durations << _param->getStepDuration(), _param->getStepDuration();
             }
         }
+    }
+    else
+    {
+        _durations.resize(1);
+        _durations << _param->getStepDuration();
     }
     /* ---------------------------------- update q ----------------------------------------------*/
     if (_current_state != State::Idle)
@@ -378,14 +385,30 @@ bool Walker::update(double time,
             }
         }
     }
+    else
+    {
+        _zmp_vals.clear();
+        _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
+    }
     /* -- until here everything is updated -- */
     if (_current_state == State::LastStep)
     {
         /* for the ending motion of the last step */
         /* TODO put here for zeroing zmp afterlast step */
-        _zmp_vals.clear();
-        _zmp_vals.push_back((Eigen::MatrixXd(1,2) << state.world_T_foot[1 - _current_swing_leg].translation()(1), _zmp_middle).finished());
-        _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
+        if (_current_stance == Stance::Single)
+        {
+            _zmp_vals.clear();
+            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << state.world_T_foot[1 - _current_swing_leg].translation()(1)).finished());
+            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
+            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
+        }
+        else
+        {
+            _zmp_vals.clear();
+            _zmp_vals.push_back((Eigen::MatrixXd(1,2) << state.world_T_foot[_current_swing_leg].translation()(1),  state.world_T_foot[1 - _current_swing_leg].translation()(1)).finished());
+            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << state.world_T_foot[1 - _current_swing_leg].translation()(1)).finished());
+            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
+        }
     }
 
     updateStep();
@@ -466,17 +489,13 @@ std::shared_ptr<Walker::Param> Walker::getDefaultParam()
     return par;
 }
 
-bool Walker::impactDetector(double time,
-                            double q, /* TODO fake or not? */
-                            double q_min,
-                            double q_max,
-                            double swing_leg_heigth,
-                            double terrain_heigth)
+bool Walker::qDetector(double q, /* TODO fake or not? */
+                       double q_min,
+                       double q_max)
 {
     bool flag_q(false);
-    bool flag_step(false);
 
-    /* first condition of impact: q reaches q_max */
+    /* q reaches q_max */
     if (q_min <= q_max)
     {
         flag_q = (q >= q_max);
@@ -486,27 +505,31 @@ bool Walker::impactDetector(double time,
         flag_q = (q <= q_max);
     }
 
-    /* second condition of impact: sole impacts ground (a certain treshold is reached) */
-    flag_step = fabs(fabs(swing_leg_heigth) - fabs(terrain_heigth)) <= 1e-3;
-
-    if (flag_step && flag_q)
-    {
-        _t_impact = time;
-        return true;
-    }
-
-    return false;
+    return flag_q;
 }
 
+bool Walker::impactDetector(double swing_leg_heigth,
+                            double terrain_heigth)
+{
+    bool flag_step(false);
+    /* sole impacts ground (a certain treshold is reached) */
+    flag_step = fabs(fabs(swing_leg_heigth) - fabs(terrain_heigth)) <= 1e-3;
 
-bool Walker::landingHandler(double time,
+    return flag_step;
+
+}
+
+bool Walker::sagHandler(double time,
                             const mdof::RobotState &state)
 {
     /* TODO what if in IDLE? THINK ABOUT THIS */
-    if (impactDetector(time, _q_sag, _q_sag_min, _q_sag_max, state.world_T_foot[_current_swing_leg].translation()(2), _terrain_height))
+    if (qDetector( _q_sag, _q_sag_min, _q_sag_max) && impactDetector(state.world_T_foot[_current_swing_leg].translation()(2), _terrain_height))
     {
+
+        _t_impact = time;
+
         _previous_event = _current_event;
-        _current_event = Event::Impact;
+        _current_event = Event::SagReached;
 
         // ---------------------------
         _q_sag_min = - _q_sag; /* HACK ALERT */
@@ -535,29 +558,6 @@ bool Walker::landingHandler(double time,
     {
         return 0; // if impact detector does not detect an impact
     }
-}
-
-bool Walker::doubleStance(double q_lat,
-                         double q_lat_min,
-                         double q_lat_max)
-{
-        bool flag_q_lat(false);
-        /* first condition of impact: q reaches q_max */
-        if (q_lat_min <= q_lat_max)
-        {
-            flag_q_lat = (q_lat >= q_lat_max);
-        }
-        else if (q_lat_min > q_lat_max)
-        {
-            flag_q_lat = (q_lat <= q_lat_max);
-        }
-
-        if (flag_q_lat) //&& flag_zmp
-        {
-            return false;
-        }
-        return true;
-
 }
 
 bool Walker::updateQ(double time,
@@ -639,7 +639,7 @@ bool Walker::step_machine(double time)
 
     switch (_current_event)
     {
-    case Event::Impact :
+    case Event::SagReached :
         switch (_current_state)
         {
         case State::Idle :
@@ -672,9 +672,13 @@ bool Walker::step_machine(double time)
             _previous_state = _current_state;
             _current_state = State::LastStep;
 
-            /* TODO set q_max to zero (is this enough to make it half step?)*/
             _q_sag_max_previous = _q_sag_max;
-            _q_sag_max = 0;
+            if (_q_buffer.empty())
+            {
+                std::vector<double> new_q;
+                new_q.push_back(0);
+                setQMax(new_q);
+            }
             break;
 
         case State::LastStep :
@@ -797,8 +801,6 @@ void Walker::log(std::string name, XBot::MatLogger::Ptr logger)
     logger->add(name + "_step_t_end", _step_t_end);
     logger->add(name + "_step_clearance", _step_clearance);
     logger->add(name + "_middle_zmp", _zmp_middle);
-//    logger->add(name + "_zmp_val_current", _zmp_val_current);
-//    logger->add(name + "_zmp_val_next", _zmp_val_next);
     logger->add(name + "_distance_ankle_com", _distance_ankle_com);
     logger->add(name + "_height_com", _height_com);
 

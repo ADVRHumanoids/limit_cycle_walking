@@ -14,6 +14,8 @@ WalkerExecutor::WalkerExecutor() :
     _time = 0;
     _period = 0.01;
     _set_flag = 0;
+    _start_flag = 0;
+    _stop_flag = 0;
     _path_to_cfg = WALKER_CONFIG_PATH;
 
     /* init ros stuff */
@@ -77,6 +79,8 @@ void WalkerExecutor::run()
 
     log(_logger);
     _set_flag = 0;
+    _start_flag = 0;
+    _stop_flag = 0;
 }
 
 bool WalkerExecutor::homing()
@@ -128,6 +132,8 @@ void WalkerExecutor::log(XBot::MatLogger::Ptr logger)
     logger->add("r_ankle", _world_T_ankle[1].translation());
     logger->add("time", _time);
     logger->add("set_flag", _set_flag);
+    logger->add("start_flag", _start_flag);
+    logger->add("stop_flag", _stop_flag);
 }
 
 WalkerExecutor::~WalkerExecutor()
@@ -268,6 +274,7 @@ bool WalkerExecutor::run_service(std_srvs::SetBoolRequest &req,
 {
     if (req.data)
     {
+        _start_flag = 1;
         std::cout << "START received. Starting ..." << std::endl;
         _wlkr->start();
         res.message = "Walking started";
@@ -275,6 +282,7 @@ bool WalkerExecutor::run_service(std_srvs::SetBoolRequest &req,
     }
     else
     {
+        _stop_flag = 1;
         std::cout << "STOP received. Stopping ..." << std::endl;
         _wlkr->stop();
         res.message = "Walking stopped";

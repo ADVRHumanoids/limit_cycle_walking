@@ -82,7 +82,7 @@ private:
 
     double _period, _time;
 
-    bool _set_flag;
+    bool _set_flag, _stop_flag, _start_flag;
 
     std::array<Eigen::Affine3d, 2> _world_T_ankle;
 };
