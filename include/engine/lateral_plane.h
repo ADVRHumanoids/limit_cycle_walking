@@ -53,10 +53,8 @@ public:
     void update(double q_sns,
                 double q_min,
                 double q_max,
-                Eigen::VectorXd zmp_val_current,
-                Eigen::VectorXd zmp_val_next,
-                double duration_current,
-                double duration_next,
+                std::vector<Eigen::MatrixXd> zmp_val,
+                Eigen::VectorXd duration,
                 double zmp_middle  = 0., /* should be constant */
                 double offset = 0.);
 
@@ -71,14 +69,14 @@ private:
 
     class MpcSolver;
 
+    Eigen::VectorXd makeChunk(Eigen::MatrixXd values, int size_current);
+
     /* compute preview window */
     void computePreviewWindow(double q_sns,
                               double q_min,
                               double q_max,
-                              Eigen::VectorXd zmp_val_current,
-                              Eigen::VectorXd zmp_val_next,
-                              double duration_current,
-                              double duration_next,
+                              std::vector<Eigen::MatrixXd> zmp_val,
+                              Eigen::VectorXd duration,
                               double zmp_middle,
                               double offset);
 
@@ -87,6 +85,8 @@ private:
     double _alpha_old, _alpha;
 
     Eigen::VectorXd _zmp_val_current, _zmp_val_next;
+    Eigen::VectorXd _zmp;
+
 
     bool _switch_side_zmp;
 

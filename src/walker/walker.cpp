@@ -11,7 +11,6 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
     _theta(0),
     _time(0),
     _new_event_time(0),
-    _started(false),
     _t_start_walk(0),
     _q(0),
     _q_sag(0),
@@ -26,17 +25,13 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
     _terrain_height(0),
     _step_t_start(0),
     _step_t_end(0),
-    _duration_current(0),
-    _duration_next(0),
     _step_clearance(0),
     _zmp_middle(0),
     _update_step(false),
     _param(par)
 {
 
-    _zmp_val_current.resize(1);
-    _zmp_val_current.resize(1);
-
+    _durations.resize(1);
     _com_pos_start.setZero();
     _com_pos_goal.setZero();
 
@@ -59,8 +54,8 @@ bool Walker::init(const mdof::RobotState &state)
     _zmp_middle = (state.world_T_foot[0].translation()(1) + state.world_T_foot[1].translation()(1)) /2;
     _com_pos_start = state.world_T_com;
     _com_pos_goal = state.world_T_com;
-    _duration_current = _param->getStepDuration();
-    _duration_next = _param->getStepDuration();
+    /* initialize duration for zmp window */
+    _durations <<_param->getStepDuration();
     /* TODO _q depends on current _q_max, so I need to update _q_max before _q */
     _q_sag_max_previous = 0;
     _q_sag_max = _param->getMaxInclination();
@@ -95,14 +90,9 @@ bool Walker::init(const mdof::RobotState &state)
 
     _distance_ankle_com = state.ankle_T_com[1 - _current_swing_leg].translation().z();
 
-    _zmp_val_current.resize(1);
-    _zmp_val_current << _zmp_middle;
+    /* set zmp */
+    _zmp_vals.push_back((Eigen::VectorXd(1,1) << _zmp_middle).finished());
 
-    _zmp_val_next.resize(1);
-    _zmp_val_next << _zmp_middle;
-
-    _zmp_val_initial_left = state.world_T_foot[0].translation()[1];
-    _zmp_val_initial_right = state.world_T_foot[1].translation()[1];
 
     updateStep();
 
@@ -225,11 +215,6 @@ bool Walker::updateTheta(double time)
 
 bool Walker::updatePhi(double time)
 {
-    if (_started == 1 && time < _t_start_walk + _delay_start)
-    {
-        return false;
-    }
-
     if (_phi_buffer.empty())
     {
         _phi = 0;
@@ -252,11 +237,9 @@ bool Walker::updateStep()
     _step.q_lat_max = _q_lat_max;
     _step.height_com = _height_com;
     _step.distance_ankle_com = _distance_ankle_com;
-    _step.duration_current = _duration_current;
-    _step.duration_next = _duration_next;
     _step.step_clearance = _step_clearance;
-    _step.zmp_val_current = _zmp_val_current;
-    _step.zmp_val_next = _zmp_val_next;
+    _step.zmp_vals = _zmp_vals;
+    _step.durations = _durations;
 
     return true;
 }
@@ -293,7 +276,7 @@ bool Walker::update(double time,
          * otherwise go to single stance, get from buffer if it's not empty and issue step */
         if (doubleStance(_q_lat, _q_lat_min, _q_lat_max))
         {
-            /* wait for double stance completed */
+            /* nothing */
         }
         else
         {
@@ -319,62 +302,80 @@ bool Walker::update(double time,
 
     step_machine(time);
 
-    /* update q */
-    if (_current_stance == Stance::Single)
+    /* ------------------------------- update durations ------------------------------------------*/
+    if (_current_state != State::Idle)
     {
-        _duration_current = _param->getStepDuration();
-        _duration_next = _param->getStepDuration();
-        _steep_q = (_q_sag_max - _q_sag_min) / _duration_current;
-        updateQ(time, _q_sag, _q_sag_min, _q_sag_max, _steep_q, _q);
-        _q_lat = _q_sag;
-        _q_lat_min = _q_sag_min;
-        _q_lat_max = _q_sag_max;
-    }
-    else
-    {
-        _duration_current = _param->getStepDuration();
-        _duration_next = _param->getStepDuration();
-
-        if (_current_state == State::Starting)
+        if (_current_stance == Stance::Single)
         {
-            _duration_current = 4 * _param->getStepDuration();
+            _durations.resize(2);
+            _durations << _param->getStepDuration(), _param->getStepDuration();
         }
-        if (_current_state == State::Starting || _current_state == State::Walking)
+        else
         {
-            double _steep_q_lat = (_q_lat_max - _q_lat_min)/_duration_current;
-            _q_lat = _q_lat + _steep_q_lat * _dt;
+
+
+            if (_current_state == State::Starting)
+            {
+                _durations.resize(3);
+                _durations << 4 * _param->getStepDuration(), _param->getStepDuration(), _param->getStepDuration();
+            }
+            else
+            {
+                _durations.resize(2);
+                _durations << _param->getStepDuration(), _param->getStepDuration();
+            }
         }
     }
-
+    /* ---------------------------------- update q ----------------------------------------------*/
+    if (_current_state != State::Idle)
+    {
+        if (_current_stance == Stance::Single)
+        {
+            _steep_q = (_q_sag_max - _q_sag_min) / _durations[0];
+            updateQ(time, _q_sag, _q_sag_min, _q_sag_max, _steep_q, _q);
+            _q_lat = _q_sag;
+            _q_lat_min = _q_sag_min;
+            _q_lat_max = _q_sag_max;
+        }
+        else
+        {
+            if (_current_state == State::Starting || _current_state == State::Walking || _current_state == State::LastStep || _current_state == State::Stopping)
+            {
+                double _steep_q_lat = (_q_lat_max - _q_lat_min)/_durations[0];
+                _q_lat = _q_lat + _steep_q_lat * _dt;
+            }
+        }
+    }
     /* TODO are these constant? */
     _distance_ankle_com = state.ankle_T_com[1 - _current_swing_leg].translation().z();
     _height_com = fabs(state.world_T_com[2] - state.world_T_foot[_current_swing_leg].translation()[2]);
 
 
-    /* update zmp */
+    /* --------------------------------- update zmp -----------------------------------------------*/
     if (_current_state != State::Idle)
     {
         if (_current_stance == Stance::Single)
         {
-            _zmp_val_current.resize(1);
-            _zmp_val_current << state.world_T_foot[1 - _current_swing_leg].translation()(1);
-
-            _zmp_val_next.resize(2);
-            _zmp_val_next << state.world_T_foot[1 - _current_swing_leg].translation()(1), state.world_T_foot[_current_swing_leg].translation()(1);
+            _zmp_vals.clear();
+            /* current */
+            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << state.world_T_foot[1 - _current_swing_leg].translation()(1)).finished());
+            /* next */
+            _zmp_vals.push_back((Eigen::MatrixXd(1,2) << state.world_T_foot[1 - _current_swing_leg].translation()(1), state.world_T_foot[_current_swing_leg].translation()(1)).finished());
         }
         else
         {
-            _zmp_val_current.resize(2);
+            _zmp_vals.clear();
             if (_current_state == State::Starting)
             {
-                _zmp_val_current << _zmp_middle, state.world_T_foot[1 - _current_swing_leg].translation()(1);
+                _zmp_vals.push_back((Eigen::MatrixXd(1,3) << _zmp_middle, _zmp_middle, state.world_T_foot[1 - _current_swing_leg].translation()(1)).finished());
+                _zmp_vals.push_back((Eigen::MatrixXd(1,1) << state.world_T_foot[1 - _current_swing_leg].translation()(1)).finished());
+                _zmp_vals.push_back((Eigen::MatrixXd(1,2) << state.world_T_foot[1 - _current_swing_leg].translation()(1), state.world_T_foot[_current_swing_leg].translation()(1)).finished());
             }
             else
             {
-                _zmp_val_current << state.world_T_foot[_current_swing_leg].translation()(1), state.world_T_foot[1 - _current_swing_leg].translation()(1);
+                _zmp_vals.push_back((Eigen::MatrixXd(1,2) << state.world_T_foot[_current_swing_leg].translation()(1), state.world_T_foot[1 - _current_swing_leg].translation()(1)).finished());
+                _zmp_vals.push_back((Eigen::MatrixXd(1,1) << (state.world_T_foot[1 - _current_swing_leg].translation()(1))).finished());
             }
-            _zmp_val_next.resize(1);
-            _zmp_val_next << state.world_T_foot[1 - _current_swing_leg].translation()(1);
         }
     }
     /* -- until here everything is updated -- */
@@ -382,8 +383,9 @@ bool Walker::update(double time,
     {
         /* for the ending motion of the last step */
         /* TODO put here for zeroing zmp afterlast step */
-        _zmp_val_next.resize(1);
-        _zmp_val_next << _zmp_middle;
+        _zmp_vals.clear();
+        _zmp_vals.push_back((Eigen::MatrixXd(1,2) << state.world_T_foot[1 - _current_swing_leg].translation()(1), _zmp_middle).finished());
+        _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
     }
 
     updateStep();
@@ -392,7 +394,7 @@ bool Walker::update(double time,
     /* compute com and foot displacement */
     _engine->computeCom(time, _step, delta_com);
 
-    /*-------------------------------------------------------------------------------------------------*/
+    /*------------------------------- update step --------------------------------------------*/
     if (_update_step)
     {
         updateTheta(time);
@@ -414,17 +416,17 @@ bool Walker::update(double time,
         /* delay -first- step to let the com swing laterally */
         _update_step = false;
     }
-
+    /*------------------------------ execute step ---------------------------------------------*/
     if (_execute_step)
     {
         _step_t_start = time;
-        _step_t_end = _step_t_start + _duration_current;
+        _step_t_end = _step_t_start + _durations[0];
 
         /* burn execute_step */
         _execute_step = 0;
     }
 
-    /*-------------------------------------------------------------------------------------------------*/
+    /*------------------------------- computing ---------------------------------------------------*/
     Eigen::Rotation2Dd rot2(_theta);
     /* compute com trajectory and rotate if needed */
     delta_com.head(2) = rot2.toRotationMatrix() * delta_com.head(2);
@@ -651,7 +653,6 @@ bool Walker::step_machine(double time)
                 setQMax(new_q);
             }
             _step_counter++;
-//            _update_step = true;
             break;
 
         case State::Starting :
@@ -664,14 +665,12 @@ bool Walker::step_machine(double time)
             _step_counter++;
             _previous_state = _current_state;
             _current_state = State::Walking;
-//            _update_step = true;
             break;
 
         case State::Stopping :
             _step_counter++;
             _previous_state = _current_state;
             _current_state = State::LastStep;
-//            _update_step = true;
 
             /* TODO set q_max to zero (is this enough to make it half step?)*/
             _q_sag_max_previous = _q_sag_max;
@@ -680,9 +679,6 @@ bool Walker::step_machine(double time)
 
         case State::LastStep :
             _step_counter++;
-
-            /* TODO 'started' flag set to False */
-            _started = 0;
 
             _previous_state = _current_state;
             _current_state = State::Idle;
@@ -710,12 +706,7 @@ bool Walker::step_machine(double time)
             _step_counter++;
             _cycle_counter++;
 
-            /* 'started' flag set to True */
-            _started = 1;
-
             _t_start_walk = time;
-
-//            _update_step = true;
             break;
 
         default : /*std::cout << "Ignored starting event. Already WALKING" << std::endl; */
@@ -781,7 +772,6 @@ void Walker::log(std::string name, XBot::MatLogger::Ptr logger)
     logger->add(name + "_phi", _phi);
     logger->add(name + "_time", _time);
     logger->add(name + "_new_event_time", _new_event_time);
-    logger->add(name + "_started_flag", _started);
     logger->add(name + "_t_start_walk", _t_start_walk);
     logger->add(name + "_q", _q);
     logger->add(name + "_q_sag", _q_sag);
@@ -805,8 +795,6 @@ void Walker::log(std::string name, XBot::MatLogger::Ptr logger)
     logger->add(name + "_waist_pos_goal", _waist_pos_goal.translation());
     logger->add(name + "_step_t_start", _step_t_start);
     logger->add(name + "_step_t_end", _step_t_end);
-    logger->add(name + "_duration_current", _duration_current);
-    logger->add(name + "_duration_next", _duration_next);
     logger->add(name + "_step_clearance", _step_clearance);
     logger->add(name + "_middle_zmp", _zmp_middle);
 //    logger->add(name + "_zmp_val_current", _zmp_val_current);

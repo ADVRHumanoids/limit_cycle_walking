@@ -16,24 +16,20 @@ struct StepState {
         q_sag_max(0),
         q_lat_min(0),
         q_lat_max(0),
-        duration_current(0),
-        duration_next(0),
         step_clearance(0),
         height_com(0),
         distance_ankle_com(0)
     {
-        zmp_val_current.setZero();
-        zmp_val_next.setZero();
+        durations.setZero();
     }
 
     double q_sag, q_sag_min, q_sag_max;
     double q_lat, q_lat_min, q_lat_max;
 
     double step_clearance;
-    double duration_current, duration_next;
 
-    Eigen::VectorXd zmp_val_current;
-    Eigen::VectorXd zmp_val_next;
+    std::vector<Eigen::MatrixXd> zmp_vals;
+    Eigen::VectorXd durations;
 
     double height_com;
     double distance_ankle_com;

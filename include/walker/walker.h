@@ -154,14 +154,14 @@ private:
     double _t_min;
     double _t_max;
 
-    double _duration_current, _duration_next;
     double _step_clearance;
 
     double _zmp_middle;
     Eigen::VectorXd _zmp_val_current;
     Eigen::VectorXd _zmp_val_next;
 
-    double _zmp_val_initial_left, _zmp_val_initial_right;
+    std::vector<Eigen::MatrixXd> _zmp_vals;
+    Eigen::VectorXd _durations;
 
     double _distance_ankle_com;
     double _height_com;

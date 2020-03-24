@@ -24,13 +24,12 @@ LateralPlane::LateralPlane(double dt, Options opt) :
 void LateralPlane::computePreviewWindow(double q_sns,
                                         double q_min,
                                         double q_max,
-                                        Eigen::VectorXd zmp_val_current,
-                                        Eigen::VectorXd zmp_val_next,
-                                        double duration_current,
-                                        double duration_next,
+                                        std::vector<Eigen::MatrixXd> zmp_val,
+                                        Eigen::VectorXd duration,
                                         double zmp_middle,
                                         double offset)
 {
+
     /* compute alpha, phase variable normalized [0, 1] between q_max and q_min */
 //    _alpha_old = (_q_sns_prev - q_min)/(q_max - q_min);
     _alpha = (q_sns - q_min)/(q_max - q_min);
@@ -47,23 +46,82 @@ void LateralPlane::computePreviewWindow(double q_sns,
         _alpha = 1;
     }
 
-    _zmp_val_current = zmp_val_current;
-    /* size of current stance (depending on alpha) */
-    _size_current = static_cast<int>( duration_current / _dt ); // const
-    /* size of the next stance */
-    _size_next = static_cast<int>( duration_next / _dt ); // const
+    /* fill zmp with given values */
+    /* assumes that vector and array have same number of rows */
 
-    /* if size_current_step is bigger than full size window, take size window */
-    Eigen::VectorXd current_segment;
-    int current_size = (_size_current > _size_window ? _size_window : _size_current);
+   std::vector<Eigen::VectorXd> chunks;
+   std::vector<int> sizes;
+   int count = 0;
+   for(auto val : zmp_val)
+   {
+       sizes.push_back(static_cast<int>( duration[count] / _dt ));
+       chunks.push_back(makeChunk(val, sizes[count]));
+       count++;
+   }
 
-    if (_zmp_val_current.size() == 1)
+   _zmp.resize(_zmp_window.size() + chunks[0].size());
+
+   int pos = 0;
+   for (auto chunk : chunks)
+   {
+       _zmp.segment(pos, chunk.size()) << chunk;
+       pos = pos + chunk.size();
+   }
+
+
+   if (pos > _zmp_window.size() + sizes[0])
+   {
+       /* okay */
+   }
+   else
+   {
+       int siz = chunks.size();
+       int n_pattern = 2; /* last 'n_pattern' chunks repeated used to make a pattern */
+       if (chunks.size() <= n_pattern - 1)
+       {
+           n_pattern = zmp_val.size();
+       }
+       int size_remaining = _zmp.size() - pos;
+       std::vector<Eigen::VectorXd> tail_chunks(chunks.end() - n_pattern, chunks.end());
+       while (size_remaining > 0)
+       {
+           for (auto& tail_chunk : tail_chunks)
+           {
+               tail_chunk = 2 * Eigen::VectorXd::Constant(tail_chunk.size(), zmp_middle) - tail_chunk;
+               if (tail_chunk.size() < size_remaining)
+               {
+                   _zmp.segment(_zmp.size() - size_remaining, tail_chunk.size()) = tail_chunk;
+                   size_remaining = size_remaining - tail_chunk.size();
+               }
+               else
+               {
+                   _zmp.tail(size_remaining) = tail_chunk.head(size_remaining);
+                   size_remaining = 0;
+               }
+           }
+       }
+   }
+
+   _zmp_window << _zmp.segment(_alpha * chunks[0].size(), _zmp_window.size());
+}
+
+Eigen::VectorXd LateralPlane::makeChunk(Eigen::MatrixXd values, int size_current)
+{
+    Eigen::VectorXd segment(size_current);
+
+    if (values.cols() == 1)
     {
-        current_segment = current_segment.Constant(_size_current, _zmp_val_current[0]);
+        segment = segment.Constant(size_current, values(0,0));
     }
-    else if (_zmp_val_current.size() == 2)
+    else if (values.cols() == 2)
     {
-        current_segment = current_segment.LinSpaced(_size_current, _zmp_val_current[0], _zmp_val_current[1]);
+        segment = segment.LinSpaced(size_current, values(0,0), values(0,1));
+    }
+    else if (values.cols() == 3)
+    {
+        Eigen::VectorXd segment_support;
+        segment.head(size_current/2) << segment_support.LinSpaced(size_current/2, values(0,0), values(0,1));
+        segment.tail(size_current/2) << segment_support.LinSpaced(size_current/2, values(0,1), values(0,2));
     }
     else
     {
@@ -71,79 +129,18 @@ void LateralPlane::computePreviewWindow(double q_sns,
         throw;
     }
 
-    _receding_size = static_cast<int>((1 - _alpha) * current_size);// changes at each step, receding
-
-    /* fill current step with receding current_segment values */
-    _zmp_window.head(_receding_size) << current_segment.tail(_receding_size);
-
-
-    /* fill all the other segment (zmp value of all the step after the current) with next zmp (and then switch symmetrically around the middle)*/
-    _zmp_val_next = zmp_val_next;
-
-    Eigen::VectorXd chunk(_size_next + _size_current);
-    if (_zmp_val_next.size() == 1)
-    {
-        chunk.head(_size_next) << chunk.Constant(_size_next, _zmp_val_next[0]);
-    }
-    else if (_zmp_val_next.size() == 2)
-    {
-        chunk.head(_size_next) << chunk.LinSpaced(_size_next, _zmp_val_next[0], _zmp_val_next[1]);
-    }
-    else
-    {
-        /* TODO */
-        throw;
-    }
-    if (_zmp_val_current.size() == 1)
-    {
-        /* flip around middle zmp (zmp_current) for third chunk BEFORE filling third chunk */
-        _zmp_val_current[0] = 2 * zmp_middle - _zmp_val_current[0];
-        chunk.tail(_size_current) << chunk.Constant(_size_current, _zmp_val_current[0]);
-    }
-    else if (_zmp_val_current.size() == 2)
-    {
-        /* flip both vertices of zmp (zmp_current) for third chunk BEFORE filling third chunk */
-        _zmp_val_current[0] = 2 * zmp_middle - _zmp_val_current[0];
-        _zmp_val_current[1] = 2 * zmp_middle - _zmp_val_current[0];
-        chunk.tail(_size_current) << chunk.LinSpaced(_size_current, _zmp_val_current[0], _zmp_val_current[1]);
-    }
-    else
-    {
-        /* TODO */
-        throw;
-    }
-
-    long int size_remaining = _size_window - _receding_size;
-    while (size_remaining > 0)
-    {
-        if (_size_next + _size_current < size_remaining)
-        {
-            _zmp_window.segment(_size_window - size_remaining, _size_next + _size_current) = chunk;
-            chunk = 2 * Eigen::VectorXd::Constant(chunk.size(), zmp_middle) - chunk;
-            size_remaining = size_remaining - (_size_next + _size_current);
-        }
-        else
-        {
-            _zmp_window.tail(size_remaining) = chunk.head(size_remaining);
-            size_remaining = 0;
-        }
-    }
-
-
-
+    return segment;
 }
 
 void LateralPlane::update(double q_sns,
                           double q_min,
                           double q_max,
-                          Eigen::VectorXd zmp_val_current,
-                          Eigen::VectorXd zmp_val_next,
-                          double duration_current,
-                          double duration_next,
+                          std::vector<Eigen::MatrixXd> zmp_val_current,
+                          Eigen::VectorXd duration,
                           double zmp_middle,
                           double offset)
 {
-    computePreviewWindow(q_sns, q_min, q_max, zmp_val_current, zmp_val_next, duration_current, duration_next, zmp_middle, offset);
+    computePreviewWindow(q_sns, q_min, q_max, zmp_val_current, duration, zmp_middle, offset);
 
     /* com value is actually a delta_com */
     _u = _mpc_solver->getKfb() * _delta_com + _mpc_solver->getKprev() * _zmp_window;

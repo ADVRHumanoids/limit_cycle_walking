@@ -43,15 +43,13 @@ bool Engine::computeCom(double time,
     double q_lat = state.q_lat;
     double q_lat_min = state.q_lat_min;
     double q_lat_max = state.q_lat_max;
-    double duration_current = state.duration_current;
-    double duration_next = state.duration_next;
-    Eigen::VectorXd zmp_val_current = state.zmp_val_current;
-    Eigen::VectorXd zmp_val_next = state.zmp_val_next;
+    std::vector<Eigen::MatrixXd> zmp_vals = state.zmp_vals;
+    Eigen::VectorXd durations = state.durations;
 
     /* compute stepping motion */
     /* STILL TODO the update of sag with real q*/ /* this was q_fake and now it's q_sag */
     _sag->update(q_sag, distance_ankle_com);
-    _lat->update(q_lat, q_lat_min, q_lat_max, zmp_val_current, zmp_val_next, duration_current, duration_next);
+    _lat->update(q_lat, q_lat_min, q_lat_max, zmp_vals, durations);
 
     delta_com(0) = _sag->getDeltaCom();
     delta_com(1) = _lat->getDeltaCom();
