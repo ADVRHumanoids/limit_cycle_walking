@@ -6,7 +6,8 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
     _current_event(Event::Empty),
     _step_counter(0),
     _cycle_counter(0),
-    _steep_q(0),
+    _steep_q_sag(0),
+    _steep_q_lat(0),
     _t_impact(0),
     _theta(0),
     _time(0),
@@ -314,7 +315,7 @@ bool Walker::update(double time,
             if (_current_state == State::Starting)
             {
                 _durations.resize(3);
-                _durations << 4 * _param->getStepDuration(), _param->getStepDuration(), _param->getStepDuration();
+                _durations << 2 *_param->getStepDuration(), _param->getStepDuration(), _param->getStepDuration();
             }
             else if (_current_state == State::LastStep)
             {
@@ -338,8 +339,8 @@ bool Walker::update(double time,
     {
         if (_current_stance == Stance::Single)
         {
-            _steep_q = (_q_sag_max - _q_sag_min) / _durations[0];
-            updateQ(time, _q_sag, _q_sag_min, _q_sag_max, _steep_q, _q);
+            _steep_q_sag = (_q_sag_max - _q_sag_min) / _durations[0];
+            updateQ(time, _q_sag, _q_sag_min, _q_sag_max, _steep_q_sag, _q);
             _q_lat = _q_sag;
             _q_lat_min = _q_sag_min;
             _q_lat_max = _q_sag_max;
@@ -348,7 +349,7 @@ bool Walker::update(double time,
         {
             if (_current_state == State::Starting || _current_state == State::Walking || _current_state == State::LastStep || _current_state == State::Stopping)
             {
-                double _steep_q_lat = (_q_lat_max - _q_lat_min)/_durations[0];
+                _steep_q_lat = (_q_lat_max - _q_lat_min)/_durations[0];
                 _q_lat = _q_lat + _steep_q_lat * _dt;
             }
         }
@@ -686,7 +687,7 @@ bool Walker::step_machine(double time)
 
             _previous_state = _current_state;
             _current_state = State::Idle;
-            _steep_q = 0;
+            _steep_q_sag = 0;
             _q_sag_max = _param->getMaxInclination();
             break;
         }
@@ -770,7 +771,8 @@ void Walker::log(std::string name, XBot::MatLogger::Ptr logger)
 {
     logger->add(name + "_step_counter", _step_counter);
     logger->add(name + "_cycle_counter", _cycle_counter);
-    logger->add(name + "_steep_q", _steep_q);
+    logger->add(name + "_steep_q_sag", _steep_q_sag);
+    logger->add(name + "_steep_q_lat", _steep_q_lat);
     logger->add(name + "_t_impact", _t_impact);
     logger->add(name + "_theta", _theta);
     logger->add(name + "_phi", _phi);

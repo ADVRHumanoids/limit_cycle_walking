@@ -153,7 +153,7 @@ void LateralPlane::log(std::string name, XBot::MatLogger::Ptr logger)
     logger->add(name + "_delta_com", _delta_com);
     logger->add(name + "_alpha_old", _alpha_old);
     logger->add(name + "_alpha", _alpha);
-//    logger->add(name + "_zmp_val", _zmp_val);
+    logger->add(name + "_zmp_val", _zmp_window[0]);
     logger->add(name + "_switch_side_zmp", _switch_side_zmp);
     logger->add(name + "_size_window", _size_window);
     logger->add(name + "_size_current", _size_current);

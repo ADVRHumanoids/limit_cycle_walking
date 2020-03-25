@@ -96,7 +96,7 @@ private:
     /* parameters of the stepping motion */
 
     int _step_counter, _cycle_counter;
-    double _steep_q;
+    double _steep_q_sag, _steep_q_lat;
 
     double _t_impact;
 
