@@ -80,3 +80,10 @@ Torso:
     base_link: "world"
     lambda: 0.1
     indices: [3]
+
+JointLimits:
+    type: "JointLimits"
+
+
+VelocityLimits:
+    type: "VelocityLimits"

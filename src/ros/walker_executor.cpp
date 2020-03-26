@@ -2,7 +2,9 @@
 
 #include <RobotInterfaceROS/ConfigFromParam.h>
 
-#include <cartesian_interface/ros/RosImpl.h>
+#include <cartesian_interface/CartesianInterfaceImpl.h>
+
+#include <thread>
 
 WalkerExecutor::WalkerExecutor() :
     _nh("walker")
@@ -48,10 +50,15 @@ void WalkerExecutor::run()
     _wlkr->update(_time, _state, _ref);
 
     /* set reference to ci */
-    _ci->setPoseReferenceRaw("l_sole", _ref.world_T_foot[0]);
-    _ci->setPoseReferenceRaw("r_sole", _ref.world_T_foot[1]);
-    _ci->setComPositionReference(_ref.world_T_com);
-    _ci->setPoseReferenceRaw("Waist", _ref.world_T_waist);
+    Eigen::Affine3d com;
+    com.translation() = _ref.world_T_com;
+    com.linear().setIdentity();
+
+    _tasks["l_sole"]->setPoseReferenceRaw(_ref.world_T_foot[0]);
+    _tasks["r_sole"]->setPoseReferenceRaw(_ref.world_T_foot[1]);
+    _tasks["Com"]->setPoseReferenceRaw(com);
+    _tasks["Waist"]->setPoseReferenceRaw(_ref.world_T_waist);
+
 
     /* update ci */
     if(!_ci->update(_time, _period))
@@ -69,12 +76,14 @@ void WalkerExecutor::run()
 
     /* set joint poition to model */
     _model->setJointPosition(_q);
+    _model->setJointVelocity(_qdot);
     _model->update();
 
     /* update robot and send */
     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
     _robot->move();
 
+    std::this_thread::sleep_for(std::chrono::duration<double>(_period));
     _time += _period;
 
     log(_logger);
@@ -88,10 +97,14 @@ bool WalkerExecutor::homing()
     _wlkr->homing(_state, _ref);
 
     /* feet */
-   _ci->setPoseReference("l_sole", _ref.world_T_foot[0]);
-   _ci->setPoseReference("r_sole", _ref.world_T_foot[1]);
-    /* com */
-   _ci->setComPositionReference(_ref.world_T_com);
+   _tasks["l_sole"]->setPoseReference(_ref.world_T_foot[0]);
+   _tasks["r_sole"]->setPoseReference(_ref.world_T_foot[1]);
+   /* com */
+   Eigen::Affine3d com;
+   com.translation() = _ref.world_T_com;
+   com.linear().setIdentity();
+
+   _tasks["Com"]->setPoseReference(com);
 
    XBot::Cartesian::State l_sole_state =_ci->getTaskState("l_sole");
    XBot::Cartesian::State r_sole_state =_ci->getTaskState("l_sole");
@@ -143,14 +156,14 @@ WalkerExecutor::~WalkerExecutor()
 
 bool WalkerExecutor::updateRobotState()
 {
-
-
+    Eigen::Affine3d com;
     /* from reference */
-    _ci->getPoseReferenceRaw("l_sole", _state.world_T_foot[0]);
-    _ci->getPoseReferenceRaw("r_sole", _state.world_T_foot[1]);
-    _ci->getComPositionReference(_state.world_T_com);
-    _ci->getPoseReferenceRaw("Waist", _state.world_T_waist);
+    _tasks["l_sole"]->getPoseReferenceRaw(_state.world_T_foot[0]);
+    _tasks["r_sole"]->getPoseReferenceRaw(_state.world_T_foot[1]);
+    _tasks["Com"]->getPoseReferenceRaw(com);
+    _tasks["Waist"]->getPoseReferenceRaw(_state.world_T_waist);
 
+    _state.world_T_com = com.translation();
     /* from model */
 //    std::array<Eigen::Affine3d, 2> world_T_ankle;
 //    Eigen::Vector3d world_T_com;
@@ -227,6 +240,7 @@ void WalkerExecutor::init_load_robot_state()
     _model->getPose("l_ankle", world_T_ankle[0]);
     _model->getPose("r_ankle", world_T_ankle[1]);
 
+
     _state.ankle_T_com[0].translation()= world_T_ankle[0].translation() - _state.world_T_com;
     _state.ankle_T_com[0].linear() = world_T_ankle[0].linear();
     _state.ankle_T_com[1].translation() = world_T_ankle[1].translation() - _state.world_T_com;
@@ -240,12 +254,24 @@ void WalkerExecutor::init_load_cartesian_interface()
     std::cout << _path_to_cfg << std::endl;
     YAML::Node ik_yaml = YAML::LoadFile(_path_to_cfg + "cartesio_stack.yaml");
 
-    XBot::Cartesian::ProblemDescription ik_problem(ik_yaml, _model);
-    _ci = std::make_shared<XBot::Cartesian::CartesianInterfaceImpl>(_model, ik_problem);
 
-//    XBot::Cartesian::RosImpl::Ptr ci;
-//    ci = std::make_shared<XBot::Cartesian::RosImpl>();
+    auto ctx = std::make_shared<XBot::Cartesian::Context>(
+                std::make_shared<XBot::Cartesian::Parameters>(_period),
+                _model);
+
+    XBot::Cartesian::ProblemDescription ik_problem(ik_yaml, ctx);
+
+    _ci = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                                ik_problem,
+                                                                ctx);
+
     _ci->enableOtg(_period);
+    std::cout << "Solver constructed successfully \n";
+
+    for(auto tname : _ci->getTaskList())
+    {
+        _tasks[tname] = std::dynamic_pointer_cast<XBot::Cartesian::CartesianTask>(_ci->getTask(tname));
+    }
 }
 
 void WalkerExecutor::init_load_walker()

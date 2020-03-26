@@ -70,6 +70,8 @@ private:
     XBot::RobotInterface::Ptr _robot;
     XBot::Cartesian::CartesianInterfaceImpl::Ptr _ci;
 
+    std::map<std::string, XBot::Cartesian::CartesianTask::Ptr> _tasks;
+
     mdof::RobotState _state;
     mdof::RobotState _ref;
 
