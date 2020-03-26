@@ -18,6 +18,11 @@ Eigen::Affine3d mdof::computeTrajectory(Eigen::Affine3d T_i, Eigen::Affine3d T_f
 
     //position
 
+    if (start_time - end_time == 0)
+    {
+        end_time = start_time + 1e-4;
+    }
+
     Eigen::Vector3d ret;
 
     double dx0 = 0;
