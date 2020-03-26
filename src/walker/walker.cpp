@@ -74,6 +74,9 @@ bool Walker::init(const mdof::RobotState &state)
     _foot_pos_goal = _foot_pos_start;
 
 
+    /* durations */
+    _ss_duration = _param->getStepDuration();
+    _ds_duration = 0; //_param->getDoubleStanceDuration();
 
     /* initialize the Engine of Walker */
     Engine::Options eng_opt;
@@ -300,32 +303,35 @@ bool Walker::update(double time,
     /* ------------------------------- update durations ------------------------------------------*/
     if (_current_state != State::Idle)
     {
+        /* if SS */
         if (_current_stance == Stance::Single)
         {
             _durations.resize(2);
-            _durations << _param->getStepDuration(), _param->getStepDuration();
+            _durations << _ss_duration, _ds_duration;
             if (_current_state == State::LastStep)
             {
                 _durations.resize(3);
-                _durations << _param->getStepDuration(), _param->getStepDuration(), _param->getStepDuration();
+                _durations << _ss_duration, _ds_duration, _ss_duration;
             }
         }
+        /* IF DS */
         else
         {
             if (_current_state == State::Starting)
             {
                 _durations.resize(3);
-                _durations << 2 *_param->getStepDuration(), _param->getStepDuration(), _param->getStepDuration();
+                /* regardless of ds duration, I need some time to start walking, hence 2 * ss_duration */
+                _durations << 2 *_ss_duration, _ss_duration, _ds_duration;
             }
             else if (_current_state == State::LastStep)
             {
                 _durations.resize(3);
-                _durations << _param->getStepDuration(), _param->getStepDuration(), _param->getStepDuration();
+                _durations << _ds_duration, _ss_duration, _ss_duration;
             }
             else
             {
                 _durations.resize(2);
-                _durations << _param->getStepDuration(), _param->getStepDuration();
+                _durations << _ds_duration, _ss_duration;
             }
         }
     }
@@ -692,7 +698,15 @@ bool Walker::step_machine(double time)
             break;
         }
         break;
-
+    case Event::LatReached :
+    {
+        switch (_current_state)
+        {
+        default:
+            break;
+        }
+        break;
+    }
     case Event::Start :
     {
         switch (_current_state)

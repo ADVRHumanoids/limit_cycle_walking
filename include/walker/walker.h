@@ -93,8 +93,8 @@ private:
     State _current_state, _previous_state;
     Event _current_event, _previous_event;
     Stance _current_stance;
-    /* parameters of the stepping motion */
 
+    /* parameters of the stepping motion */
     int _step_counter, _cycle_counter;
     double _steep_q_sag, _steep_q_lat;
 
@@ -168,6 +168,8 @@ private:
     bool _cmd_step;
     bool _execute_step;
 
+    /* duration single stance and double stance */
+    double _ss_duration, _ds_duration;
     /* parameters for the robot */
     mdof::StepState _step;
     std::shared_ptr<Param> _param;
