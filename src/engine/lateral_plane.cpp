@@ -75,7 +75,6 @@ void LateralPlane::computePreviewWindow(double q_sns,
    }
    else
    {
-       int siz = chunks.size();
        int n_pattern = 2; /* last 'n_pattern' chunks repeated used to make a pattern */
        if (chunks.size() <= n_pattern - 1)
        {

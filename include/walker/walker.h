@@ -136,6 +136,9 @@ private:
     /* TODO com_pos_goal is not used */
     Eigen::Vector3d _com_pos_goal;
 
+    Eigen::Vector3d _delta_com;
+    Eigen::Vector3d _delta_com_rot;
+
     std::array<Eigen::Affine3d, 2> _foot_pos_start;
     std::array<Eigen::Affine3d, 2> _foot_pos_goal;
 
@@ -157,6 +160,9 @@ private:
     double _zmp_middle;
     Eigen::VectorXd _zmp_val_current;
     Eigen::VectorXd _zmp_val_next;
+
+    double _zmp_val_initial_left;
+    double _zmp_val_initial_right;
 
     std::vector<Eigen::MatrixXd> _zmp_vals;
     Eigen::VectorXd _durations;

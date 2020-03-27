@@ -17,6 +17,7 @@ struct StepState {
         q_lat_min(0),
         q_lat_max(0),
         step_clearance(0),
+        zmp_middle(0),
         height_com(0),
         distance_ankle_com(0)
     {
@@ -30,6 +31,8 @@ struct StepState {
 
     std::vector<Eigen::MatrixXd> zmp_vals;
     Eigen::VectorXd durations;
+
+    double zmp_middle;
 
     double height_com;
     double distance_ankle_com;
