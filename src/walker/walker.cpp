@@ -14,6 +14,8 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
     _new_event_time(0),
     _t_start_walk(0),
     _q(0),
+    _q_min(0),
+    _q_max(0),
     _q_sag(0),
     _q_sag_min(0),
     _q_sag_max(0),
@@ -64,14 +66,15 @@ bool Walker::init(const mdof::RobotState &state)
     _q_sag_max_previous = 0;
     _q_sag_max = _param->getMaxInclination();
     _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
-    /* TODO this should be _q as starting, but since I am using a small hack for starting, I'm beginning from 0
-     * so that after the first part (up to _start + _delay) is at the right value
-     */
     _q_sag_min = _q_sag;  /*TODO here make changes!!!! */
 
     _q_lat = _q_sag;
     _q_lat_min = _q_sag_min;
     _q_lat_max = _q_sag_max;
+
+    _q = _q_sag;
+    _q_min = _q_sag_min;
+    _q_max = _q_sag_max;
 
     _foot_pos_start = state.world_T_foot;
     _foot_pos_goal = _foot_pos_start;
@@ -104,8 +107,20 @@ bool Walker::init(const mdof::RobotState &state)
     /* set zmp */
     _zmp_vals.push_back((Eigen::VectorXd(1,1) << _zmp_middle).finished());
 
+    _step.q_sag = _q;
+    _step.q_lat = _q_lat;
+    _step.q_sag_min = _q_sag_min;
+    _step.q_sag_max = _q_max;
+    _step.q_lat_min = _q_lat_min;
+    _step.q_lat_max = _q_lat_max;
+    _step.height_com = _height_com;
+    _step.distance_ankle_com = _distance_ankle_com;
+    _step.step_clearance = _step_clearance;
+    _step.zmp_vals = _zmp_vals;
+    _step.durations = _durations;
+    _step.zmp_middle = _zmp_middle;
 
-    updateStep();
+//    updateStep();<
 
     _engine->initialize(_step);
 
@@ -238,33 +253,29 @@ bool Walker::updatePhi(double time)
     return true;
 }
 
-bool Walker::updateStep()
-{
-    _step.q_sag = _q;
-    _step.q_lat = _q_lat;
-    _step.q_sag_min = _q_sag_min;
-    _step.q_sag_max = _q_sag_max;
-    _step.q_lat_min = _q_lat_min;
-    _step.q_lat_max = _q_lat_max;
-    _step.height_com = _height_com;
-    _step.distance_ankle_com = _distance_ankle_com;
-    _step.step_clearance = _step_clearance;
-    _step.zmp_vals = _zmp_vals;
-    _step.durations = _durations;
-    _step.zmp_middle = _zmp_middle;
+//bool Walker::updateStep()
+//{
+//    _step.q_sag = _q;
+//    _step.q_lat = _q_lat;
+//    _step.q_sag_min = _q_sag_min;
+//    _step.q_sag_max = _q_max;
+//    _step.q_lat_min = _q_lat_min;
+//    _step.q_lat_max = _q_lat_max;
+//    _step.height_com = _height_com;
+//    _step.distance_ankle_com = _distance_ankle_com;
+//    _step.step_clearance = _step_clearance;
+//    _step.zmp_vals = _zmp_vals;
+//    _step.durations = _durations;
+//    _step.zmp_middle = _zmp_middle;
 
-    return true;
-}
+//    return true;
+//}
 
 bool Walker::update(double time,
                     const mdof::RobotState &state,
                     mdof::RobotState &ref)
 {
-    /* update _q_sag */
-    Eigen::Vector3d com_lat(0, _delta_com[1], 0);
-    Eigen::Vector3d com = state.world_T_com - com_lat;
-
-    _q_sag = computeQSag(_current_swing_leg, _theta, com, _com_pos_start, state.ankle_T_com);
+    _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
 
     sagHandler(time, state);
 
@@ -290,7 +301,8 @@ bool Walker::update(double time,
     if (qDetector(_q_lat, _q_lat_min, _q_lat_max))
     {
         _current_event = Event::LatReached;
-        _q_lat = 0; /* RESET Q_LAT */
+
+        _q_lat = _q_sag;
 
         if (!_q_buffer.empty())
         {
@@ -357,11 +369,28 @@ bool Walker::update(double time,
     {
         if (_current_stance == Stance::Single)
         {
-            _steep_q_sag = (_q_sag_max - _q_sag_min) / _durations[0];
-            updateQ(time, _q_sag, _q_sag_min, _q_sag_max, _steep_q_sag, _q);
-            _q_lat = _q_sag;
+
+//            _q_lat = _q_sag;
             _q_lat_min = _q_sag_min;
             _q_lat_max = _q_sag_max;
+
+            _steep_q_lat = (_q_lat_max - _q_lat_min)/_durations[0];
+            _q_lat = _q_lat + _steep_q_lat * _dt;
+
+            if (_q_sag < 0)
+            {
+                _steep_q_sag = (0 - _q_sag_min) / _durations[0] * 2;
+            }
+            else
+            {
+                _steep_q_sag = (_q_sag_max - 0) / _durations[0] * 2;
+            }
+
+//            _steep_q_sag = (_q_sag_max - _q_sag_min) / _durations[0];
+
+            updateQ(time, _q, _q_sag_min, _q_sag_max, _steep_q_sag, _q);
+
+
         }
         else
         {
@@ -383,19 +412,8 @@ bool Walker::update(double time,
         double zmp_current;
         double zmp_next;
 
-        if (_current_swing_leg == 0)
-        {
-            zmp_current = _zmp_val_initial_right;
-            zmp_next = _zmp_val_initial_left;
-        }
-        else
-        {
-            zmp_current = _zmp_val_initial_left;
-            zmp_next = _zmp_val_initial_right;
-        }
-
-//        zmp_current = state.world_T_foot[1 - _current_swing_leg].translation()[1];
-//        zmp_next = state.world_T_foot[_current_swing_leg].translation()[1];
+        zmp_current = state.world_T_foot[1 - _current_swing_leg].translation()[1];
+        zmp_next = state.world_T_foot[_current_swing_leg].translation()[1];
 
         if (_current_stance == Stance::Single)
         {
@@ -447,7 +465,21 @@ bool Walker::update(double time,
     }
 
     /* -- until here everything is updated -- */
-    updateStep();
+    /* _q now goes from qmin to qmax with qmin negative, while I want it to be from zero to a value for the com to advance */
+    _step.q_sag = _q + _q_sag_max_previous;
+    _step.q_sag_min = _q_sag_min;
+    _step.q_sag_max = _q_sag_max;
+    _step.q_lat = _q_lat;
+    _step.q_lat_min = _q_lat_min;
+    _step.q_lat_max = _q_lat_max;
+    _step.height_com = _height_com;
+    _step.distance_ankle_com = _distance_ankle_com;
+    _step.step_clearance = _step_clearance;
+    _step.zmp_vals = _zmp_vals;
+    _step.durations = _durations;
+    _step.zmp_middle = _zmp_middle;
+
+//    updateStep();
 
     /* compute com and foot displacement */
     _engine->computeCom(time, _step, _delta_com);
@@ -457,19 +489,21 @@ bool Walker::update(double time,
     {
         Eigen::Rotation2Dd rot2(_theta);
 
-        Eigen::Vector3d delta_com_tot;
-        Eigen::Vector3d delta_foot_tot;
 
-        _engine->computeStep(time, _step, delta_foot_tot, delta_com_tot);
+        _engine->computeStep(time, _step, _delta_foot_tot, _delta_com_tot);
 
-        delta_com_tot.head(2) = rot2.toRotationMatrix() * delta_com_tot.head(2);
-        _com_pos_goal = _com_pos_start + delta_com_tot;
+//       TODO delta_com_tot.head(2) = rot2.toRotationMatrix() * delta_com_tot.head(2);
 
-        delta_foot_tot.head(2) = rot2.toRotationMatrix() * delta_foot_tot.head(2);
-        _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + delta_foot_tot;
+        /* this is because I'm passing the full q_max to the engine but I only want the x component (for theta...)*/
+        _delta_com_tot[0] = _delta_com_tot[0] * cos(_theta);
+
+        _com_pos_goal = _com_pos_start + _delta_com_tot;
+
+        _delta_foot_tot.head(2) = rot2.toRotationMatrix() * _delta_foot_tot.head(2);
+        _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + _delta_foot_tot;
         _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_phi, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
-//        _zmp_middle = (_foot_pos_goal[_current_swing_leg].translation()[1] + _foot_pos_goal[1 - _current_swing_leg].translation()[1]) /2;
+        _zmp_middle = (_foot_pos_goal[_current_swing_leg].translation()[1] + _foot_pos_goal[1 - _current_swing_leg].translation()[1]) /2;
         /* t_impact gets updated every time an impact occurs */
         /* delay -first- step to let the com swing laterally */
         _update_step = false;
@@ -485,14 +519,16 @@ bool Walker::update(double time,
     }
 
     /*------------------------------- computing ---------------------------------------------------*/
-    Eigen::Rotation2Dd rot2(_theta);
+//    Eigen::Rotation2Dd rot2(_theta);
     /* compute com trajectory and rotate if needed */
 
-    Eigen::Vector2d delta_com_x(_delta_com[0], 0);
-    delta_com_x = rot2.toRotationMatrix() * delta_com_x.head(2);
+//    Eigen::Vector2d delta_com_x(_delta_com[0], 0);
+//    delta_com_x = rot2.toRotationMatrix() * delta_com_x.head(2);
 
 
-    _delta_com_rot << delta_com_x[0], delta_com_x[1] + _delta_com[1], _delta_com[2];
+    _delta_com_rot = _delta_com;
+
+//    _delta_com_rot << delta_com_x[0], delta_com_x[1] + _delta_com[1], _delta_com[2];
 
 
 //    delta_com_rot.head(2) = rot2.toRotationMatrix() * _delta_com.head(2);
@@ -544,10 +580,12 @@ bool Walker::qDetector(double q, /* TODO fake or not? */
     /* q reaches q_max */
     if (q_min <= q_max)
     {
+//        flag_q = (q  >= q_max) || (q - q_max <= 1e3);
         flag_q = (q >= q_max);
     }
     else if (q_min > q_max)
     {
+//        flag_q = (q  <= q_max) || (q - q_max <= 1e3);
         flag_q = (q <= q_max);
     }
 
@@ -578,12 +616,13 @@ bool Walker::sagHandler(double time,
         _current_event = Event::SagReached;
 
         // ---------------------------
+        _q_min = - _q_sag;
         _q_sag_min = - _q_sag; /* HACK ALERT */
         _q_sag_max_previous = _q_sag_max;
         // ---------------------------
 
         /* reset q_fake */
-        _q = 0;
+        _q = - _q_sag;
         /* TODO is it ok? */
         _q_lat = - _q_sag;
         _q_lat_min = - _q_sag;
@@ -614,7 +653,6 @@ bool Walker::updateQ(double time,
                      double& q)
 {
         bool cond_q(false);
-
         if (q_sag_min <= q_sag_max)
         {
             cond_q = (q_sag >= q_sag_max);
@@ -645,14 +683,14 @@ double Walker::computeQSag(bool current_swing_leg,
     double q;
     double offset_q;
     /* 2D rot matrix, theta in radian */
-    Eigen::Rotation2Dd rot2(-theta);
+//    Eigen::Rotation2Dd rot2(-theta);
 
     /* distance between current com and starting com (updated at each step) */
     dist_com = world_T_com - world_T_com_start;
 
-    /* rotate back com */
-    dist_com.head(2) = rot2.toRotationMatrix() * dist_com.head(2);
 
+    /* rotate back com */
+//    dist_com.head(2) = rot2.toRotationMatrix() * dist_com.head(2);
     /* TODO depending on the length of the step, remove offset */
     offset_q = _q_sag_max_previous;
 
@@ -833,6 +871,8 @@ void Walker::log(std::string name, XBot::MatLogger::Ptr logger)
     logger->add(name + "_new_event_time", _new_event_time);
     logger->add(name + "_t_start_walk", _t_start_walk);
     logger->add(name + "_q", _q);
+    logger->add(name + "_q_min", _q_min);
+    logger->add(name + "_q_max", _q_max);
     logger->add(name + "_q_sag", _q_sag);
     logger->add(name + "_q_sag_min", _q_sag_min);
     logger->add(name + "_q_sag_max", _q_sag_max);

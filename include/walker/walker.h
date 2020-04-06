@@ -96,7 +96,7 @@ private:
 
     /* parameters of the stepping motion */
     int _step_counter, _cycle_counter;
-    double _steep_q_sag, _steep_q_lat;
+    double _steep_q, _steep_q_sag, _steep_q_lat;
 
     double _t_impact;
 
@@ -116,7 +116,7 @@ private:
     double _q, _q_min, _q_max;
     double _q_sag, _q_sag_min, _q_sag_max;
     double _q_lat, _q_lat_min, _q_lat_max;
-    double _q_sag_max_previous;
+    double _q_sag_max_previous, _q_max_previous;
 
     /* dt of the control */
     double _dt;
@@ -144,6 +144,9 @@ private:
 
     Eigen::Affine3d _waist_pos_start;
     Eigen::Affine3d _waist_pos_goal;
+
+    Eigen::Vector3d _delta_com_tot;
+    Eigen::Vector3d _delta_foot_tot;
 
 //    std::array<bool, 2> _foot_contact;
 
