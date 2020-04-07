@@ -276,9 +276,11 @@ bool Walker::update(double time,
                     const mdof::RobotState &state,
                     mdof::RobotState &ref)
 {
+    _q_sag_prev = _q_sag;
     _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
 
-    sagHandler(time, state);
+    if (_current_stance == Stance::Single)
+        sagHandler(time, state);
 
     /* if impact, go to double stance */
     if (_current_event == Event::SagReached)
@@ -302,7 +304,8 @@ bool Walker::update(double time,
     if (qDetector(_q_lat, _q_lat_min, _q_lat_max))
     {
         _current_event = Event::LatReached;
-
+        _q_sag_prev = _q_sag;
+        _zero_cross = false;
         _q_lat = _q_sag;
 
         if (!_q_buffer.empty())
@@ -366,7 +369,7 @@ bool Walker::update(double time,
         _durations << _param->getStepDuration();
     }
 
-    /* --------------------------------- execute times ------------------------------------------*/
+    /* --------------------------------- update times ------------------------------------------*/
     if (_execute_step)
     {
         _step_t_start = time;
@@ -388,21 +391,36 @@ bool Walker::update(double time,
             /* this is to get the new q_sag if theta is there */
             _q_sag_max = atan(tan(_q_max - _q_min) * cos(_theta)) + _q_min;
 
-            if (_q_sag < 0)
+            if (!_zero_cross)
             {
-                _steep_q_sag = (0 - _q_sag_min) / _durations[0] * 2;
+                if ( (!std::signbit(_q_sag) != !std::signbit(_q_sag_prev)))
+                {
+                    _zero_cross = true;
+                }
+            }
+
+            if (_current_state == State::Starting)
+            {
+                if (!_zero_cross)
+                {
+                    _steep_q_sag = (0 - _q_sag_min) / _durations[0];
+                }
+                else
+                {
+                    _steep_q_sag = (_q_sag_max - 0) / _durations[0];
+                }
             }
             else
             {
-                _steep_q_sag = (_q_sag_max - 0) / _durations[0] * 2;
+                if (!_zero_cross)
+                {
+                    _steep_q_sag = (0 - _q_sag_min) / _durations[0] * 2;
+                }
+                else
+                {
+                    _steep_q_sag = (_q_sag_max - 0) / _durations[0] * 2;
+                }
             }
-
-//            if (_q_sag <= _q_sag_max)
-//            {
-//                _q = _q + _steep_q_sag*(_dt); // basically q = a*t
-//            }
-
-
             updateQ(time, _q, _q_sag_min, _q_sag_max, _steep_q_sag, _q);
 
         }
@@ -584,33 +602,14 @@ bool Walker::qDetector(double q, /* TODO fake or not? */
 {
     bool flag_q(false);
 
-    if (!_zero_cross)
+    /* q reaches q_max */
+    if (q_min <= q_max)
     {
-        if (q < 0)
-        {
-            _zero_cross = (q >= 0);
-        }
-        else
-        {
-            _zero_cross = (q <= 0);
-        }
+        flag_q = (q >= q_max);
     }
-    else
+    else if (q_min > q_max)
     {
-        /* q reaches q_max */
-        if (q_min <= q_max)
-        {
-            flag_q = (q >= q_max);
-        }
-        else if (q_min > q_max)
-        {
-            flag_q = (q <= q_max);
-        }
-    }
-
-    if (flag_q == true)
-    {
-        _zero_cross = false;
+        flag_q = (q <= q_max);
     }
 
     return flag_q;
@@ -631,8 +630,10 @@ bool Walker::sagHandler(double time,
                             const mdof::RobotState &state)
 {
     /* TODO what if in IDLE? THINK ABOUT THIS */
-    if (qDetector( _q_sag, _q_sag_min, _q_sag_max) && impactDetector(state.world_T_foot[_current_swing_leg].translation()(2), _terrain_height))
+    if (qDetector( _alpha_sag, 0, 1) && impactDetector(state.world_T_foot[_current_swing_leg].translation()(2), _terrain_height))
     {
+        _zero_cross = false;
+        _q_sag_prev = - _q_sag;
 
         _t_impact = time;
 

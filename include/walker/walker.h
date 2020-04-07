@@ -114,6 +114,7 @@ private:
     double _t_start_walk;
 
     /* phase variable */
+    double _q_sag_prev;
     double _q, _q_min, _q_max;
     double _q_sag, _q_sag_min, _q_sag_max;
     double _q_lat, _q_lat_min, _q_lat_max;
