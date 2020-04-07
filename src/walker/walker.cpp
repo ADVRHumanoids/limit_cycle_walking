@@ -26,6 +26,7 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
     _current_swing_leg(0),
     _delay_start(0),
     _terrain_height(0),
+    _zero_cross(false),
     _step_t_start(0),
     _step_t_end(0),
     _step_clearance(0),
@@ -213,12 +214,12 @@ bool Walker::updateQMax(double time)
     /* update q_max */
     if (_q_buffer.empty())
     {
-        std::cout << "empty buffer, _q_sag_max is not updated: " << _q_sag_max << std::endl;
+        std::cout << "empty buffer, _q_sag_max is not updated: " << _q_max << std::endl;
         return false;
     }
     else
     {
-        _q_sag_max = _q_buffer.front();
+        _q_max = _q_buffer.front();
         _q_buffer.pop_front();
         return true;
     }
@@ -364,18 +365,28 @@ bool Walker::update(double time,
         _durations.resize(1);
         _durations << _param->getStepDuration();
     }
+
+    /* --------------------------------- execute times ------------------------------------------*/
+    if (_execute_step)
+    {
+        _step_t_start = time;
+        _step_t_end = _step_t_start + _durations[0];
+    }
+
     /* ---------------------------------- update q ----------------------------------------------*/
     if (_current_state != State::Idle)
     {
         if (_current_stance == Stance::Single)
         {
+            /* this links q_sag to q_lat, so that when q_sag advances from t_start to t_end q_lat goes from q_min to q_max */
+            _alpha_sag = ((time - _step_t_start) / (_step_t_end - _step_t_start));
 
-//            _q_lat = _q_sag;
-            _q_lat_min = _q_sag_min;
-            _q_lat_max = _q_sag_max;
+            _q_lat_min = _q_min;
+            _q_lat_max = _q_max;
+            _q_lat = _q_lat_min + _alpha_sag * (_q_lat_max - _q_lat_min);
 
-            _steep_q_lat = (_q_lat_max - _q_lat_min)/_durations[0];
-            _q_lat = _q_lat + _steep_q_lat * _dt;
+            /* this is to get the new q_sag if theta is there */
+            _q_sag_max = atan(tan(_q_max - _q_min) * cos(_theta)) + _q_min;
 
             if (_q_sag < 0)
             {
@@ -386,19 +397,19 @@ bool Walker::update(double time,
                 _steep_q_sag = (_q_sag_max - 0) / _durations[0] * 2;
             }
 
-//            _steep_q_sag = (_q_sag_max - _q_sag_min) / _durations[0];
+//            if (_q_sag <= _q_sag_max)
+//            {
+//                _q = _q + _steep_q_sag*(_dt); // basically q = a*t
+//            }
+
 
             updateQ(time, _q, _q_sag_min, _q_sag_max, _steep_q_sag, _q);
-
 
         }
         else
         {
-            if (_current_state == State::Starting || _current_state == State::Walking || _current_state == State::LastStep || _current_state == State::Stopping)
-            {
-                _steep_q_lat = (_q_lat_max - _q_lat_min)/_durations[0];
-                _q_lat = _q_lat + _steep_q_lat * _dt;
-            }
+            _steep_q_lat = (_q_lat_max - _q_lat_min)/_durations[0];
+            _q_lat = _q_lat + _steep_q_lat * _dt;
         }
     }
     /* TODO are these constant? */
@@ -468,7 +479,7 @@ bool Walker::update(double time,
     /* _q now goes from qmin to qmax with qmin negative, while I want it to be from zero to a value for the com to advance */
     _step.q_sag = _q + _q_sag_max_previous;
     _step.q_sag_min = _q_sag_min;
-    _step.q_sag_max = _q_sag_max;
+    _step.q_sag_max = _q_max;
     _step.q_lat = _q_lat;
     _step.q_lat_min = _q_lat_min;
     _step.q_lat_max = _q_lat_max;
@@ -511,10 +522,6 @@ bool Walker::update(double time,
     /*------------------------------ execute step ---------------------------------------------*/
     if (_execute_step)
     {
-        _step_t_start = time;
-        _step_t_end = _step_t_start + _durations[0];
-
-        /* burn execute_step */
         _execute_step = 0;
     }
 
@@ -577,16 +584,33 @@ bool Walker::qDetector(double q, /* TODO fake or not? */
 {
     bool flag_q(false);
 
-    /* q reaches q_max */
-    if (q_min <= q_max)
+    if (!_zero_cross)
     {
-//        flag_q = (q  >= q_max) || (q - q_max <= 1e3);
-        flag_q = (q >= q_max);
+        if (q < 0)
+        {
+            _zero_cross = (q >= 0);
+        }
+        else
+        {
+            _zero_cross = (q <= 0);
+        }
     }
-    else if (q_min > q_max)
+    else
     {
-//        flag_q = (q  <= q_max) || (q - q_max <= 1e3);
-        flag_q = (q <= q_max);
+        /* q reaches q_max */
+        if (q_min <= q_max)
+        {
+            flag_q = (q >= q_max);
+        }
+        else if (q_min > q_max)
+        {
+            flag_q = (q <= q_max);
+        }
+    }
+
+    if (flag_q == true)
+    {
+        _zero_cross = false;
     }
 
     return flag_q;
@@ -657,7 +681,7 @@ bool Walker::updateQ(double time,
         {
             cond_q = (q_sag >= q_sag_max);
         }
-        else if (_q_sag_min > q_sag_max)
+        else if (q_sag_min > q_sag_max)
         {
             cond_q = (q_sag <= q_sag_max);
         }
@@ -801,8 +825,6 @@ bool Walker::step_machine(double time)
 
             _step_counter++;
             _cycle_counter++;
-
-            _t_start_walk = time;
             break;
 
         default : /*std::cout << "Ignored starting event. Already WALKING" << std::endl; */

@@ -102,6 +102,7 @@ private:
 
     double _theta, _phi;
 
+    double _alpha_sag;
 
     double _time;
     double _new_event_time;
@@ -148,6 +149,7 @@ private:
     Eigen::Vector3d _delta_com_tot;
     Eigen::Vector3d _delta_foot_tot;
 
+    bool _zero_cross;
 //    std::array<bool, 2> _foot_contact;
 
     /* initial and final time of foot movement */
