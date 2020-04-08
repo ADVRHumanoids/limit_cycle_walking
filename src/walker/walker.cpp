@@ -401,11 +401,6 @@ bool Walker::update(double time,
 
             if (_current_state == State::Starting)
             {
-                if (!_zero_cross)
-                {
-                    _steep_q_sag = (0 - _q_sag_min) / _durations[0];
-                }
-                else
                 {
                     _steep_q_sag = (_q_sag_max - 0) / _durations[0];
                 }
