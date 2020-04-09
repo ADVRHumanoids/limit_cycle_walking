@@ -13,18 +13,11 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
     _time(0),
     _new_event_time(0),
     _t_start_walk(0),
-    _q(0),
-    _q_min(0),
-    _q_max(0),
-    _q_sag(0),
-    _q_sag_min(0),
-    _q_sag_max(0),
-    _q_lat(0),
-    _q_lat_min(0),
-    _q_lat_max(0),
+    _q(0), _q_min(0),_q_max(0),
+    _q_sag(0), _q_sag_min(0), _q_sag_max(0),
+    _q_lat(0), _q_lat_min(0), _q_lat_max(0),
     _dt(dt),
     _current_swing_leg(0),
-    _delay_start(0),
     _terrain_height(0),
     _zero_cross(false),
     _step_t_start(0),
@@ -40,7 +33,6 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
     _com_pos_goal.setZero();
 
     _delta_com.setZero();
-    _delta_com_rot.setZero();
 
     _foot_pos_start[0].matrix().setZero();
     _foot_pos_start[1].matrix().setZero();
@@ -55,19 +47,33 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
 bool Walker::init(const mdof::RobotState &state)
 {
     std::cout << "Initialization of Walker... " << std::endl;
+
     _current_stance = Stance::Double;
+
+    /* distance from world to foot */
     _terrain_height = state.world_T_foot[_current_swing_leg].translation()(2);
+
+    /* swing leg */
     _current_swing_leg = _param->getFirstSideStep();
-    _zmp_middle = (state.world_T_foot[0].translation()(1) + state.world_T_foot[1].translation()(1)) /2;
+
+    /* com */
     _com_pos_start = state.world_T_com;
     _com_pos_goal = state.world_T_com;
-    /* initialize duration for zmp window */
-    _durations <<_param->getStepDuration();
-    /* TODO _q depends on current _q_max, so I need to update _q_max before _q */
+
+    /* feet */
+    _foot_pos_start = state.world_T_foot;
+    _foot_pos_goal = state.world_T_foot;
+
+    /* duration for zmp window */
+    _durations << _param->getStepDuration();
+
+    /* q */
     _q_sag_max_previous = 0;
-    _q_sag_max = _param->getMaxInclination();
+    _q_sag_prev = 0;
+
     _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
-    _q_sag_min = _q_sag;  /*TODO here make changes!!!! */
+    _q_sag_min = _q_sag;
+    _q_sag_max = _param->getMaxInclination();
 
     _q_lat = _q_sag;
     _q_lat_min = _q_sag_min;
@@ -77,19 +83,12 @@ bool Walker::init(const mdof::RobotState &state)
     _q_min = _q_sag_min;
     _q_max = _q_sag_max;
 
-    _foot_pos_start = state.world_T_foot;
-    _foot_pos_goal = _foot_pos_start;
-
 
     /* durations */
     _ss_duration = _param->getStepDuration();
-    _ds_duration = 0; //_param->getDoubleStanceDuration();
+    _ds_duration = _param->getDoubleStanceDuration();
 
-    /* zmp vals */
-    _zmp_val_initial_left = state.world_T_foot[0].translation()[1];
-    _zmp_val_initial_right = state.world_T_foot[1].translation()[1];
-
-    /* initialize the Engine of Walker */
+    /* engine of Walker */
     Engine::Options eng_opt;
     eng_opt.mpc_Q = _param->getMpcQ();
     eng_opt.mpc_R = _param->getMpcR();
@@ -99,13 +98,12 @@ bool Walker::init(const mdof::RobotState &state)
 
     _engine = std::make_shared<Engine>(_dt, eng_opt);
 
-
     /* TODO: is this right? I don't think so */
     _height_com = fabs(state.world_T_com[2] - state.world_T_foot[_current_swing_leg].translation()[2]);
-
     _distance_ankle_com = state.ankle_T_com[1 - _current_swing_leg].translation().z();
 
-    /* set zmp */
+    /* zmp */
+    _zmp_middle = (state.world_T_foot[0].translation()(1) + state.world_T_foot[1].translation()(1)) /2;
     _zmp_vals.push_back((Eigen::VectorXd(1,1) << _zmp_middle).finished());
 
     _step.q_sag = _q;
@@ -121,7 +119,7 @@ bool Walker::init(const mdof::RobotState &state)
     _step.durations = _durations;
     _step.zmp_middle = _zmp_middle;
 
-//    updateStep();<
+//    updateStep();
 
     _engine->initialize(_step);
 
@@ -145,7 +143,6 @@ bool Walker::homing(const mdof::RobotState &state,
     com(2) = state.world_T_com[2] + _param->getInitialLowering();
 
     std::array<Eigen::Affine3d, 2> feet = {state.world_T_foot[0], state.world_T_foot[1]};
-
 
     Eigen::Quaterniond _orientation_goal;
     _orientation_goal.setIdentity();
@@ -230,7 +227,8 @@ bool Walker::updateTheta(double time)
 {
     if (_theta_buffer.empty())
     {
-        _theta = 0;
+        std::cout << "empty buffer, _theta is not updated: " << _theta << std::endl;
+        return false;
     }
     else
     {
@@ -244,7 +242,8 @@ bool Walker::updatePhi(double time)
 {
     if (_phi_buffer.empty())
     {
-        _phi = 0;
+        std::cout << "empty buffer, _phi is not updated: " << _phi << std::endl;
+        return false;
     }
     else
     {
@@ -518,7 +517,7 @@ bool Walker::update(double time,
 
 //       TODO delta_com_tot.head(2) = rot2.toRotationMatrix() * delta_com_tot.head(2);
 
-        /* this is because I'm passing the full q_max to the engine but I only want the x component (for theta...)*/
+        /* this is because I'm passing the full q_max to the engine but I only want the x component (for theta...) */
         _delta_com_tot[0] = _delta_com_tot[0] * cos(_theta);
 
         _com_pos_goal = _com_pos_start + _delta_com_tot;
@@ -528,8 +527,7 @@ bool Walker::update(double time,
         _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_phi, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
         _zmp_middle = (_foot_pos_goal[_current_swing_leg].translation()[1] + _foot_pos_goal[1 - _current_swing_leg].translation()[1]) /2;
-        /* t_impact gets updated every time an impact occurs */
-        /* delay -first- step to let the com swing laterally */
+
         _update_step = false;
     }
     /*------------------------------ execute step ---------------------------------------------*/
@@ -539,25 +537,8 @@ bool Walker::update(double time,
     }
 
     /*------------------------------- computing ---------------------------------------------------*/
-//    Eigen::Rotation2Dd rot2(_theta);
-    /* compute com trajectory and rotate if needed */
-
-//    Eigen::Vector2d delta_com_x(_delta_com[0], 0);
-//    delta_com_x = rot2.toRotationMatrix() * delta_com_x.head(2);
-
-
-    _delta_com_rot = _delta_com;
-
-//    _delta_com_rot << delta_com_x[0], delta_com_x[1] + _delta_com[1], _delta_com[2];
-
-
-//    delta_com_rot.head(2) = rot2.toRotationMatrix() * _delta_com.head(2);
-//    delta_com_rot[2] = _delta_com[2];
-
-
-
     Eigen::Vector3d com_ref;
-    com_ref = _com_pos_start + _delta_com_rot;
+    com_ref = _com_pos_start + _delta_com;
 
     /*compute feet trajectories and rotate if needed */
     std::array<Eigen::Affine3d, 2> feet_ref;
@@ -637,7 +618,7 @@ bool Walker::sagHandler(double time,
 
         // ---------------------------
         _q_min = - _q_sag;
-        _q_sag_min = - _q_sag; /* HACK ALERT */
+        _q_sag_min = - _q_sag;
         _q_sag_max_previous = _q_sag_max;
         // ---------------------------
 
@@ -702,15 +683,10 @@ double Walker::computeQSag(bool current_swing_leg,
     Eigen::Vector3d dist_com;
     double q;
     double offset_q;
-    /* 2D rot matrix, theta in radian */
-//    Eigen::Rotation2Dd rot2(-theta);
 
     /* distance between current com and starting com (updated at each step) */
     dist_com = world_T_com - world_T_com_start;
 
-
-    /* rotate back com */
-//    dist_com.head(2) = rot2.toRotationMatrix() * dist_com.head(2);
     /* TODO depending on the length of the step, remove offset */
     offset_q = _q_sag_max_previous;
 
@@ -726,13 +702,6 @@ bool Walker::updateZmp(mdof::RobotState state)
 
 bool Walker::step_machine(double time)
 {
-    /* q_max
-     * q_min
-     * started
-     * step_counter
-     * state
-     * steep_q
-     */
 
     //    std::cout << "Entering step machine with event: '" << _current_event << "' during state: '" << _current_state << "'" << std::endl;
 
@@ -776,7 +745,6 @@ bool Walker::step_machine(double time)
             _previous_state = _current_state;
             _current_state = State::LastStep;
 
-            _q_sag_max_previous = _q_sag_max;
             if (_q_buffer.empty())
             {
                 std::vector<double> new_q;
@@ -790,8 +758,6 @@ bool Walker::step_machine(double time)
 
             _previous_state = _current_state;
             _current_state = State::Idle;
-            _steep_q_sag = 0;
-            _q_sag_max = _param->getMaxInclination();
             break;
         }
         break;
@@ -819,7 +785,6 @@ bool Walker::step_machine(double time)
             _previous_state = _current_state;
             _current_state = State::Starting;
 
-            _step_counter++;
             _cycle_counter++;
             break;
 
@@ -900,12 +865,10 @@ void Walker::log(std::string name, XBot::MatLogger::Ptr logger)
     logger->add(name + "_q_lat_max", _q_lat_max);
     logger->add(name + "_dt", _dt);
     logger->add(name + "_current_swing_leg", _current_swing_leg);
-    logger->add(name + "_delay_start", _delay_start);
     logger->add(name + "_terrain_height", _terrain_height);
     logger->add(name + "_com_pos_start", _com_pos_start);
     logger->add(name + "_com_pos_goal", _com_pos_goal);
     logger->add(name + "_delta_com", _delta_com);
-    logger->add(name + "_delta_com_rot", _delta_com_rot);
     logger->add(name + "_l_foot_pos_start", _foot_pos_start[0].translation());
     logger->add(name + "_l_foot_pos_goal", _foot_pos_goal[0].translation());
     logger->add(name + "_r_foot_pos_start", _foot_pos_start[1].translation());

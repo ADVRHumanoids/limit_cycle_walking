@@ -1,5 +1,5 @@
-#ifndef STEP_MACHINE_H
-#define STEP_MACHINE_H
+#ifndef WALKER_H
+#define WALKER_H
 
 #include <robot/robot_state.h>
 #include <engine/engine.h>
@@ -14,7 +14,7 @@ public:
 
     Walker(double dt, std::shared_ptr<Param> par = getDefaultParam()); /* TODO */
 
-    enum class Event { SagReached = 0, LatReached = 1, Start = 2, Stop = 3, Empty = 4 }; /* some private (Impact), some public ? */
+    enum class Event { SagReached = 0, LatReached = 1, Start = 2, Stop = 3, Empty = 4 };
     enum class State { Idle = 0, Walking = 1, Starting = 2, Stopping = 4, LastStep = 5 };
     enum class Stance { Double = 0, Single = 1 };
 
@@ -32,7 +32,7 @@ public:
     /* heading (in rad) of the com */
     bool setTheta(std::vector<double> theta);
 
-    /* rotation (in rad )of foot and waist */
+    /* rotation (in rad) of foot and waist */
     bool setPhi(std::vector<double> phi);
 
     bool update(double time,
@@ -44,10 +44,10 @@ public:
 
     State getState() {return _current_state;}
 
+    void log(std::string name, XBot::MatLogger::Ptr logger);
+
     friend std::ostream& operator<<(std::ostream& os, Event s);
     friend std::ostream& operator<<(std::ostream& os, State s);
-
-    void log(std::string name, XBot::MatLogger::Ptr logger);
 
 private:
 
@@ -64,23 +64,23 @@ private:
                         double terrain_heigth);
 
     bool sagHandler(double time,
-                        const mdof::RobotState &state);
+                    const mdof::RobotState &state);
 
     bool latHandler(double time,
-                        const mdof::RobotState &state);
+                    const mdof::RobotState &state);
 
     bool updateQ(double time,
                   double q_sag,
                   double q_sag_min,
                   double q_sag_max,
-                  double steep_q,
-                  double& q);
+                 double steep_q,
+                 double& q);
 
     double computeQSag(bool current_swing_leg,
-                  double theta,
-                  Eigen::Vector3d world_T_com,
-                  Eigen::Vector3d world_T_com_start,
-                  std::array<Eigen::Affine3d, 2> ankle_T_com);
+                       double theta,
+                       Eigen::Vector3d world_T_com,
+                       Eigen::Vector3d world_T_com_start,
+                       std::array<Eigen::Affine3d, 2> ankle_T_com);
 
     bool updateQMax(double time);
     bool updateTheta(double time);
@@ -88,7 +88,7 @@ private:
 
     bool updateStep();
     bool updateZmp(mdof::RobotState state);
-//    bool resetter();
+    //    bool resetter();
 
     State _current_state, _previous_state;
     Event _current_event, _previous_event;
@@ -126,9 +126,6 @@ private:
     /* swinging leg (0 -> left, 1 -> right) */
     bool _current_swing_leg;
 
-    /* time between instant that received START command is received and instant where robot starts walking. Required for initial lateral shift of the CoM */
-    double _delay_start;
-
     /* buffer of commands for step */
     std::deque<double> _q_buffer, _theta_buffer, _phi_buffer;
 
@@ -139,7 +136,6 @@ private:
     Eigen::Vector3d _com_pos_goal;
 
     Eigen::Vector3d _delta_com;
-    Eigen::Vector3d _delta_com_rot;
 
     std::array<Eigen::Affine3d, 2> _foot_pos_start;
     std::array<Eigen::Affine3d, 2> _foot_pos_goal;
@@ -157,19 +153,9 @@ private:
     double _step_t_start;
     double _step_t_end;
 
-    /* initial and final time of total stepping motion */
-    double _t_min;
-    double _t_max;
-
     double _step_clearance;
 
     double _zmp_middle;
-    Eigen::VectorXd _zmp_val_current;
-    Eigen::VectorXd _zmp_val_next;
-
-    double _zmp_val_initial_left;
-    double _zmp_val_initial_right;
-
     std::vector<Eigen::MatrixXd> _zmp_vals;
     Eigen::VectorXd _durations;
 
@@ -177,7 +163,6 @@ private:
     double _height_com;
 
     bool _update_step;
-    bool _cmd_step;
     bool _execute_step;
 
     /* duration single stance and double stance */
@@ -219,4 +204,4 @@ private:
 
 #include <param/param.h>
 
-#endif // STEP_MACHINE_H
+#endif // WALKER_H
