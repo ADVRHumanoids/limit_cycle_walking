@@ -50,6 +50,9 @@ bool Walker::init(const mdof::RobotState &state)
 
     _current_stance = Stance::Double;
 
+    /* advancement of sagittal from 0 to 1 */
+    _alpha_sag = 0;
+
     /* distance from world to foot */
     _terrain_height = state.world_T_foot[_current_swing_leg].translation()(2);
 
