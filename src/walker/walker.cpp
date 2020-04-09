@@ -393,23 +393,24 @@ bool Walker::update(double time,
             /* this is to get the new q_sag if theta is there */
             _q_sag_max = atan(tan(_q_max - _q_min) * cos(_theta)) + _q_min;
 
-            if (!_zero_cross)
-            {
-                if ( (!std::signbit(_q_sag) != !std::signbit(_q_sag_prev)))
-                {
-                    _zero_cross = true;
-                }
-            }
+//            if (!_zero_cross)
+//            {
+//                if ( (!std::signbit(_q_sag) != !std::signbit(_q_sag_prev)))
+//                {
+//                    _zero_cross = true;
+//                }
+//            }
 
-            if (_current_state == State::Starting)
-            {
-                {
-                    _steep_q_sag = (_q_sag_max - 0) / _durations[0];
-                }
-            }
-            else
-            {
-                if (!_zero_cross)
+//            if (_current_state == State::Starting)
+//            {
+//                {
+//                    _steep_q_sag = (_q_sag_max - 0) / _durations[0];
+//                }
+//            }
+//            else
+//            {
+//                if (!_zero_cross)
+                if (_alpha_sag <= 0.5)
                 {
                     _steep_q_sag = (0 - _q_sag_min) / _durations[0] * 2;
                 }
@@ -417,7 +418,7 @@ bool Walker::update(double time,
                 {
                     _steep_q_sag = (_q_sag_max - 0) / _durations[0] * 2;
                 }
-            }
+//            }
             updateQ(time, _q, _q_sag_min, _q_sag_max, _steep_q_sag, _q);
 
         }
@@ -768,6 +769,11 @@ bool Walker::step_machine(double time)
     {
         switch (_current_state)
         {
+        case State::Starting :
+            _previous_state = _current_state;
+            _current_state = State::Walking;
+            break;
+
         default:
             break;
         }
@@ -805,9 +811,15 @@ bool Walker::step_machine(double time)
             break;
 
         case State::Walking :
-        case State::Starting :
             _previous_state = _current_state;
             _current_state = State::Stopping; // TODO replan as soon as I get the message?
+            break;
+
+        case State::Starting :
+            _previous_state = _current_state;
+            _current_state = State::Idle; // TODO replan as soon as I get the message?
+            _q_buffer.clear();
+            _q_lat = 0; /* TODO */
             break;
 
         case State::Stopping :
