@@ -56,6 +56,9 @@ bool Walker::init(const mdof::RobotState &state)
     /* distance from world to foot */
     _terrain_height = state.world_T_foot[_current_swing_leg].translation()(2);
 
+    /* step clearance */
+    _step_clearance = _param->getStepClearance();
+
     /* swing leg */
     _current_swing_leg = _param->getFirstSideStep();
 
@@ -72,7 +75,6 @@ bool Walker::init(const mdof::RobotState &state)
 
     /* q */
     _q_sag_max_previous = 0;
-    _q_sag_prev = 0;
 
     _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
     _q_sag_min = _q_sag;
@@ -278,7 +280,6 @@ bool Walker::update(double time,
                     const mdof::RobotState &state,
                     mdof::RobotState &ref)
 {
-    _q_sag_prev = _q_sag;
     _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
 
     if (_current_stance == Stance::Single)
@@ -287,6 +288,7 @@ bool Walker::update(double time,
     /* if impact, go to double stance */
     if (_current_event == Event::SagReached)
     {
+//        _alpha_sag = 0;
         _current_stance = Stance::Double;
         std::cout << "State changed. Current stance: DOUBLE" << std::endl;
         /* change _current_swing_leg */
@@ -306,8 +308,6 @@ bool Walker::update(double time,
     if (qDetector(_q_lat, _q_lat_min, _q_lat_max))
     {
         _current_event = Event::LatReached;
-        _q_sag_prev = _q_sag;
-        _zero_cross = false;
         _q_lat = _q_sag;
 
         if (!_q_buffer.empty())
@@ -321,6 +321,7 @@ bool Walker::update(double time,
         {
             _current_event = Event::Stop;
         }
+
 
         _current_stance = Stance::Single;
         std::string side;
@@ -384,7 +385,7 @@ bool Walker::update(double time,
         if (_current_stance == Stance::Single)
         {
             /* this links q_sag to q_lat, so that when q_sag advances from t_start to t_end q_lat goes from q_min to q_max */
-            _alpha_sag = ((time - _step_t_start) / (_step_t_end - _step_t_start));
+            _alpha_sag = std::min(std::max((time - _step_t_start)/(_step_t_end - _step_t_start), 0.0), 1.0);
 
             _q_lat_min = _q_min;
             _q_lat_max = _q_max;
@@ -552,9 +553,9 @@ bool Walker::update(double time,
     feet_ref[_current_swing_leg] = mdof::computeTrajectory(_foot_pos_start[_current_swing_leg],
                                                            _foot_pos_goal[_current_swing_leg],
                                                            _step_clearance,
-                                                           _step_t_start,
-                                                           _step_t_end,
-                                                           time);
+                                                           0,
+                                                           1,
+                                                           _alpha_sag);
 
     /* rotate waist */
     Eigen::Affine3d waist_ref = _waist_pos_start;
@@ -612,9 +613,6 @@ bool Walker::sagHandler(double time,
     /* TODO what if in IDLE? THINK ABOUT THIS */
     if (qDetector( _alpha_sag, 0, 1) && impactDetector(state.world_T_foot[_current_swing_leg].translation()(2), _terrain_height))
     {
-        _zero_cross = false;
-        _q_sag_prev = - _q_sag;
-
         _t_impact = time;
 
         _previous_event = _current_event;

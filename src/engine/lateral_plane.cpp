@@ -32,19 +32,19 @@ void LateralPlane::computePreviewWindow(double q_sns,
 
     /* compute alpha, phase variable normalized [0, 1] between q_max and q_min */
 //    _alpha_old = (_q_sns_prev - q_min)/(q_max - q_min);
-    _alpha = (q_sns - q_min)/(q_max - q_min);
+    _alpha = std::min(std::max((q_sns - q_min)/(q_max - q_min), 0.0), 1.0);
 
-    /* if alpha < 0 make it zero. This can happen if q_sns become */
-    if (_alpha < 0)
-    {
-        std::cout << "Lateral plane. WARNING: alpha < 0 " << std::endl;
-        _alpha = 0;
-    }
-    if (_alpha > 1)
-    {
-        std::cout << "Lateral plane. WARNING: alpha > 1 " << std::endl;
-        _alpha = 1;
-    }
+//    /* if alpha < 0 make it zero. This can happen if q_sns become */
+//    if (_alpha < 0)
+//    {
+//        std::cout << "Lateral plane. WARNING: alpha < 0 " << std::endl;
+//        _alpha = 0;
+//    }
+//    if (_alpha > 1)
+//    {
+//        std::cout << "Lateral plane. WARNING: alpha > 1 " << std::endl;
+//        _alpha = 1;
+//    }
 
     /* fill zmp with given values */
     /* assumes that vector and array have same number of rows */
