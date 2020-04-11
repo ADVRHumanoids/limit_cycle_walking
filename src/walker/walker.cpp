@@ -520,10 +520,11 @@ bool Walker::update(double time,
 
         _engine->computeStep(time, _step, _delta_foot_tot, _delta_com_tot);
 
-//       TODO delta_com_tot.head(2) = rot2.toRotationMatrix() * delta_com_tot.head(2);
+//       TODO
+        _delta_com_tot.head(2) = rot2.toRotationMatrix() * _delta_com_tot.head(2);
 
         /* this is because I'm passing the full q_max to the engine but I only want the x component (for theta...) */
-        _delta_com_tot[0] = _delta_com_tot[0] * cos(_theta);
+//        _delta_com_tot[0] = _delta_com_tot[0] * cos(_theta);
 
         _com_pos_goal = _com_pos_start + _delta_com_tot;
 
@@ -543,6 +544,8 @@ bool Walker::update(double time,
 
     /*------------------------------- computing ---------------------------------------------------*/
     Eigen::Vector3d com_ref;
+    Eigen::Rotation2Dd rot2(_theta);
+    _delta_com.head(2) = rot2.toRotationMatrix() * _delta_com.head(2);
     com_ref = _com_pos_start + _delta_com;
 
     /*compute feet trajectories and rotate if needed */
@@ -685,9 +688,13 @@ double Walker::computeQSag(bool current_swing_leg,
     Eigen::Vector3d dist_com;
     double q;
     double offset_q;
+    Eigen::Rotation2Dd rot2( - _theta);
 
     /* distance between current com and starting com (updated at each step) */
     dist_com = world_T_com - world_T_com_start;
+
+    /* rotate back com */
+    dist_com.head(2) = rot2.toRotationMatrix() * dist_com.head(2);
 
     /* TODO depending on the length of the step, remove offset */
     offset_q = _q_sag_max_previous;
