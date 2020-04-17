@@ -101,6 +101,7 @@ private:
     double _t_impact;
 
     double _theta, _phi;
+    double _theta_previous;
 
     double _alpha_sag;
 
@@ -121,6 +122,8 @@ private:
 
     /* dt of the control */
     double _dt;
+
+    double _zmp_right, _zmp_left;
 
     /* swinging leg (0 -> left, 1 -> right) */
     bool _current_swing_leg;

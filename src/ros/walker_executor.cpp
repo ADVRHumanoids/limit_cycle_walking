@@ -96,38 +96,51 @@ bool WalkerExecutor::homing()
 {
     _wlkr->homing(_state, _ref);
 
+    double reaching_time = 1;
+
     /* feet */
-   _tasks["l_sole"]->setPoseReference(_ref.world_T_foot[0]);
-   _tasks["r_sole"]->setPoseReference(_ref.world_T_foot[1]);
+   _tasks["l_sole"]->setPoseTarget(_ref.world_T_foot[0], reaching_time);
+   _tasks["r_sole"]->setPoseTarget(_ref.world_T_foot[1], reaching_time);
    /* com */
    Eigen::Affine3d com;
    com.translation() = _ref.world_T_com;
    com.linear().setIdentity();
+   _tasks["Com"]->setPoseTarget(com, reaching_time);
 
-   _tasks["Com"]->setPoseReference(com);
+   std::cout << "Homing.." << std::endl;
 
-   XBot::Cartesian::State l_sole_state =_ci->getTaskState("l_sole");
-   XBot::Cartesian::State r_sole_state =_ci->getTaskState("l_sole");
-   XBot::Cartesian::State com_state =_ci->getTaskState("l_sole");
-
-   while (l_sole_state != XBot::Cartesian::State::Online)
+   while (_tasks["l_sole"]->getTaskState() != XBot::Cartesian::State::Online &&
+          _tasks["r_sole"]->getTaskState() != XBot::Cartesian::State::Online &&
+          _tasks["Com"]->getTaskState() != XBot::Cartesian::State::Online)
    {
-       std::cout << "Task is reaching.." << std::endl;
+       /* update ci */
+       _ci->update(_time, _period);
+
+       /* integrate solution */
+       _model->getJointPosition(_q);
+       _model->getJointVelocity(_qdot);
+       _model->getJointAcceleration(_qddot);
+
+       _q += _period * _qdot + 0.5 * std::pow(_period, 2) * _qddot;
+       _qdot += _period * _qddot;
+
+       /* set joint poition to model */
+       _model->setJointPosition(_q);
+       _model->setJointVelocity(_qdot);
+       _model->update();
+
+       /* update robot and send */
+       _robot->setReferenceFrom(*_model, XBot::Sync::Position);
+       _robot->move();
+
+       std::this_thread::sleep_for(std::chrono::duration<double>(_period));
+       _time += _period;
    }
 
-   while (r_sole_state != XBot::Cartesian::State::Online)
-   {
-       std::cout << "Task is reaching.." << std::endl;
-   }
+   updateRobotState();
 
-   while (com_state != XBot::Cartesian::State::Online)
-   {
-       std::cout << "Task is reaching.." << std::endl;
-   }
-
+   std::cout << "Homing pose reached. " << std::endl;
    /* update state */
-   _state = _ref;
-
 
    return true;
 }

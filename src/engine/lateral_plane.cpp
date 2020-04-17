@@ -24,7 +24,7 @@ LateralPlane::LateralPlane(double dt, Options opt) :
 void LateralPlane::computePreviewWindow(double q_sns,
                                         double q_min,
                                         double q_max,
-                                        std::vector<Eigen::MatrixXd> zmp_val,
+                                        std::vector<Eigen::MatrixXd> zmp_val, /* better vector probably */
                                         Eigen::VectorXd duration,
                                         double zmp_middle,
                                         double offset)
@@ -49,54 +49,84 @@ void LateralPlane::computePreviewWindow(double q_sns,
     /* fill zmp with given values */
     /* assumes that vector and array have same number of rows */
 
-   std::vector<Eigen::VectorXd> chunks;
-   std::vector<int> sizes;
-   int count = 0;
-   for(auto val : zmp_val)
-   {
-       sizes.push_back(static_cast<int>( duration[count] / _dt ));
-       chunks.push_back(makeChunk(val, sizes[count]));
-       count++;
-   }
+    double last_value;
+    last_value = zmp_val.back().coeffRef(0, zmp_val.back().cols() -1);
 
+    std::vector<Eigen::VectorXd> chunks;
+    std::vector<int> sizes;
+    int count = 0;
+    /* generate all the chunk given the zmp values */
+    for(auto val : zmp_val)
+    {
+        sizes.push_back(static_cast<int>( duration[count] / _dt ));
+        chunks.push_back(makeChunk(val, sizes[count]));
+        count++;
+   }
+   /* _size of zmp for a period (one step) is zmp_window + period */
    _zmp.resize(_zmp_window.size() + chunks[0].size());
 
    int pos = 0;
+
+   /* fill zmp with chunks */
    for (auto chunk : chunks)
    {
        _zmp.segment(pos, chunk.size()) << chunk;
        pos = pos + chunk.size();
    }
 
-
+   /* if the current chunks fill the zmp... */
    if (pos > _zmp_window.size() + sizes[0])
    {
        /* okay */
    }
-   else
+   else /* otherwise...*/
    {
-       int n_pattern = 2; /* last 'n_pattern' chunks repeated used to make a pattern */
-       if (chunks.size() <= n_pattern - 1)
+       /* last 'n_pattern' chunks repeated to make a pattern */
+       int n_pattern = 2;
+       /* if 'n_pattern' is less than the chunks */
+       if (zmp_val.size() <= n_pattern - 1)
        {
            n_pattern = zmp_val.size();
        }
        int size_remaining = _zmp.size() - pos;
-       std::vector<Eigen::VectorXd> tail_chunks(chunks.end() - n_pattern, chunks.end());
+       /* take the last 'n_pattern' chunks */
+       std::vector<Eigen::MatrixXd> zmp_vals_tail(zmp_val.end() - n_pattern, zmp_val.end());
+       std::vector<int> sizes_tail(sizes.end() - n_pattern, sizes.end());
+
+
        while (size_remaining > 0)
        {
-           for (auto& tail_chunk : tail_chunks)
+           int i = 0;
+           for (auto& zmp_val_tail : zmp_vals_tail)
            {
-               tail_chunk = 2 * Eigen::VectorXd::Constant(tail_chunk.size(), zmp_middle) - tail_chunk;
-               if (tail_chunk.size() < size_remaining)
+               if (sizes_tail.at(i) < size_remaining)
                {
-                   _zmp.segment(_zmp.size() - size_remaining, tail_chunk.size()) = tail_chunk;
-                   size_remaining = size_remaining - tail_chunk.size();
+                   if (zmp_val_tail.size() == 1)
+                   {
+                       _zmp.segment(_zmp.size() - size_remaining, sizes_tail.at(i)) = makeChunk((Eigen::MatrixXd(1,1) << last_value).finished(), sizes_tail.at(i));
+                   }
+                   else
+                   {
+                       _zmp.segment(_zmp.size() - size_remaining, sizes_tail.at(i)) = makeChunk((Eigen::MatrixXd(1,2) << last_value, 2 * zmp_middle - last_value).finished(), sizes_tail.at(i));
+                       last_value = 2 * zmp_middle - last_value;
+                   }
+
+                   size_remaining = size_remaining - sizes_tail.at(i);
                }
                else
                {
-                   _zmp.tail(size_remaining) = tail_chunk.head(size_remaining);
+                   if (zmp_val_tail.size() == 1)
+                   {
+                       _zmp.tail(size_remaining) = makeChunk((Eigen::MatrixXd(1,1) << last_value).finished(), size_remaining);
+                   }
+                   else
+                   {
+                       _zmp.tail(size_remaining) = makeChunk((Eigen::MatrixXd(1,2) << last_value, 2 * zmp_middle - last_value).finished(), size_remaining);
+                   }
                    size_remaining = 0;
                }
+
+               i++;
            }
        }
    }
