@@ -40,7 +40,7 @@ public:
     double getHorizonDuration() const {return _horizon_duration;}
     double getZmpOffset() const {return _zmp_offset;}
 
-    void log(std::string name, XBot::MatLogger::Ptr logger);
+    void log(std::string name, XBot::MatLogger2::Ptr logger);
 
 private:
 

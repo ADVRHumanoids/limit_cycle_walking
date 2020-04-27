@@ -37,7 +37,7 @@ struct StepState {
     double height_com;
     double distance_ankle_com;
 
-    void log(std::string name, XBot::MatLogger::Ptr logger)
+    void log(std::string name, XBot::MatLogger2::Ptr logger)
     {
         logger->add(name + "_q_sag", q_sag);
         logger->add(name + "_q_lat", q_lat);

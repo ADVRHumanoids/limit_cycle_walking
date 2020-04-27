@@ -86,7 +86,7 @@ bool Engine::computeStep(double time, const mdof::StepState &state, Eigen::Vecto
 
 }
 
-void Engine::log(std::string name, XBot::MatLogger::Ptr logger)
+void Engine::log(std::string name, XBot::MatLogger2::Ptr logger)
 {
     logger->add(name + "_dt", _dt);
 

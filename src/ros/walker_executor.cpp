@@ -2,8 +2,6 @@
 
 #include <RobotInterfaceROS/ConfigFromParam.h>
 
-#include <cartesian_interface/CartesianInterfaceImpl.h>
-
 #include <thread>
 
 WalkerExecutor::WalkerExecutor() :
@@ -11,7 +9,11 @@ WalkerExecutor::WalkerExecutor() :
 {
 //    _feet_links = {"l_sole", "r_sole"};
 
-    _logger = XBot::MatLogger::getLogger("/tmp/walker_log");
+    /* Create logger */
+    XBot::MatLogger2::Options logger_opt;
+    logger_opt.default_buffer_size = 1e5;
+    _logger = XBot::MatLogger2::MakeLogger("/tmp/walker_log", logger_opt);
+    _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
 
     _time = 0;
     _period = 0.01;
@@ -145,7 +147,7 @@ bool WalkerExecutor::homing()
    return true;
 }
 
-void WalkerExecutor::log(XBot::MatLogger::Ptr logger)
+void WalkerExecutor::log(XBot::MatLogger2::Ptr logger)
 {
     _state.log("state", logger);
     _ref.log("ref", logger);
@@ -164,7 +166,6 @@ void WalkerExecutor::log(XBot::MatLogger::Ptr logger)
 
 WalkerExecutor::~WalkerExecutor()
 {
-    _logger->flush();
 }
 
 bool WalkerExecutor::updateRobotState()

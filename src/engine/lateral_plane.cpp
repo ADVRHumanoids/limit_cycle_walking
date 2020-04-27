@@ -177,7 +177,7 @@ void LateralPlane::update(double q_sns,
 }
 
 
-void LateralPlane::log(std::string name, XBot::MatLogger::Ptr logger)
+void LateralPlane::log(std::string name, XBot::MatLogger2::Ptr logger)
 {
     logger->add(name + "_delta_com", _delta_com);
     logger->add(name + "_alpha_old", _alpha_old);

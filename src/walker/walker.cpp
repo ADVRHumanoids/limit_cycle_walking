@@ -944,7 +944,7 @@ bool Walker::step_machine(double time)
     return true;
 }
 
-void Walker::log(std::string name, XBot::MatLogger::Ptr logger)
+void Walker::log(std::string name, XBot::MatLogger2::Ptr logger)
 {
     logger->add(name + "_step_counter", _step_counter);
     logger->add(name + "_cycle_counter", _cycle_counter);

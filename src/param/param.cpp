@@ -41,7 +41,7 @@ Walker::Param::Param(ros::NodeHandle nh) : Param()
     }
 }
 
-void Walker::Param::log(std::string name, XBot::MatLogger::Ptr logger)
+void Walker::Param::log(std::string name, XBot::MatLogger2::Ptr logger)
 {
     logger->add(name + "_initial_lowering", _initial_lowering);
     logger->add(name + "_first_side_step", _first_side_step);

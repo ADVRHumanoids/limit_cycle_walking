@@ -5,6 +5,8 @@
 #include <walker/walker.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 
+#include <cartesian_interface/utils/RobotStatePublisher.h>
+
 #include <XBotInterface/RobotInterface.h>
 
 #include <std_srvs/SetBool.h>
@@ -16,7 +18,7 @@
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
 
-#include <XBotLogger/MatLogger.hpp>
+#include <matlogger2/matlogger2.h>
 
 class WalkerExecutor {
 public:
@@ -25,7 +27,7 @@ public:
     void run();
     bool homing();
     
-    void log(XBot::MatLogger::Ptr logger);
+    void log(XBot::MatLogger2::Ptr logger);
 
     ~WalkerExecutor();
 
@@ -35,6 +37,8 @@ private:
 
     void init_services();
     void init_load_model_and_robot();
+
+    void init_load_model();
     void init_load_robot_state();
     void init_load_cartesian_interface();
     void init_load_walker();
@@ -70,6 +74,8 @@ private:
     XBot::RobotInterface::Ptr _robot;
     XBot::Cartesian::CartesianInterfaceImpl::Ptr _ci;
 
+    std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rsp;
+
     std::map<std::string, XBot::Cartesian::CartesianTask::Ptr> _tasks;
 
     mdof::RobotState _state;
@@ -80,7 +86,7 @@ private:
 
     Eigen::VectorXd _q, _qdot, _qddot;
 
-    XBot::MatLogger::Ptr _logger;
+    XBot::MatLogger2::Ptr _logger;
 
     double _period, _time;
 
@@ -90,31 +96,3 @@ private:
 };
 
 #endif // WALKER_ROS_H
-
-
-
-
-//////// current one ////////////
-
-//int main(int argc, char **argv)
-//{
-//    ros::init(argc, argv, "virtual_constraints");
-
-
-//    virtualConstraintsNode VC;
-
-//    /*synchronize this node to the cartesian interface*/
-//    ros::service::waitForService("cartesian/get_task_list");
-//    ros::Rate loop_rate(100); //TODO set it from the robot
-//    robot_interface_ROS& robot = VC.get_robot(); /*or -->  VC.get_robot().sense();*/
-
-
-//    while (ros::ok())
-//    {
-//        VC.get_robot().sense();
-//        VC.exe(ros::Time::now().toSec());
-//        loop_rate.sleep();
-//    }
-//}
-
-

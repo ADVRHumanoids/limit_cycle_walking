@@ -1,7 +1,7 @@
 ﻿#ifndef ROBOT_STATE_H
 #define ROBOT_STATE_H
 
-#include <XBotInterface/MatLogger.hpp>
+#include <matlogger2/matlogger2.h>
 
 namespace mdof {
 
@@ -35,7 +35,7 @@ struct RobotState
 
     Eigen::Vector3d world_T_com;
 
-    void log(std::string name, XBot::MatLogger::Ptr logger)
+    void log(std::string name, XBot::MatLogger2::Ptr logger)
     {
         logger->add(name + "_com_vel", com_vel);
         logger->add(name + "_l_foot", world_T_foot[0].translation());

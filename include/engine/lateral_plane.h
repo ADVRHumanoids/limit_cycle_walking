@@ -1,7 +1,7 @@
 #ifndef LATERAL_PLANE_H
 #define LATERAL_PLANE_H
 
-#include <XBotLogger/Logger.hpp>
+#include <matlogger2/matlogger2.h>
 
 class LateralPlane {
 
@@ -63,7 +63,7 @@ public:
 
     Eigen::VectorXd getPreviewWindow(){return _zmp_window;}
 
-    void log(std::string name, XBot::MatLogger::Ptr logger);
+    void log(std::string name, XBot::MatLogger2::Ptr logger);
 
 private:
 

@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(XBotInterface REQUIRED)
 find_package(OpenMpC REQUIRED)
+find_package(matlogger2 REQUIRED)
 
 add_service_files(
   FILES
@@ -68,6 +69,7 @@ target_link_libraries(LimitCycleWalker ${catkin_LIBRARIES}
                                        ${XBotInterface_LIBRARIES}
                                        ${OpenMpC_LIBRARIES}
                                        ${cartesian_interface_LIBRARIES}
+                                       matlogger2::matlogger2
                                        yaml-cpp)
 
 install(TARGETS LimitCycleWalker LimitCycleWalker

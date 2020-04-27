@@ -19,7 +19,7 @@ bool SagittalPlane::update(double q,
     return true;
 }
 
-void SagittalPlane::log(std::string name, XBot::MatLogger::Ptr logger)
+void SagittalPlane::log(std::string name, XBot::MatLogger2::Ptr logger)
 {
     std::string className("sagittal_plane_");
 

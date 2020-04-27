@@ -44,7 +44,7 @@ public:
 
     State getState() {return _current_state;}
 
-    void log(std::string name, XBot::MatLogger::Ptr logger);
+    void log(std::string name, XBot::MatLogger2::Ptr logger);
 
     friend std::ostream& operator<<(std::ostream& os, Event s);
     friend std::ostream& operator<<(std::ostream& os, State s);

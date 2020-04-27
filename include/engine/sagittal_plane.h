@@ -1,7 +1,7 @@
 #ifndef SAGITTAL_PLANE_H
 #define SAGITTAL_PLANE_H
 
-#include <XBotLogger/Logger.hpp>
+#include <matlogger2/matlogger2.h>
 
 /**
  * this walker is conceived having in mind a 'normal walk':
@@ -30,7 +30,7 @@ public:
     double getDeltaCom(){return _delta_com;}
     double getDeltaFoot() {return _delta_foot;}
 
-    void log(std::string name, XBot::MatLogger::Ptr logger);
+    void log(std::string name, XBot::MatLogger2::Ptr logger);
 
 private:
 

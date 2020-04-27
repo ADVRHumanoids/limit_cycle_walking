@@ -1,10 +1,12 @@
 #ifndef MPC_SOLVER_H
 #define MPC_SOLVER_H
 
-#include <XBotLogger/Logger.hpp>
+#include <matlogger2/matlogger2.h>
 #include <OpenMpC/solver/UnconstrainedMpc.h>
 
 #include <engine/lateral_plane.h>
+
+#include <iostream>
 
 class LateralPlane::MpcSolver {
 public:
@@ -27,7 +29,7 @@ public:
 
     OpenMpC::dynamics::LtiDynamics::Ptr getIntegrator() {return _integrator;}
 
-    void log(std::string name, XBot::MatLogger::Ptr logger);
+    void log(std::string name, XBot::MatLogger2::Ptr logger);
 
 private:
 
