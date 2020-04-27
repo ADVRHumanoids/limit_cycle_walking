@@ -85,6 +85,8 @@ void WalkerExecutor::run()
     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
     _robot->move();
 
+    _rsp->publishTransforms(ros::Time::now(), "ci");
+
     std::this_thread::sleep_for(std::chrono::duration<double>(_period));
     _time += _period;
 
@@ -211,6 +213,8 @@ void WalkerExecutor::init_load_model_and_robot()
 
     _model->getJointPosition(_q);
 
+    _rsp = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_model);
+
 //    XBot::JointNameMap joint_map;
 //    _model->getJointPosition(joint_map);
 //    std::cout << joint_map["RankleRoll"] << std::endl;
@@ -227,6 +231,36 @@ void WalkerExecutor::init_load_model_and_robot()
 //    _model->setFloatingBasePose(w_T_pelvis*w_T_l.inverse());
     //    _model->update()
 }
+
+//void WalkerExecutor::init_load_model_from_launchfile()
+//{
+//    // an option structure which is needed to make a model
+//    XBot::ConfigOptions xbot_cfg;
+
+//    // set the urdf and srdf path..
+//    xbot_cfg.set_urdf_path(URDF_PATH);
+//    xbot_cfg.set_srdf_path(SRDF_PATH);
+
+//    // the following call is needed to generate some default joint IDs
+//    xbot_cfg.generate_jidmap();
+
+//    // some additional parameters..
+//    xbot_cfg.set_parameter("is_model_floating_base", true);
+//    xbot_cfg.set_parameter<std::string>("model_type", "RBDL");
+
+//    // and we can make the model class
+//    auto model = XBot::ModelInterface::getModel(xbot_cfg);
+
+
+//    ros::NodeHandle nh("xbotcore");
+//    auto cfg = XBot::ConfigOptionsFromParamServer(nh);
+
+//    // and we can make the model class
+//    auto model = XBot::ModelInterface::getModel(cfg);
+//    _rsp = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(model);
+
+//}
+
 
 //void WalkerExecutor::init_homing()
 //{
@@ -290,7 +324,6 @@ void WalkerExecutor::init_load_cartesian_interface()
 
 void WalkerExecutor::init_load_walker()
 {
-    //_walker_par = std::make_shared<Walker::Param>(_nh);
     YAML::Node walking_yaml = YAML::LoadFile(_path_to_cfg + "walking_config.yaml");
     auto wlkr_par = std::make_shared<Walker::Param>(walking_yaml);
     _wlkr = std::make_shared<Walker>(_period, wlkr_par);

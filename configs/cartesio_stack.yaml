@@ -4,7 +4,7 @@ solver_options:
 
 stack:
     - ["LFoot", "RFoot"] #PosturalPennacchio
-    - ["CoM", "Torso"] # CoM # CoMStabilizer #"Torso"
+    - ["CoM", "Torso", "LArm", RArm] # CoM # CoMStabilizer #"Torso"
     - ["WaistOrient"]
     - ["Postural"]
     
@@ -64,14 +64,14 @@ Postural:
 
 LArm:
     type: "Cartesian"
-    distal_link: "LSoftHand"
-    base_link: "world"
+    distal_link: "l_ball_tip"
+    base_link: "torso"
     lambda: 0.1
 
 RArm:
     type: "Cartesian"
-    distal_link: "RSoftHand"
-    base_link: "world"
+    distal_link: "r_ball_tip"
+    base_link: "torso"
     lambda: 0.1
 
 Torso:

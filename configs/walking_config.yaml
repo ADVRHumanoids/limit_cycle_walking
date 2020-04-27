@@ -1,12 +1,12 @@
 init_parameters:
-    initial_lowering: -0.12
+    initial_lowering: 0
     first_step_side: Right
     lean_forward: 0.0
 
 walking_parameters:
     step_clearance: 0.05
     step_duration: 1
-    double_stance_duration: 0.0
+    double_stance_duration: 0
     max_inclination: 0.05
 
 mpc_parameters:

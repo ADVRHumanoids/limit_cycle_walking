@@ -284,27 +284,26 @@ bool Walker::update(double time,
                     const mdof::RobotState &state,
                     mdof::RobotState &ref)
 {
-
-     if (_current_stance == Stance::Single)
-        sagHandler(time, state);
+    sagHandler(time, state);
 
     /* if impact, go to double stance */
     if (_current_event == Event::SagReached)
     {
-//        _alpha_sag = 0;
-        _current_stance = Stance::Double;
         std::cout << "State changed. Current stance: DOUBLE" << std::endl;
         /* change _current_swing_leg */
         _current_swing_leg = 1 - _current_swing_leg;
 
+        if (!_q_buffer.empty())
+        {
+            _update_step = 1;
+            _execute_step = 1;
+        }
+
         updateQMax(time);
         updateTheta(time);
+        updatePhi(time);
 
-    }
 
-
-    if (_current_event == Event::SagReached)
-    {
         // ---------------------------
         _q_min = - _q_sag_max;
         _q_sag_min = - _q_sag_max;
@@ -316,58 +315,29 @@ bool Walker::update(double time,
         /* TODO is it ok? */
         _q_lat = - _q_sag_max;
         _q_lat_min = - _q_sag_max;
-    }
-
-    _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
 
 
-//    double theta_diff;
-    if (_current_event == Event::SagReached)
-    {
-        if (fabs(_theta - _theta_previous ) >= 1e-2)
-        {
-            _q_min = _q_sag;
-            _q_sag_min = _q_sag;
-        }
-    }
 
+        _q_lat = _q_sag;
 
-    /* if in idle and receive a q_max, start TODO with that q_max!*/
-//    if (_current_state == State::Idle)
-//    {
-//        if (!_q_buffer.empty())
-//        {
-//          _current_event = Event::Start;
-//        }
-//    }
-
-    /* if qDetector lat triggers, get from buffer if it's not empty and issue step */
-    if (qDetector(_q_lat, _q_lat_min, _q_lat_max))
-    {
-        _current_event = Event::LatReached;
-
-        if (!_q_buffer.empty())
-        {
-            _update_step = 1;
-            _execute_step = 1;
-        }
-        else
-        {
-            _current_event = Event::Stop;
-        }
-
-
-        _current_stance = Stance::Single;
         std::string side;
         (_current_swing_leg) ? side = "LEFT" : side = "RIGHT";
         std::cout << "State changed. Current stance: " << side << std::endl;
     }
 
+    _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
 
 
-    if (_current_event == Event::LatReached)
+    if (_current_event == Event::SagReached)
     {
-        _q_lat = _q_sag;
+        if (fabs( _theta - _theta_previous ) >= 1e-2)
+        {
+//            _q = _q_sag;
+            _q_min = _q_sag;
+            _q_sag_min = _q_sag;
+            _flag_theta = 1;
+        }
+
     }
 
     step_machine(time);
@@ -375,36 +345,18 @@ bool Walker::update(double time,
     /* ------------------------------- update durations ------------------------------------------*/
     if (_current_state != State::Idle)
     {
-        /* if SS */
-        if (_current_stance == Stance::Single)
+        _durations.resize(2);
+        _durations << _ss_duration, _ss_duration;
+
+        if (_current_state == State::Starting)
         {
             _durations.resize(2);
-            _durations << _ss_duration, _ds_duration;
-            if (_current_state == State::LastStep)
-            {
-                _durations.resize(3);
-                _durations << _ss_duration, _ds_duration, _ss_duration;
-            }
+            _durations << 2 * _ss_duration, _ss_duration;
         }
-        /* IF DS */
-        else
+        if (_current_state == State::LastStep)
         {
-            if (_current_state == State::Starting)
-            {
-                _durations.resize(3);
-                /* regardless of ds duration, I need some time to start walking, hence 2 * ss_duration */
-                _durations << 2 *_ss_duration, _ss_duration, _ds_duration;
-            }
-            else if (_current_state == State::LastStep)
-            {
-                _durations.resize(3);
-                _durations << _ds_duration, _ss_duration, _ss_duration;
-            }
-            else
-            {
-                _durations.resize(2);
-                _durations << _ds_duration, _ss_duration;
-            }
+            _durations.resize(2);
+            _durations << _ss_duration, _ss_duration;
         }
     }
     else
@@ -423,54 +375,30 @@ bool Walker::update(double time,
     /* ---------------------------------- update q ----------------------------------------------*/
     if (_current_state != State::Idle)
     {
-        if (_current_stance == Stance::Single)
+        /* this links q_sag to q_lat, so that when q_sag advances from t_start to t_end q_lat goes from q_min to q_max */
+        _alpha_sag = std::min(std::max((time - _step_t_start)/(_step_t_end - _step_t_start), 0.0), 1.0);
+
+//        _q_lat_min = _q_sag_min;
+//        _q_lat_max = _q_sag_max;
+//        _q_lat = _q_sag;
+        _q_lat_min = _q_min;
+        _q_lat_max = _q_max;
+        _q_lat = _q_lat_min + _alpha_sag * (_q_lat_max - _q_lat_min);
+
+        _q_sag_max = _q_max;
+
+
+        if (_alpha_sag <= 0.5)
         {
-            /* this links q_sag to q_lat, so that when q_sag advances from t_start to t_end q_lat goes from q_min to q_max */
-            _alpha_sag = std::min(std::max((time - _step_t_start)/(_step_t_end - _step_t_start), 0.0), 1.0);
-
-            _q_lat_min = _q_min;
-            _q_lat_max = _q_max;
-            _q_lat = _q_lat_min + _alpha_sag * (_q_lat_max - _q_lat_min);
-
-            /* this is to get the new q_sag if theta is there */
-//            _q_sag_max = atan(tan(_q_max - _q_min) * cos(_theta)) + _q_min;
-
-            _q_sag_max = _q_max;
-//            if (!_zero_cross)
-//            {
-//                if ( (!std::signbit(_q_sag) != !std::signbit(_q_sag_prev)))
-//                {
-//                    _zero_cross = true;
-//                }
-//            }
-
-//            if (_current_state == State::Starting)
-//            {
-//                {
-//                    _steep_q_sag = (_q_sag_max - 0) / _durations[0];
-//                }
-//            }
-//            else
-//            {
-//                if (!_zero_cross)
-            if (_alpha_sag <= 0.5)
-            {
-                _steep_q_sag = (0 - _q_sag_min) / _durations[0] * 2;
-            }
-            else
-            {
-                _steep_q_sag = (_q_sag_max - 0) / _durations[0] * 2;
-            }
-            //            }
-//            updateQ(time, _q_sag, _q_sag_min, _q_sag_max, _steep_q_sag, _q);
-             _q = _q + _steep_q_sag *(_dt);
-
+            _steep_q_sag = (0 - _q_sag_min) / _durations[0] * 2;
         }
         else
         {
-            _steep_q_lat = (_q_lat_max - _q_lat_min)/_durations[0];
-            _q_lat = _q_lat + _steep_q_lat * _dt;
+            _steep_q_sag = (_q_sag_max - 0) / _durations[0] * 2;
         }
+        //            }
+        //            updateQ(time, _q_sag, _q_sag_min, _q_sag_max, _steep_q_sag, _q);
+        _q = _q + _steep_q_sag *(_dt);
     }
     /* TODO are these constant? */
     _distance_ankle_com = state.ankle_T_com[1 - _current_swing_leg].translation().z();
@@ -486,83 +414,44 @@ bool Walker::update(double time,
         Eigen::Vector3d temp_zmp_swing, temp_zmp_stance;
 
 
-
-
         temp_zmp_stance.head(2) = rot2 * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_start).head(2);
         temp_zmp_swing.head(2) = rot2 * (state.world_T_foot[_current_swing_leg].translation() - _com_pos_start).head(2);
 
 
-        if (!_theta_buffer.empty())
-        {
-            Eigen::Rotation2Dd rot2a(_theta_buffer.front());
-            Eigen::Vector3d temp_zmp_swing1;
-            temp_zmp_swing1.head(2) = rot2a * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_goal).head(2);
+//        if (!_theta_buffer.empty())
+//        {
+//            Eigen::Rotation2Dd rot2a(_theta_buffer.front());
+//            Eigen::Vector3d temp_zmp_swing1;
+//            temp_zmp_swing1.head(2) = rot2a * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_goal).head(2);
 
-            Eigen::Rotation2Dd rot2(- _theta_buffer.front());
-            temp_zmp_swing.head(2) = - (rot2 * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_goal).head(2));
+//            Eigen::Rotation2Dd rot2(- _theta_buffer.front());
+//            temp_zmp_swing.head(2) = - (rot2 * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_goal).head(2));
 
-        }
+//        }
 
         zmp_current = temp_zmp_stance(1);
         zmp_next = temp_zmp_swing(1);
 
 
-
-//        if (_current_swing_leg == 1)
-//        {
-//            zmp_current = _zmp_left;
-//            zmp_next = _zmp_right;
-//        }
-//        else
-//        {
-//            zmp_current = _zmp_right;
-//            zmp_next = _zmp_left;
-//        }
+        _zmp_vals.clear();
+        _zmp_vals.push_back((Eigen::MatrixXd(1,1) << zmp_current).finished());
+        _zmp_vals.push_back((Eigen::MatrixXd(1,1) << zmp_next).finished());
 
 
-
-
-        if (_current_stance == Stance::Single)
+        if (_current_state == State::Starting)
         {
             _zmp_vals.clear();
-            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << zmp_current).finished());
-            _zmp_vals.push_back((Eigen::MatrixXd(1,2) << zmp_current, zmp_next).finished());
+            _zmp_vals.push_back((Eigen::MatrixXd(1,2) << _zmp_middle, zmp_current).finished());
+            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << zmp_next).finished());
         }
-        else
-        {
-            _zmp_vals.clear();
-            if (_current_state == State::Starting)
-            {
-                _zmp_vals.push_back((Eigen::MatrixXd(1,3) << _zmp_middle, _zmp_middle, zmp_current).finished());
-                _zmp_vals.push_back((Eigen::MatrixXd(1,1) << zmp_current).finished());
-                _zmp_vals.push_back((Eigen::MatrixXd(1,2) << zmp_current, zmp_next).finished());
-            }
-            else
-            {
-                _zmp_vals.push_back((Eigen::MatrixXd(1,2) << zmp_next, zmp_current).finished());
-                _zmp_vals.push_back((Eigen::MatrixXd(1,1) << zmp_current).finished());
-            }
-        }
-
 
         if (_current_state == State::LastStep)
         {
-            /* for the ending motion of the last step */
-            /* TODO put here for zeroing zmp afterlast step */
-            if (_current_stance == Stance::Single)
-            {
-                _zmp_vals.clear();
-                _zmp_vals.push_back((Eigen::MatrixXd(1,1) << zmp_current).finished());
-                _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
-                _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
-            }
-            else
-            {
-                _zmp_vals.clear();
-                _zmp_vals.push_back((Eigen::MatrixXd(1,2) << zmp_next, zmp_current).finished());
-                _zmp_vals.push_back((Eigen::MatrixXd(1,1) <<zmp_current).finished());
-                _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
-            }
+
+            _zmp_vals.clear();
+            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << zmp_current).finished());
+            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
+            _zmp_vals.push_back((Eigen::MatrixXd(1,1) << _zmp_middle).finished());
         }
     }
     else
@@ -633,7 +522,9 @@ bool Walker::update(double time,
     /*------------------------------- computing ---------------------------------------------------*/
     Eigen::Vector3d com_ref;
     Eigen::Rotation2Dd rot2(_theta);
+
     _delta_com.head(2) = rot2.toRotationMatrix() * _delta_com.head(2);
+
 
     com_ref = _com_pos_start + _delta_com;
 
@@ -645,9 +536,9 @@ bool Walker::update(double time,
     feet_ref[_current_swing_leg] = mdof::computeTrajectory(_foot_pos_start[_current_swing_leg],
                                                            _foot_pos_goal[_current_swing_leg],
                                                            _step_clearance,
-                                                           0,
-                                                           1,
-                                                           _alpha_sag);
+                                                           _q_sag_min,
+                                                           _q_sag_max,
+                                                           _q_sag);
 
     /* rotate waist */
     Eigen::Affine3d waist_ref = _waist_pos_start;
@@ -703,7 +594,7 @@ bool Walker::sagHandler(double time,
                             const mdof::RobotState &state)
 {
     /* TODO what if in IDLE? THINK ABOUT THIS */
-    if (qDetector( _alpha_sag, 0, 1) && impactDetector(state.world_T_foot[_current_swing_leg].translation()(2), _terrain_height))
+    if (qDetector(_alpha_sag, 0, 1) && impactDetector(state.world_T_foot[_current_swing_leg].translation()(2), _terrain_height))
     {
         _t_impact = time;
 
@@ -781,7 +672,7 @@ double Walker::computeQSag(bool current_swing_leg,
 
     ankle_T_com[1 - current_swing_leg].translation().head(2) = rot2 * ankle_T_com[1 - current_swing_leg].translation().head(2);
     /* compute q, inclination angle of the robot */
-//    q = atan( dist_com(0) / fabs(ankle_T_com[1 - current_swing_leg].translation()(2)) ) - offset_q;
+    double q2 = atan( dist_com(0) / fabs(ankle_T_com[1 - current_swing_leg].translation()(2)) ) - offset_q;
 
     q = - atan( ankle_T_com[1 - current_swing_leg].translation()(0) / fabs(ankle_T_com[1 - current_swing_leg].translation()(2)) );
 
@@ -853,20 +744,6 @@ bool Walker::step_machine(double time)
             break;
         }
         break;
-    case Event::LatReached :
-    {
-        switch (_current_state)
-        {
-        case State::Starting :
-            _previous_state = _current_state;
-            _current_state = State::Walking;
-            break;
-
-        default:
-            break;
-        }
-        break;
-    }
     case Event::Start :
     {
         switch (_current_state)
@@ -879,6 +756,10 @@ bool Walker::step_machine(double time)
                 new_q.push_back(_param->getMaxInclination());
                 setQMax(new_q);
             }
+
+            _update_step = 1;
+            _execute_step = 1;
+
             _previous_state = _current_state;
             _current_state = State::Starting;
 

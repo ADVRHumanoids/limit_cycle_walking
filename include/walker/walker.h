@@ -1,6 +1,7 @@
 #ifndef WALKER_H
 #define WALKER_H
 
+
 #include <robot/robot_state.h>
 #include <engine/engine.h>
 #include <walker/foot_trajectory.h>
@@ -14,7 +15,7 @@ public:
 
     Walker(double dt, std::shared_ptr<Param> par = getDefaultParam()); /* TODO */
 
-    enum class Event { SagReached = 0, LatReached = 1, Start = 2, Stop = 3, Empty = 4 };
+    enum class Event { SagReached = 0, Start = 2, Stop = 3, Empty = 4 };
     enum class State { Idle = 0, Walking = 1, Starting = 2, Stopping = 4, LastStep = 5 };
     enum class Stance { Double = 0, Single = 1 };
 
@@ -139,6 +140,7 @@ private:
 
     Eigen::Vector3d _delta_com;
 
+    bool _flag_theta;
     std::array<Eigen::Affine3d, 2> _foot_pos_start;
     std::array<Eigen::Affine3d, 2> _foot_pos_goal;
 
@@ -181,7 +183,6 @@ private:
         {
             case Event::Empty : return os << "empty";
             case Event::SagReached :  return os << "sagittal completed";
-            case Event::LatReached :  return os << "lateral completed";
             case Event::Start :  return os << "start";
             case Event::Stop :  return os << "stop";
             default : return os << "wrong event";
