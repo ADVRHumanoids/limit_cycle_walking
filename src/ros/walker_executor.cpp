@@ -386,20 +386,20 @@ bool WalkerExecutor::set_cmd_service(limit_cycle_walking::SetCommandsRequest &re
         res.success = false;
     }
 
-    if (!req.theta.empty())
+    if (!req.dist_feet.empty())
     {
-        std::cout << "new 'theta' received: " << std::endl;
-        for (auto elem : req.theta)
+        std::cout << "new 'dist_feet' received: " << std::endl;
+        for (auto elem : req.dist_feet)
         {
             std::cout << elem << ", ";
         }
         std::cout << std::endl;
-        _wlkr->setTheta(req.theta);
+        _wlkr->setDistFeet(req.dist_feet);
         res.success = true;
     }
     else
     {
-        std::cout << "Empty 'theta' command." << std::endl;
+        std::cout << "Empty 'dist_feet' command." << std::endl;
         res.success = false;
     }
 

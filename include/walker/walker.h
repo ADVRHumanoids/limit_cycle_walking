@@ -30,9 +30,7 @@ public:
     /* stride of the step */
     bool setQMax(std::vector<double> q_max);
 
-    /* heading (in rad) of the com */
-    bool setTheta(std::vector<double> theta);
-
+    bool setDistFeet(std::vector<double> dist_feet);
     /* rotation (in rad) of foot and waist */
     bool setPhi(std::vector<double> phi);
 
@@ -101,8 +99,8 @@ private:
 
     double _t_impact;
 
-    double _theta, _phi;
-    double _theta_previous;
+    double _theta, _phi, _dist_feet;
+    double _theta_previous, _phi_prev;
 
     double _alpha_sag;
 
@@ -112,6 +110,8 @@ private:
     /* received command to start walking */
     bool _started;
 
+    bool _turning_step = false;
+    bool _turning_step_prev = false;
     /* starting time */
     double _t_start_walk;
 
@@ -130,7 +130,7 @@ private:
     bool _current_swing_leg;
 
     /* buffer of commands for step */
-    std::deque<double> _q_buffer, _theta_buffer, _phi_buffer;
+    std::deque<double> _q_buffer, _theta_buffer, _phi_buffer, _dist_feet_buffer;
 
     double _terrain_height;
 
