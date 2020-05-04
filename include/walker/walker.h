@@ -121,6 +121,7 @@ private:
     double _q_lat, _q_lat_min, _q_lat_max;
     double _q_sag_max_previous, _q_max_previous;
 
+    Eigen::Vector2d _com_disp;
     /* dt of the control */
     double _dt;
 

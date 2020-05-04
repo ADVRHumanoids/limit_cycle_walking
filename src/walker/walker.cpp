@@ -274,7 +274,7 @@ bool Walker::update(double time,
                     const mdof::RobotState &state,
                     mdof::RobotState &ref)
 {
-    _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
+//    _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
 
     sagHandler(time, state);
 
@@ -322,18 +322,15 @@ bool Walker::update(double time,
         _q_lat = - _q_sag_max;
         _q_lat_min = - _q_sag_max;
 
+//        if (_turning_step == false && _turning_step_prev == true)
+//        {
+//            _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
+//            _q_min = _q_sag;
+//            _q_sag_min = _q_sag;
+//        }
 
+//        _q_lat = _q_sag;
 
-        _q_lat = _q_sag;
-
-
-        if (_turning_step == false && _turning_step_prev == true)
-        {
-            _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
-            _q_min = _q_sag;
-            _q_sag_min = _q_sag;
-
-        }
 
         std::string side;
         (_current_swing_leg) ? side = "LEFT" : side = "RIGHT";
@@ -341,21 +338,9 @@ bool Walker::update(double time,
 
         /* prepare step */
 
-
-        double d;
-        if (_current_swing_leg == 0)
-        {
-            /* left */
-            d = _dist_feet;
-        }
-        else
-        {
-            /* right */
-            d = - _dist_feet;
-        }
-
+       /* check if phi is feasible */
         double _phi_min = - atan((state.world_T_foot[_current_swing_leg].translation()[0] - state.world_T_foot[1 - _current_swing_leg].translation()[0]) /
-                               (state.world_T_foot[_current_swing_leg].translation()[1] - state.world_T_foot[1 - _current_swing_leg].translation()[1]));
+                                 (state.world_T_foot[_current_swing_leg].translation()[1] - state.world_T_foot[1 - _current_swing_leg].translation()[1]));
 
         if (_phi_min < 0)
         {
@@ -373,27 +358,64 @@ bool Walker::update(double time,
 
         }
 
+        double d;
+        if (_current_swing_leg == 0)
+        {
+            /* left */
+            d = _dist_feet;
+        }
+        else
+        {
+            /* right */
+            d = - _dist_feet;
+        }
+
+
         Eigen::Rotation2Dd rot2_phi(_phi);
         Eigen::Rotation2Dd rot2_theta(_theta);
 
+        /* distance on current y from foot to com */
         Eigen::Vector2d dist_com_foot;
         dist_com_foot << 0, d/2;
 
+        /* delta com given q_max */
         Eigen::Vector2d delta_com;
         delta_com << fabs(_distance_ankle_com) * tan(_q_max), 0;
 
+        Eigen::Vector2d foot_start = _foot_pos_start[1 - _current_swing_leg].translation().head(2);
+        Eigen::Vector2d dist_com_foot_rot = rot2_phi.toRotationMatrix() * rot2_theta.toRotationMatrix() * dist_com_foot;
+        Eigen::Vector2d delta_com_rot = rot2_phi.toRotationMatrix() * rot2_theta.toRotationMatrix() * delta_com;
+
+        /* com goal */
         Eigen::Vector2d com_goal = _foot_pos_start[1 - _current_swing_leg].translation().head(2)
                                    + rot2_phi.toRotationMatrix()
                                    * (rot2_theta.toRotationMatrix() * (dist_com_foot + delta_com));
 
-        Eigen::Vector2d com_disp;
-        com_disp = com_goal - _com_pos_start.head(2);
+//        Eigen::Vector2d com_disp;
+        _com_disp = com_goal - _com_pos_start.head(2);
 
-        _theta = atan2(com_disp(1), com_disp(0));
-        _q_max = atan(com_disp.norm()/fabs(_distance_ankle_com)) + _q_sag_min;
+        _theta = atan2(_com_disp(1), _com_disp(0));
 
+
+//        if (_turning_step == true)
+//        {
+//            _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
+
+//        }
+
+    }
+
+    _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.ankle_T_com);
+
+
+    if (_current_event == Event::SagReached)
+    {
+
+        _q_min = _q_sag;
+        _q_sag_min = _q_sag;
+
+        _q_max = atan(_com_disp.norm()/fabs(_distance_ankle_com)) + _q_sag_min;
         _q_sag_max = _q_max;
-
     }
 
     step_machine(time);
@@ -469,15 +491,15 @@ bool Walker::update(double time,
         double zmp_next;
         double angle;
 
-        if (_turning_step == true)
-        {
-            angle = 0;
+//        if (_turning_step == true)
+//        {
+//            angle = 0;
 
-        }
-        else
-        {
+//        }
+//        else
+//        {
             angle = - _theta;
-        }
+//        }
 
 //        double d;
 //        if (_current_swing_leg == 0)
@@ -495,31 +517,30 @@ bool Walker::update(double time,
         Eigen::Vector3d temp_zmp_swing, temp_zmp_stance;
 
 
-        if (_current_swing_leg == 0)
-        {
-            temp_zmp_stance(1) = _zmp_right;
-            temp_zmp_swing(1) = _zmp_left;
-        }
-        else
-        {
-            temp_zmp_stance(1) = _zmp_left;
-            temp_zmp_swing(1) = _zmp_right;
-        }
-//        temp_zmp_stance.head(2) = rot2 * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_start).head(2);
-////        temp_zmp_swing.head(2) << 0, temp_zmp_stance[1] + d;
-//        temp_zmp_swing.head(2) = rot2 * (state.world_T_foot[_current_swing_leg].translation() - _com_pos_start).head(2);
-
-
-//        if (!_theta_buffer.empty())
+//        if (_current_swing_leg == 0)
 //        {
-//            Eigen::Rotation2Dd rot2a(_theta_buffer.front());
-//            Eigen::Vector3d temp_zmp_swing1;
-//            temp_zmp_swing1.head(2) = rot2a * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_goal).head(2);
-
-//            Eigen::Rotation2Dd rot2(- _theta_buffer.front());
-//            temp_zmp_swing.head(2) = - (rot2 * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_goal).head(2));
-
+//            temp_zmp_stance(1) = _zmp_right;
+//            temp_zmp_swing(1) = _zmp_left;
 //        }
+//        else
+//        {
+//            temp_zmp_stance(1) = _zmp_left;
+//            temp_zmp_swing(1) = _zmp_right;
+//        }
+        temp_zmp_stance.head(2) = rot2 * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_start).head(2);
+        temp_zmp_swing.head(2) = rot2 * (state.world_T_foot[_current_swing_leg].translation() - _com_pos_start).head(2);
+
+
+        if (!_theta_buffer.empty())
+        {
+            Eigen::Rotation2Dd rot2a(_theta_buffer.front());
+            Eigen::Vector3d temp_zmp_swing1;
+            temp_zmp_swing1.head(2) = rot2a * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_goal).head(2);
+
+            Eigen::Rotation2Dd rot2(- _theta_buffer.front());
+            temp_zmp_swing.head(2) = - (rot2 * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_goal).head(2));
+
+        }
 
         zmp_current = temp_zmp_stance(1);
         zmp_next = temp_zmp_swing(1);
@@ -556,7 +577,7 @@ bool Walker::update(double time,
     /* _q now goes from qmin to qmax with qmin negative, while I want it to be from zero to a value for the com to advance */
     _step.q_sag = _q + _q_sag_max_previous;
     _step.q_sag_min = _q_sag_min;
-    _step.q_sag_max = _q_max;
+    _step.q_sag_max = _q_sag_max;
     _step.q_lat = _q_lat;
     _step.q_lat_min = _q_lat_min;
     _step.q_lat_max = _q_lat_max;
