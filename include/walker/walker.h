@@ -122,6 +122,7 @@ private:
     double _q_sag_max_previous, _q_max_previous;
 
     Eigen::Vector2d _com_disp;
+    double _theta_next;
     /* dt of the control */
     double _dt;
 
