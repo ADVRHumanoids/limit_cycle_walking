@@ -79,6 +79,8 @@ private:
                        double theta,
                        Eigen::Vector3d world_T_com,
                        Eigen::Vector3d world_T_com_start,
+                       std::array<Eigen::Affine3d, 2> ankle,
+                       Eigen::Vector3d com,
                        std::array<Eigen::Affine3d, 2> ankle_T_com);
 
     bool updateQMax(double time);
@@ -101,8 +103,11 @@ private:
 
     double _theta, _phi, _dist_feet;
     double _theta_previous, _phi_prev;
+    double _heading;
 
     double _alpha_sag;
+
+    Eigen::Vector3d _com_ref_unrot;
 
     double _time;
     double _new_event_time;
@@ -120,6 +125,7 @@ private:
     double _q_sag, _q_sag_min, _q_sag_max;
     double _q_lat, _q_lat_min, _q_lat_max;
     double _q_sag_max_previous, _q_max_previous;
+    double _q_max_pre_steer;
 
     Eigen::Vector2d _com_disp;
     double _theta_next;
@@ -148,6 +154,9 @@ private:
 
     Eigen::Affine3d _waist_pos_start;
     Eigen::Affine3d _waist_pos_goal;
+
+    Eigen::Affine3d _torso_pos_start;
+    Eigen::Affine3d _torso_pos_goal;
 
     Eigen::Vector3d _delta_com_tot;
     Eigen::Vector3d _delta_foot_tot;

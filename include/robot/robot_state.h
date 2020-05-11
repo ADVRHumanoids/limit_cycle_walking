@@ -12,12 +12,17 @@ struct RobotState
     {
         world_T_com.setZero();
 
+        world_T_ankle[0].matrix().setZero();
+        world_T_ankle[1].matrix().setZero();
+
+
         com_vel.setZero();
 
         world_T_foot[0].matrix().setZero();
         world_T_foot[1].matrix().setZero();
 
         world_T_waist.matrix().setZero();
+        world_T_torso.matrix().setZero();
 
         ankle_T_com[0].matrix().setZero();
         ankle_T_com[1].matrix().setZero();
@@ -29,11 +34,14 @@ struct RobotState
 
     std::array<Eigen::Affine3d, 2> world_T_foot;
 
-    Eigen::Affine3d world_T_waist;
+    Eigen::Affine3d world_T_waist, world_T_torso;
 
     std::array<Eigen::Affine3d, 2> ankle_T_com;
 
+    std::array<Eigen::Affine3d, 2> world_T_ankle;
+
     Eigen::Vector3d world_T_com;
+
 
     void log(std::string name, XBot::MatLogger2::Ptr logger)
     {

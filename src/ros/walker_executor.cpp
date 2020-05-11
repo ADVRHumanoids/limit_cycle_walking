@@ -60,6 +60,7 @@ void WalkerExecutor::run()
     _tasks["r_sole"]->setPoseReferenceRaw(_ref.world_T_foot[1]);
     _tasks["Com"]->setPoseReferenceRaw(com);
     _tasks["Waist"]->setPoseReferenceRaw(_ref.world_T_waist);
+    _tasks["torso"]->setPoseReferenceRaw(_ref.world_T_torso);
 
 
     /* update ci */
@@ -158,8 +159,8 @@ void WalkerExecutor::log(XBot::MatLogger2::Ptr logger)
     logger->add("q", _q);
     logger->add("q_dot", _qdot);
     logger->add("q_ddot", _qddot);
-    logger->add("l_ankle", _world_T_ankle[0].translation());
-    logger->add("r_ankle", _world_T_ankle[1].translation());
+//    logger->add("l_ankle", _world_T_ankle[0].translation());
+//    logger->add("r_ankle", _world_T_ankle[1].translation());
     logger->add("time", _time);
     logger->add("set_flag", _set_flag);
     logger->add("start_flag", _start_flag);
@@ -178,21 +179,22 @@ bool WalkerExecutor::updateRobotState()
     _tasks["r_sole"]->getPoseReferenceRaw(_state.world_T_foot[1]);
     _tasks["Com"]->getPoseReferenceRaw(com);
     _tasks["Waist"]->getPoseReferenceRaw(_state.world_T_waist);
+    _tasks["torso"]->getPoseReferenceRaw(_state.world_T_torso);
 
     _state.world_T_com = com.translation();
     /* from model */
 //    std::array<Eigen::Affine3d, 2> world_T_ankle;
 //    Eigen::Vector3d world_T_com;
 
-    _model->getPose("l_ankle", _world_T_ankle[0]);
-    _model->getPose("r_ankle", _world_T_ankle[1]);
+    _model->getPose("l_ankle", _state.world_T_ankle[0]);
+    _model->getPose("r_ankle", _state.world_T_ankle[1]);
 
 //    _model->getCOM(world_T_com);
 
-    _state.ankle_T_com[0].translation() = _world_T_ankle[0].translation() - _state.world_T_com;
-    _state.ankle_T_com[0].linear() = _world_T_ankle[0].linear();
-    _state.ankle_T_com[1].translation() = _world_T_ankle[1].translation() - _state.world_T_com;
-    _state.ankle_T_com[1].linear() = _world_T_ankle[1].linear();
+    _state.ankle_T_com[0].translation() = _state.world_T_ankle[0].translation() - _state.world_T_com;
+    _state.ankle_T_com[0].linear() = _state.world_T_ankle[0].linear();
+    _state.ankle_T_com[1].translation() = _state.world_T_ankle[1].translation() - _state.world_T_com;
+    _state.ankle_T_com[1].linear() = _state.world_T_ankle[1].linear();
 
     return true;
 }
@@ -278,21 +280,19 @@ void WalkerExecutor::init_load_model_and_robot()
 
 void WalkerExecutor::init_load_robot_state()
 {
-
-    std::array<Eigen::Affine3d, 2> world_T_ankle;
-
     _model->getPose("l_sole", _state.world_T_foot[0]);
     _model->getPose("r_sole", _state.world_T_foot[1]);
     _model->getCOM(_state.world_T_com);
     _model->getPose("Waist", _state.world_T_waist);
-    _model->getPose("l_ankle", world_T_ankle[0]);
-    _model->getPose("r_ankle", world_T_ankle[1]);
+    _model->getPose("torso", _state.world_T_torso);
+    _model->getPose("l_ankle", _state.world_T_ankle[0]);
+    _model->getPose("r_ankle", _state.world_T_ankle[1]);
 
 
-    _state.ankle_T_com[0].translation()= world_T_ankle[0].translation() - _state.world_T_com;
-    _state.ankle_T_com[0].linear() = world_T_ankle[0].linear();
-    _state.ankle_T_com[1].translation() = world_T_ankle[1].translation() - _state.world_T_com;
-    _state.ankle_T_com[1].linear() = world_T_ankle[1].linear();
+    _state.ankle_T_com[0].translation()= _state.world_T_ankle[0].translation() - _state.world_T_com;
+    _state.ankle_T_com[0].linear() = _state.world_T_ankle[0].linear();
+    _state.ankle_T_com[1].translation() = _state.world_T_ankle[1].translation() - _state.world_T_com;
+    _state.ankle_T_com[1].linear() = _state.world_T_ankle[1].linear();
 
     _ci->reset(_time);
 }
