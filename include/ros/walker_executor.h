@@ -20,6 +20,8 @@
 
 #include <matlogger2/matlogger2.h>
 
+#include <ros/footsteps_viz.h>
+
 class WalkerExecutor {
 public:
 
@@ -36,6 +38,7 @@ private:
     bool updateRobotState();
 
     void init_services();
+    void init_footsteps();
     void init_load_model_and_robot();
 
     void init_load_model();
@@ -93,6 +96,8 @@ private:
     bool _set_flag, _stop_flag, _start_flag;
 
     std::array<Eigen::Affine3d, 2> _world_T_ankle;
+
+    FootstepsSpawner::Ptr _footstep_viz;
 };
 
 #endif // WALKER_ROS_H

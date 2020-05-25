@@ -26,6 +26,8 @@ WalkerExecutor::WalkerExecutor() :
     init_services();
     /* init model and robot */
     init_load_model_and_robot();
+    /*init visualization footsteps */
+    init_footsteps();
     /* init cartesian interface */
     init_load_cartesian_interface();
     /* init walker */
@@ -36,6 +38,12 @@ WalkerExecutor::WalkerExecutor() :
     homing();
     /* initialize walker with current state of the robot */
     init_initialize_walker();
+}
+
+void WalkerExecutor::init_footsteps()
+{
+    _footstep_viz = std::make_shared<FootstepsSpawner>(_model, _nh);
+    _footstep_viz->initializeMarkers();
 }
 
 void WalkerExecutor::run()
@@ -87,6 +95,7 @@ void WalkerExecutor::run()
     _robot->move();
 
     _rsp->publishTransforms(ros::Time::now(), "ci");
+    _footstep_viz->spawnMarkers(_ref, ros::Time::now());
 
     std::this_thread::sleep_for(std::chrono::duration<double>(_period));
     _time += _period;

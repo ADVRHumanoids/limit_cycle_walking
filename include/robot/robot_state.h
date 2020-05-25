@@ -26,6 +26,13 @@ struct RobotState
 
         ankle_T_com[0].matrix().setZero();
         ankle_T_com[1].matrix().setZero();
+
+        feet_contact[0] = false;
+        feet_contact[1] = false;
+
+        impact[0] = false;
+        impact[1] = false;
+
     }
 
     /* feet are organized in arrays, first left second right */
@@ -42,6 +49,10 @@ struct RobotState
 
     Eigen::Vector3d world_T_com;
 
+    std::array<bool, 2> feet_contact;
+
+    std::array<bool, 2> impact;
+
 
     void log(std::string name, XBot::MatLogger2::Ptr logger)
     {
@@ -52,6 +63,8 @@ struct RobotState
         logger->add(name + "_l_ankle_to_com", ankle_T_com[0].translation());
         logger->add(name + "_r_ankle_to_com", ankle_T_com[1].translation());
         logger->add(name + "_com_pos", world_T_com);
+        logger->add(name + "_left_contact", feet_contact[0]);
+        logger->add(name + "_right_contact", feet_contact[1]);
     }
 };
 }

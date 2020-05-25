@@ -175,6 +175,9 @@ bool Walker::homing(const mdof::RobotState &state,
     ref.world_T_com = com;
     ref.world_T_foot = feet;
 
+    ref.feet_contact[0] = true;
+    ref.feet_contact[1] = true;
+
     /* TODO sanity check? */
     return true;
 }
@@ -490,6 +493,7 @@ bool Walker::update(double time,
         _q_sag_max = _q_max;
     }
 
+    ref.impact[1 - _current_swing_leg] = (_current_event == Event::SagReached) ? true : false;
     step_machine(time);
 
     if (_turning_step)
