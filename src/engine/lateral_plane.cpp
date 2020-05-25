@@ -109,9 +109,12 @@ Eigen::VectorXd LateralPlane::makeChunk(Eigen::MatrixXd values, int size_current
     }
     else if (values.cols() == 3)
     {
+        int segment_lenght = static_cast<int>(size_current/3);
+
         Eigen::VectorXd segment_support;
-        segment.head(size_current/2) << segment_support.LinSpaced(size_current/2, values(0,0), values(0,1));
-        segment.tail(size_current/2) << segment_support.LinSpaced(size_current/2, values(0,1), values(0,2));
+        segment.segment(0, segment_lenght) << segment_support.Constant(segment_lenght, values(0,0));
+        segment.segment(segment_lenght, segment_lenght) << segment_support.Constant(segment_lenght, values(0,1));
+        segment.segment(2 *segment_lenght, segment_lenght) << segment_support.Constant(segment_lenght, values(0,2));
     }
     else
     {

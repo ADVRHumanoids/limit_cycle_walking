@@ -60,7 +60,8 @@ private:
                    double q_max);
 
     bool impactDetector(double swing_leg_heigth,
-                        double terrain_heigth);
+                        double terrain_heigth,
+                        double threshold);
 
     bool sagHandler(double time,
                     const mdof::RobotState &state);
@@ -126,6 +127,8 @@ private:
     double _q_lat, _q_lat_min, _q_lat_max;
     double _q_sag_max_previous, _q_max_previous;
     double _q_max_pre_steer;
+
+    bool _pre_pre_turning_step, _pre_turning_step = 0;
 
     Eigen::Vector2d _com_disp;
     double _theta_next;

@@ -4,8 +4,8 @@ solver_options:
 
 stack:
     - ["LFoot", "RFoot"] #PosturalPennacchio
-    - ["CoM", "Torso", "LArm", RArm] # CoM # CoMStabilizer #"Torso"
-    - ["WaistOrient"]
+    - ["CoM", "WaistOrient", "LArm", RArm] # CoM # CoMStabilizer #"Torso"
+    - ["Torso"]
     - ["Postural"]
     
 constraints: ["JointLimits", "VelocityLimits"]
@@ -77,8 +77,8 @@ RArm:
 Torso:
     type: "Cartesian"
     distal_link: "torso"
-    base_link: "world"
-    lambda: 0.1
+    base_link: "Waist"
+    lambda: 0.10
     indices: [3]
 
 JointLimits:
