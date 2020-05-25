@@ -62,7 +62,8 @@ add_library(LimitCycleWalker STATIC
     src/walker/walker.cpp
     src/param/param.cpp
     src/ros/walker_executor.cpp
-    src/ros/walker_server.cpp)
+    src/ros/walker_server.cpp
+    src/ros/footsteps_viz.cpp)
 
 
 target_link_libraries(LimitCycleWalker ${catkin_LIBRARIES}
