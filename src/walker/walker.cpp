@@ -28,14 +28,12 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
     _update_step(false),
     _param(par)
 {
-    _com_offset.setZero();
+//    _com_offset.setZero();
 
     _reset_flag = false;
     _durations.resize(1);
     _com_pos_start.setZero();
     _com_pos_goal.setZero();
-
-    _delta_com.setZero();
 
     _foot_pos_start[0].matrix().setZero();
     _foot_pos_start[1].matrix().setZero();
@@ -45,6 +43,8 @@ Walker::Walker(double dt, std::shared_ptr<Param> par) :
 
     _waist_pos_start.matrix().setZero();
     _waist_pos_goal.matrix().setZero();
+
+    _wTw.matrix().setZero();
 }
 
 bool Walker::init(const mdof::RobotState &state)
@@ -66,6 +66,7 @@ bool Walker::init(const mdof::RobotState &state)
     _current_swing_leg = _param->getFirstSideStep();
 
     _wTw = state.world_T_waist;
+
     initialize_start_stop(state);
 //    /* com */
 //    _com_pos_start = state.world_T_com;
@@ -462,8 +463,8 @@ bool Walker::update(double time,
 
          double x_goal = (middle_zmp_next - stance[1])/m + stance[0];
 
-         _q_max_pre_steer = atan((x_goal - _com_pos_start(0))/fabs(_distance_ankle_com)) + _q_sag_min;
-//         _q_max_pre_steer = _q_sag_max;
+//         _q_max_pre_steer = atan((x_goal - _com_pos_start(0))/fabs(_distance_ankle_com)) + _q_sag_min;
+         _q_max_pre_steer = _q_sag_max;
 
 
 
@@ -607,7 +608,7 @@ bool Walker::update(double time,
 
         if (_current_state != State::LastStep)
         {
-            if (_turning_step || _turning_step_prev || _pre_turning_step)
+            if (_turning_step || _turning_step_prev)
             {
                 /* distance on current y from foot to com */
                 Eigen::Vector2d dist_com_foot;
@@ -644,7 +645,7 @@ bool Walker::update(double time,
     {
         if (_current_state != State::LastStep )
         {
-            if (_turning_step || _turning_step_prev || _pre_turning_step)
+            if (_turning_step || _turning_step_prev)
             {
             _q_min = _q_sag;
             _q_sag_min = _q_sag;
@@ -663,7 +664,7 @@ bool Walker::update(double time,
 
         /* boh 2 */
         Eigen::Rotation2Dd rot2(- _theta);
-                Eigen::Rotation2Dd rot2_phi( - _phi);
+        Eigen::Rotation2Dd rot2_phi( - _phi);
         double zmp_current = (rot2 * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_start).head(2))[1];
         double zmp_next =  (rot2 * rot2_phi * (_foot_pos_goal[_current_swing_leg].translation() - _com_pos_goal).head(2))[1];
 
@@ -890,10 +891,10 @@ bool Walker::update(double time,
         _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + _delta_foot_tot;
         _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
-        if (_turning_step)
-        {
-           _wTw = state.world_T_waist;
-        }
+//        if (_turning_step)
+//        {
+//           _wTw = state.world_T_waist;
+//        }
         _waist_pos_goal.linear() = _wTw * (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 //        _zmp_middle = (_foot_pos_goal[_current_swing_leg].translation()[1] + _foot_pos_goal[1 - _current_swing_leg].translation()[1]) /2;
 

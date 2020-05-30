@@ -143,8 +143,15 @@ void LateralPlane::update(double q_sns,
                           double zmp_middle,
                           double offset)
 {
-    computePreviewWindow(q_sns, q_min, q_max, zmp_val_current, duration, zmp_middle, offset);
 
+    if (q_min == 0 && q_max == 0)
+    {
+        _zmp_window.setZero();
+    }
+    else
+    {
+        computePreviewWindow(q_sns, q_min, q_max, zmp_val_current, duration, zmp_middle, offset);
+    }
     /* com value is actually a delta_com */
     _u = _mpc_solver->getKfb() * _delta_com + _mpc_solver->getKprev() * _zmp_window;
     _mpc_solver->getIntegrator()->integrate(_delta_com, _u, _dt, _delta_com);

@@ -142,7 +142,6 @@ private:
 
     Eigen::Affine3d _wTw;
 
-    Eigen::Vector3d _com_offset;
     double _zmp_right, _zmp_left;
 
     /* swinging leg (0 -> left, 1 -> right) */

@@ -5,7 +5,7 @@ init_parameters:
 
 walking_parameters:
     step_clearance: 0.05 #0.05
-    step_duration: 0.4 #0.5
+    step_duration: 0.5 #0.5
     double_stance_duration: 0
     max_inclination: 0.07 #0.07
     feet_offset: 0.00
