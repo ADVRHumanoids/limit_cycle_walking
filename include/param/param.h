@@ -39,6 +39,7 @@ public:
     double getMpcR() const {return _mpc_R;}
     double getHorizonDuration() const {return _horizon_duration;}
     double getZmpOffset() const {return _zmp_offset;}
+    double getOffsetFeet() const {return _feet_offset;}
 
     void log(std::string name, XBot::MatLogger2::Ptr logger);
 
@@ -63,6 +64,7 @@ private:
     double _mpc_R;
     double _horizon_duration;
     double _zmp_offset;
+    double _feet_offset;
 
 };
 

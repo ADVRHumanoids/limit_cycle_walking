@@ -120,8 +120,11 @@ bool WalkerExecutor::homing()
    com.translation() = _ref.world_T_com;
    com.linear().setIdentity();
    _tasks["Com"]->setPoseTarget(com, reaching_time);
+   /* waist */
+   _tasks["Waist"]->setPoseTarget(_ref.world_T_waist, reaching_time);
 
    std::cout << "Homing.." << std::endl;
+
 
    while (_tasks["l_sole"]->getTaskState() != XBot::Cartesian::State::Online &&
           _tasks["r_sole"]->getTaskState() != XBot::Cartesian::State::Online &&

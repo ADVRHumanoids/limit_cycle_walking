@@ -87,15 +87,20 @@ private:
     bool updateQMax(double time);
     bool updateTheta(double time);
     bool updatePhi(double time);
+    bool updateDistFeet(double time);
 
     bool updateStep();
     bool updateZmp(mdof::RobotState state);
     //    bool resetter();
 
+    bool initialize_q(const mdof::RobotState &state);
+    bool initialize_start_stop(const mdof::RobotState &state);
+
     State _current_state, _previous_state;
     Event _current_event, _previous_event;
     Stance _current_stance;
 
+    bool _reset_flag;
     /* parameters of the stepping motion */
     int _step_counter, _cycle_counter;
     double _steep_q, _steep_q_sag, _steep_q_lat;
@@ -135,6 +140,9 @@ private:
     /* dt of the control */
     double _dt;
 
+    Eigen::Affine3d _wTw;
+
+    Eigen::Vector3d _com_offset;
     double _zmp_right, _zmp_left;
 
     /* swinging leg (0 -> left, 1 -> right) */
@@ -176,6 +184,8 @@ private:
     double _zmp_middle;
     std::vector<Eigen::MatrixXd> _zmp_vals;
     Eigen::VectorXd _durations;
+
+    double _zmp_offset;
 
     double _distance_ankle_com;
     double _height_com;

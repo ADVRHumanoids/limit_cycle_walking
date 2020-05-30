@@ -12,6 +12,7 @@ Walker::Param::Param()
     _step_duration = 2;
     _double_stance_duration = 0;
     _max_inclination = 0.1;
+    _feet_offset = 0.0;
 
     /* mpc parameters */
     _mpc_Q = 1000000;
@@ -53,6 +54,8 @@ void Walker::Param::log(std::string name, XBot::MatLogger2::Ptr logger)
     logger->add(name + "_mpc_R", _mpc_R);
     logger->add(name + "_horizon_duration", _horizon_duration);
     logger->add(name + "_zmp_offset", _zmp_offset);
+    logger->add(name + "_zmp_offset", _feet_offset);
+
 }
 
 Walker::Param::Param(YAML::Node yaml_node) : Param()
@@ -154,6 +157,16 @@ bool Walker::Param::parseYAML(YAML::Node yaml_node)
         {
             _max_inclination = walking_parameters["max_inclination"].as<double>();
         }
+
+        if(!walking_parameters["feet_offset"])
+        {
+            std::cout << "Missing in '" << walk_par << "': 'feet_offset'. Using default --> " << _feet_offset << std::endl;
+        }
+        else
+        {
+            _feet_offset = walking_parameters["feet_offset"].as<double>();
+        }
+
     }
 
     YAML::Node mpc_parameters = yaml_node["mpc_parameters"];
