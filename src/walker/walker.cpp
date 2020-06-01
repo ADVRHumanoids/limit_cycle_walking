@@ -509,7 +509,12 @@ bool Walker::update(double time,
         }
         else if (_turning_step)
         {
+            _turning_step_next = true;
             _turning_step = false;
+        }
+        else if (_turning_step_next)
+        {
+            _turning_step_next = false;
         }
 
         //        _turning_step = false;
@@ -526,6 +531,7 @@ bool Walker::update(double time,
         if (_turning_step == false && _turning_step_prev == true)
         {
             _heading = _heading + _phi;
+            _theta_previous = _theta;
             _theta = _heading;
             _phi = 0;
         }
@@ -627,7 +633,7 @@ bool Walker::update(double time,
                 _com_disp = com_goal - _com_pos_start.head(2);
 
 
-                _theta_previous = _theta;
+//                _theta_previous = _theta;
                 _theta = atan2(_com_disp(1), _com_disp(0));
             }
         }
@@ -782,6 +788,20 @@ bool Walker::update(double time,
 
         }
 
+        if (_current_state == State::LastStep)
+        {
+            double ratio = 0.8;
+            if (_alpha_sag <= ratio)
+            {
+                _steep_q_sag = (0 - _q_sag_min) / _durations[0] * (1/ratio);
+            }
+            else
+            {
+                _steep_q_sag = (q_sag_max - 0) / _durations[0] * (1/(1-ratio));
+            }
+
+        }
+
         _q = _q + _steep_q_sag *(_dt);
     }
     /* TODO are these constant? */
@@ -887,9 +907,18 @@ bool Walker::update(double time,
 //        _delta_com_tot[0] = _delta_com_tot[0] * cos(_theta);
         _com_pos_goal = _com_pos_start + _delta_com_tot;
 
+        double angle;
+        if (_turning_step_next)
+        {
+            angle = _theta_previous;
+        }
+        else
+        {
+            angle = _theta;
+        }
         _delta_foot_tot.head(2) = rot2.toRotationMatrix() * _delta_foot_tot.head(2);
         _foot_pos_goal[_current_swing_leg].translation() = _foot_pos_start[_current_swing_leg].translation() + _delta_foot_tot;
-        _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(_theta, Eigen::Vector3d::UnitZ())).toRotationMatrix();
+        _foot_pos_goal[_current_swing_leg].linear() = (Eigen::AngleAxisd(angle, Eigen::Vector3d::UnitZ())).toRotationMatrix();
 
 //        if (_turning_step)
 //        {

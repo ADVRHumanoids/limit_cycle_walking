@@ -123,6 +123,7 @@ private:
 
     bool _turning_step = false;
     bool _turning_step_prev = false;
+    bool _turning_step_next = false;
     /* starting time */
     double _t_start_walk;
 

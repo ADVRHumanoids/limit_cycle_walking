@@ -1,17 +1,17 @@
 init_parameters:
     initial_lowering: 0.001
     first_step_side: Right
-    lean_forward: 0.05
+    lean_forward: 0.0 #0.05
 
 walking_parameters:
     step_clearance: 0.05 #0.05
-    step_duration: 0.5 #0.5
+    step_duration: 0.4 #0.5
     double_stance_duration: 0
-    max_inclination: 0.07 #0.07
+    max_inclination: 0.08 #0.07
     feet_offset: 0.00
 
 mpc_parameters:
     Q: 100000
     R: 1
     horizon_duration: 2
-    zmp_offset: -0.004 # -0.004
+    zmp_offset: -0.000 # -0.004

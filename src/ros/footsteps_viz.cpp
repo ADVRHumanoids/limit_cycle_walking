@@ -42,7 +42,7 @@ void FootstepsSpawner::spawnMarkers(mdof::RobotState state, ros::Time t)
     }
     else if (state.impact[1])
     {
-        _markers.markers.push_back(generateMarker(state.world_T_foot[1], t));
+        _markers.markers.push_back(generateMarker(state.world_T_foot[1], t, {1.0, 1.0, 0.0, 0.0}));
     }
 
 
