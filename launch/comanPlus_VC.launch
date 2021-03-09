@@ -2,7 +2,7 @@
 
     <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/robots/iit-cogimon-ros-pkg/cogimon_urdf/urdf/cogimon.urdf"/>
     <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/robots/iit-cogimon-ros-pkg/cogimon_srdf/srdf/cogimon.srdf"/>
-    <param name="cartesian/problem_description" textfile="$(env ROBOTOLOGY_ROOT)/external/limit_cycle_walking/cogimon_walker/VC_cartesio/problems/comanPlus_VC_stack.yaml"/>
+    <param name="cartesian/problem_description" textfile="$(env ROBOTOLOGY_ROOT)/external/limit_cycle_walking/configs/cartesio_stack.yaml"/>
 
     
     <!-- param name="cartesian/com/max_velocity_linear" type="double" value="100.0"/ -->
