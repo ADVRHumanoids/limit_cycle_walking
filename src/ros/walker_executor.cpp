@@ -66,7 +66,7 @@ void WalkerExecutor::run()
 
     _tasks["l_sole"]->setPoseReferenceRaw(_ref.world_T_foot[0]);
     _tasks["r_sole"]->setPoseReferenceRaw(_ref.world_T_foot[1]);
-    _tasks["Com"]->setPoseReferenceRaw(com);
+    _tasks["com"]->setPoseReferenceRaw(com);
     _tasks["Waist"]->setPoseReferenceRaw(_ref.world_T_waist);
     _tasks["torso"]->setPoseReferenceRaw(_ref.world_T_torso);
 
@@ -119,7 +119,7 @@ bool WalkerExecutor::homing()
    Eigen::Affine3d com;
    com.translation() = _ref.world_T_com;
    com.linear().setIdentity();
-   _tasks["Com"]->setPoseTarget(com, reaching_time);
+   _tasks["com"]->setPoseTarget(com, reaching_time);
    /* waist */
    _tasks["Waist"]->setPoseTarget(_ref.world_T_waist, reaching_time);
 
@@ -128,7 +128,7 @@ bool WalkerExecutor::homing()
 
    while (_tasks["l_sole"]->getTaskState() != XBot::Cartesian::State::Online &&
           _tasks["r_sole"]->getTaskState() != XBot::Cartesian::State::Online &&
-          _tasks["Com"]->getTaskState() != XBot::Cartesian::State::Online)
+          _tasks["com"]->getTaskState() != XBot::Cartesian::State::Online)
    {
        /* update ci */
        _ci->update(_time, _period);
@@ -189,7 +189,7 @@ bool WalkerExecutor::updateRobotState()
     /* from reference */
     _tasks["l_sole"]->getPoseReferenceRaw(_state.world_T_foot[0]);
     _tasks["r_sole"]->getPoseReferenceRaw(_state.world_T_foot[1]);
-    _tasks["Com"]->getPoseReferenceRaw(com);
+    _tasks["com"]->getPoseReferenceRaw(com);
     _tasks["Waist"]->getPoseReferenceRaw(_state.world_T_waist);
     _tasks["torso"]->getPoseReferenceRaw(_state.world_T_torso);
 
