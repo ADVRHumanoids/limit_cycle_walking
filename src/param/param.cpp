@@ -49,6 +49,7 @@ void Walker::Param::log(std::string name, XBot::MatLogger2::Ptr logger)
     logger->add(name + "_lean_forward", _lean_forward);
     logger->add(name + "_step_clearance", _step_clearance);
     logger->add(name + "_step_duration", _step_duration);
+    logger->add(name + "_max_inclination", _max_inclination);
     logger->add(name + "_double_stance_duration", _double_stance_duration);
     logger->add(name + "_mpc_Q", _mpc_Q);
     logger->add(name + "_mpc_R", _mpc_R);
