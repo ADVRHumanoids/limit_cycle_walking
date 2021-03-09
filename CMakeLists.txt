@@ -10,7 +10,6 @@ add_compile_options(-std=c++11)
 #find_package(Eigen3 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
-    cartesian_interface
     roscpp
     std_msgs
     message_generation
@@ -24,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(XBotInterface REQUIRED)
 find_package(OpenMpC REQUIRED)
 find_package(matlogger2 REQUIRED)
+find_package(cartesian_interface REQUIRED)
 
 add_service_files(
   FILES
