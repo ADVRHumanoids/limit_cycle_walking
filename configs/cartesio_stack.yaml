@@ -4,7 +4,7 @@ solver_options:
 
 stack:
     - ["LFoot", "RFoot"] #PosturalPennacchio
-    - ["CoM", "WaistOrient", "LArm", RArm] # CoM # CoMStabilizer #"Torso"
+    - ["CoM", "WaistOrient"] # CoM # CoMStabilizer #"Torso"
     - ["Torso"]
     - ["Postural"]
     

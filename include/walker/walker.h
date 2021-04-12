@@ -133,6 +133,8 @@ private:
     double _q_lat, _q_lat_min, _q_lat_max;
     double _q_sag_max_previous, _q_max_previous;
     double _q_max_pre_steer;
+    double _q_cmd;
+
 
     bool _pre_pre_turning_step, _pre_turning_step = 0;
 

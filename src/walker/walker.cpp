@@ -90,6 +90,8 @@ bool Walker::init(const mdof::RobotState &state)
     /* q */
 
     initialize_q(state);
+
+    _q_cmd = _param->getMaxInclination();
 //    _q_sag_max_previous = 0;
 
 //    _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start, state.world_T_ankle, state.world_T_com, state.ankle_T_com);
@@ -279,6 +281,7 @@ bool Walker::setQMax(std::vector<double> q_max)
     {
         _q_buffer.push_back(i);
     }
+    _q_cmd = q_max.back();
     /* TODO sanity check? */
     return true;
 }
@@ -382,7 +385,7 @@ bool Walker::update(double time,
         sagHandler(time, state);
     }
 
-    if (!_phi_buffer.empty() && !_pre_turning_step)
+    if (!_phi_buffer.empty() && _phi_buffer.front() != 0. && !_pre_turning_step)
     {
         _pre_pre_turning_step = 1;
     }
@@ -482,7 +485,7 @@ bool Walker::update(double time,
         if (_current_state == State::Walking)
         {
             std::vector<double> new_q;
-            new_q.push_back(_param->getMaxInclination());
+            new_q.push_back(_q_cmd);
             setQMax(new_q);
         }
 
@@ -641,6 +644,11 @@ bool Walker::update(double time,
     }
 
     _q_sag = computeQSag(_current_swing_leg, _theta, state.world_T_com, _com_pos_start,  state.world_T_ankle, state.world_T_com, state.ankle_T_com);
+
+    if (_turning_step)
+    {
+        _theta_next = _phi;
+    }
 
     if (_current_state == State::Idle)
     {
@@ -825,7 +833,7 @@ bool Walker::update(double time,
         temp_zmp_swing.head(2) = rot2 * rot2_phi * (_foot_pos_goal[_current_swing_leg].translation() - _com_pos_goal).head(2);
 
 
-        if (_pre_turning_step)
+        if (_pre_turning_step || _turning_step)
         {
             Eigen::Rotation2Dd rot2(- _theta_next);
             temp_zmp_swing.head(2) = - (rot2 * (state.world_T_foot[1 - _current_swing_leg].translation() - _com_pos_goal).head(2));
